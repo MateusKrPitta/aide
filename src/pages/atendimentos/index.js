@@ -12,14 +12,16 @@ import {
   TextField,
 } from "@mui/material";
 import {
+  AccountBalance,
   AddCircleOutline,
   AddCircleOutlineOutlined,
-  AddCircleOutlineRounded,
   Article,
   Assignment,
-  Close,
+  AttachMoney,
+  CreditCard,
   DateRange,
   Edit,
+  LocationOnOutlined,
   Money,
   MoneyOutlined,
   Numbers,
@@ -28,32 +30,32 @@ import {
   Phone,
   Search,
   Work,
+  WorkHistory,
 } from "@mui/icons-material";
 import ButtonComponent from "../../components/button";
 import CentralModal from "../../components/modal-central";
-import ButtonClose from "../../components/buttons/button-close";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
+
 import TableLoading from "../../components/loading/loading-table/loading";
 import TableComponent from "../../components/table";
 import { atendimentosCadastrados } from "../../entities/header/atendimentos";
 import ModalLateral from "../../components/modal-lateral";
+import Acordion from "../../components/accordion";
+import ClienteAtendimento from "./cadastro/cliente";
+import PrestadorAtendimento from "./cadastro/prestador";
+import TrabalhoAtendimento from "./cadastro/trabalho";
+import DocumentosAtendimento from "./cadastro/documentos";
+import ClienteEditar from "./editar/cliente";
+import ServicoEditar from "./editar/servico";
+import DocumentosEditar from "./editar/documentos";
 
 const Atendimentos = () => {
   const [editando, setEditando] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [efeito, setEfeito] = useState(false);
+
   const [cadastro, setCadastro] = useState(false);
-  const [selectedDocuments, setSelectedDocuments] = useState([]);
-  const [selectedServices, setSelectedServices] = useState([]);
-  const [availableServices, setAvailableServices] = useState([
-    "Limpeza Dentária",
-    "Clareamento",
-    "Restauração",
-    "Extração",
-    "Ortodontia",
-  ]);
   const [listaUsuarios, setListaUsuarios] = useState([
     {
       id: 1,
@@ -265,171 +267,7 @@ const Atendimentos = () => {
                       variants={fadeIn}
                       transition={{ duration: 0.9 }}
                     >
-                      <div className="flex w-full  flex-wrap items-center gap-4">
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Nome Cliente"
-                          name="nome"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "100%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "47%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Person />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Telefone"
-                          name="telefone"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "100%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "47%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Phone />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="CPF"
-                          name="cpf"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "100%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "30%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Article />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Estado"
-                          name="estado"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "100%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "30%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <LocationOnIcon />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Cidade"
-                          name="cidade"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "100%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "32%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <LocationOnIcon />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Endereço"
-                          name="endereco"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "100%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "47%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <LocationOnIcon />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Número"
-                          name="numero"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "100%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "47%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Numbers />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                      </div>
+                      <ClienteAtendimento />
                     </motion.div>
                   </div>
                 )}
@@ -442,37 +280,7 @@ const Atendimentos = () => {
                       variants={fadeIn}
                       transition={{ duration: 0.9 }}
                     >
-                      <div className="flex w-full  flex-wrap items-center gap-4">
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Prestadores"
-                          name="prestador"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "100%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "47%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Work />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <ButtonComponent
-                          startIcon={<AddCircleOutline fontSize="small" />}
-                          title={"Adicionar"}
-                          subtitle={"Adicionar"}
-                          buttonSize="large"
-                        />
-                      </div>
+                      <PrestadorAtendimento />
                     </motion.div>
                   </div>
                 )}
@@ -485,174 +293,7 @@ const Atendimentos = () => {
                       variants={fadeIn}
                       transition={{ duration: 0.9 }}
                     >
-                      <div className="flex w-full  flex-wrap items-center gap-4">
-                        <label className="text-xs w-full">Prestador:</label>
-                        <TextField
-                          select
-                          fullWidth
-                          label="Selecione um serviço"
-                          value=""
-                          sx={{
-                            width: {
-                              xs: "100%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "40%",
-                            },
-                          }}
-                          onChange={(event) => {
-                            const service = event.target.value;
-                            if (
-                              service &&
-                              !selectedServices.includes(service)
-                            ) {
-                              setSelectedServices([
-                                ...selectedServices,
-                                service,
-                              ]);
-                              setAvailableServices(
-                                availableServices.filter((s) => s !== service)
-                              );
-                            }
-                          }}
-                          variant="outlined"
-                          size="small"
-                          s
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Assignment />
-                              </InputAdornment>
-                            ),
-                          }}
-                        >
-                          {availableServices.map((service) => (
-                            <MenuItem key={service} value={service}>
-                              {service}
-                            </MenuItem>
-                          ))}
-                        </TextField>
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Data de Início"
-                          type="date"
-                          name="data"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "100%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "25%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <DateRange />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          type="date"
-                          label="Data de Entrega"
-                          name="data"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "100%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "25%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <DateRange />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        {selectedServices.map((service) => (
-                          <div
-                            style={{
-                              border: "1px solid hsl(348, 35.30%, 45.50%)",
-                              borderRadius: "10px",
-                              padding: "10px",
-                            }}
-                            className="flex w-[95%] items-center gap-3 justify-between"
-                            key={service}
-                          >
-                            <label className="text-xs w-[30%] ">
-                              {service}
-                            </label>
-                            <TextField
-                              fullWidth
-                              variant="outlined"
-                              size="small"
-                              label="Valor"
-                              name="valor"
-                              autoComplete="off"
-                              sx={{
-                                width: {
-                                  xs: "100%",
-                                  sm: "50%",
-                                  md: "40%",
-                                  lg: "25%",
-                                },
-                              }}
-                              InputProps={{
-                                startAdornment: (
-                                  <InputAdornment position="start">
-                                    <Money />
-                                  </InputAdornment>
-                                ),
-                              }}
-                            />
-                            <TextField
-                              fullWidth
-                              variant="outlined"
-                              size="small"
-                              label="Comissão"
-                              name="comissao"
-                              autoComplete="off"
-                              sx={{
-                                width: {
-                                  xs: "100%",
-                                  sm: "50%",
-                                  md: "40%",
-                                  lg: "25%",
-                                },
-                              }}
-                              InputProps={{
-                                startAdornment: (
-                                  <InputAdornment position="start">
-                                    <MoneyOutlined />
-                                  </InputAdornment>
-                                ),
-                              }}
-                            />
-                            <ButtonClose
-                              funcao={() => {
-                                setSelectedServices(
-                                  selectedServices.filter((s) => s !== service)
-                                );
-                                setAvailableServices([
-                                  ...availableServices,
-                                  service,
-                                ]);
-                              }}
-                            />
-                          </div>
-                        ))}
-                      </div>
+                      <TrabalhoAtendimento />
                     </motion.div>
                   </div>
                 )}
@@ -665,62 +306,7 @@ const Atendimentos = () => {
                       variants={fadeIn}
                       transition={{ duration: 0.9 }}
                     >
-                      <div className="flex w-full flex-col gap-4">
-                        {/* Input para upload de arquivos */}
-                        <input
-                          type="file"
-                          id="document-upload"
-                          accept=".pdf"
-                          multiple
-                          style={{ display: "none" }}
-                          onChange={(e) => {
-                            const files = Array.from(e.target.files);
-                            setSelectedDocuments((prev) => [
-                              ...prev,
-                              ...files.map((file) => ({
-                                name: file.name,
-                                file: file,
-                              })),
-                            ]);
-                          }}
-                        />
-                        <div className="w-[40%]">
-                          <ButtonComponent
-                            startIcon={
-                              <AddCircleOutlineOutlined fontSize="small" />
-                            }
-                            title={"Adicionar Documentos"}
-                            subtitle={"Adicionar Documentos"}
-                            buttonSize="large"
-                            onClick={() =>
-                              document.getElementById("document-upload").click()
-                            }
-                          />
-                        </div>
-                        {/* Botão para acionar o input file */}
-
-                        {/* Lista de documentos adicionados */}
-                        <div className="flex flex-col w-[95%] gap-2 mt-2">
-                          {selectedDocuments.map((doc, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center justify-between p-2 border border-primary rounded"
-                            >
-                              <div className="flex items-center gap-2">
-                                <Article fontSize="small" />
-                                <label className="text-xs">{doc.name}</label>
-                              </div>
-                              <ButtonClose
-                                funcao={() => {
-                                  setSelectedDocuments((prev) =>
-                                    prev.filter((_, i) => i !== index)
-                                  );
-                                }}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                      <DocumentosAtendimento />
                     </motion.div>
                   </div>
                 )}
@@ -759,20 +345,109 @@ const Atendimentos = () => {
               </div>
             </div>
           </CentralModal>
+
           <ModalLateral
             open={editando}
-            width={'800px'}
+            width={"800px"}
             handleClose={handleCloseEdicao}
             tituloModal="Editar Atendimento"
             icon={<Edit />}
             tamanhoTitulo="83%"
             conteudo={
-            <div className="w-full flex gap-3">
-               <div className="flex flex-col justify-center ga w-[20%]" style={{border:'1px solid #9D4B5B', borderRadius:"10px"}}>
-                <Person fontSize="small"/>
-                <label>Prestador</label>
-                </div> 
-            </div>}
+              <div
+                className="w-full flex items-start gap-3 "
+                style={{ maxHeight: "500px", overflow: "auto" }}
+              >
+                <div
+                  className="flex flex-col items-center justify-center w-[20%] p-5"
+                  style={{ border: "1px solid #9D4B5B", borderRadius: "10px" }}
+                >
+                  <Person />
+                  <label className="text-xs font-bold">Prestador</label>
+                </div>
+                <div
+                  className="flex flex-col gap-2 items-center justify-center w-[80%] p-5"
+                  style={{ border: "1px solid #9D4B5B", borderRadius: "10px" }}
+                >
+                  <Acordion
+                    icone={<Work />}
+                    titulo={"Informações do Serviço"}
+                    informacoes={
+                      <div className="flex items-center gap-4 w-full flex-wrap">
+                        <TextField
+                          fullWidth
+                          variant="outlined"
+                          size="small"
+                          type="date"
+                          label="Data de Início"
+                          autoComplete="off"
+                          sx={{
+                            width: {
+                              xs: "100%",
+                              sm: "50%",
+                              md: "40%",
+                              lg: "30%",
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <DateRange />
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                        <TextField
+                          fullWidth
+                          variant="outlined"
+                          size="small"
+                          type="date"
+                          label="Previsão de Entrega"
+                          autoComplete="off"
+                          sx={{
+                            width: {
+                              xs: "100%",
+                              sm: "50%",
+                              md: "40%",
+                              lg: "30%",
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <DateRange />
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      </div>
+                    }
+                  ></Acordion>
+
+                  <Acordion
+                    icone={<WorkHistory />}
+                    titulo={"Serviço"}
+                    informacoes={<ServicoEditar />}
+                  >
+                    <ServicoEditar />
+                  </Acordion>
+
+                  <Acordion
+                    icone={<Person />}
+                    titulo={"Cliente"}
+                    informacoes={<ClienteEditar />}
+                  ></Acordion>
+
+                  <Acordion
+                    icone={<Article />}
+                    titulo={"Documentos"}
+                    informacoes={<DocumentosEditar />}
+                  >
+                    <ServicoEditar />
+                  </Acordion>
+                </div>
+              </div>
+            }
           />
         </motion.div>
       </div>
