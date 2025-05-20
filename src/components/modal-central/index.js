@@ -42,7 +42,7 @@ const CentralModal = ({ open, onClose, bottom, title, children, icon, width, top
                         gutterBottom
                     >
                         <Lines gap={'5px'} conteudo={<>
-                            <Lines width={'5%'} alignItems={'center'} justifyContent={'center'} padding={'5px'} backgroundColor={'#0d2d43'} borderRadius={'5px'} color={'#ffff'} conteudo={<>{icon}</>} />
+                            <Lines width={'5%'} alignItems={'center'} justifyContent={'center'} padding={'5px'} backgroundColor={'#9D4B5B'} borderRadius={'5px'} color={'#ffff'} conteudo={<>{icon}</>} />
                             <Label fontWeight={700} width={tamanhoTitulo || '75%'} fontSize={'15px'} conteudo={<>{title}</>} />
                             <ButtonClose width={'10%'} display={'flex'} alignItems={'end'} justifyContent={'end'} funcao={onClose} />
                         </>}></Lines>

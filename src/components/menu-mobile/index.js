@@ -40,7 +40,7 @@ const MenuMobile = () => {
             <div className='flex items-start w-[30%] md:mr-8'>
                 <img style={{ width: '100%', marginRight: '150px', padding: '10px' }} src={Logo} alt="Total de Produtos" />
             </div>
-            <div className="w-[42%] md:w-[25%] sm:mr-0 lg:w-[25%] md:mr-6 justify-center flex p-2 bg-white rounded-md">
+            <div className="w-[42%] md:w-[25%] sm:mr-0 mt lg:w-[25%] md:mr-6 justify-center flex p-2 bg-white rounded-md">
                 <SelectTextFields
                     width={'150px'}
                     icon={<LocationOnIcon fontSize="small" />}
