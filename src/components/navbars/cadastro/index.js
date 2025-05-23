@@ -2,7 +2,7 @@ import React from 'react';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import ButtonComponent from '../../button';
 import { useNavigate } from 'react-router-dom';
-import { Person, Work } from '@mui/icons-material';
+import { People, Person, Person2, Work } from '@mui/icons-material';
 
 const HeaderCadastro = () => {
     const navigate = useNavigate();
@@ -19,6 +19,9 @@ const HeaderCadastro = () => {
                 break;
             case 'servicos':
                 navigate('/cadastro/servicos');
+                break;
+            case 'prestadores':
+                navigate('/cadastro/prestadores');
                 break;
 
             default:
@@ -43,6 +46,14 @@ const HeaderCadastro = () => {
                 title="Clientes"
                 buttonSize="large"
                 onClick={() => handleNavigation('clientes')}
+                className="w-[35%] sm:w-[50%] md:w-[40%] lg:w-[100%]"
+            />
+
+            <ButtonComponent
+                startIcon={<People fontSize="small" />}
+                title="Prestadores"
+                buttonSize="large"
+                onClick={() => handleNavigation('prestadores')}
                 className="w-[35%] sm:w-[50%] md:w-[40%] lg:w-[100%]"
             />
 

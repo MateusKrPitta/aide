@@ -6,7 +6,7 @@ import HeaderCadastro from '../../../components/navbars/cadastro';
 import CentralModal from '../../../components/modal-central';
 import MenuMobile from "../../../components/menu-mobile";
 import ModalLateral from "../../../components/modal-lateral";
-import { Edit, Work, } from '@mui/icons-material';
+import { Article, Edit, Numbers, Person, Phone, Work, } from '@mui/icons-material';
 import { InputAdornment, TextField } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
@@ -15,6 +15,7 @@ import { motion } from 'framer-motion';
 import TableLoading from "../../../components/loading/loading-table/loading";
 import TableComponent from "../../../components/table";
 import { servicoCadastrados } from "../../../entities/header/cadastro/servico";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
 
 const Clientes = () => {
 
@@ -136,58 +137,178 @@ const Clientes = () => {
                                 maxHeight={'90vh'}
                                 top={'20%'}
                                 left={'28%'}
-                                width={'400px'}
+                                width={'600px'}
                                 icon={<AddCircleOutlineIcon fontSize="small" />}
                                 open={cadastroUsuario}
                                 onClose={FecharCadastroUsuario}
-                                title="Cadastrar Serviço"
+                                title="Cadastrar Cliente"
                             >
                                 <div className="overflow-y-auto overflow-x-hidden max-h-[300px]">
-                                    <div className='mt-4 flex gap-3 flex-wrap'>
-                                        <TextField
+                                    <div className="flex w-full mt-4 flex-wrap items-center gap-4">
+                                          <TextField
                                             fullWidth
                                             variant="outlined"
                                             size="small"
-                                            label="Nome "
+                                            label="Nome Cliente"
                                             name="nome"
-                                            value={nome}
-                                            onChange={(e) => setNome(e.target.value)}
                                             autoComplete="off"
-                                            sx={{ width: { xs: '100%', sm: '50%', md: '40%', lg: '95%' } }}
-                                            InputProps={{
-                                                startAdornment: (
-                                                    <InputAdornment position="start">
-                                                        <Work />
-                                                    </InputAdornment>
-                                                ),
+                                            sx={{
+                                              width: {
+                                                xs: "100%",
+                                                sm: "50%",
+                                                md: "40%",
+                                                lg: "47%",
+                                              },
                                             }}
-                                        />
-                                        <TextField
+                                            InputProps={{
+                                              startAdornment: (
+                                                <InputAdornment position="start">
+                                                  <Person />
+                                                </InputAdornment>
+                                              ),
+                                            }}
+                                          />
+                                          <TextField
                                             fullWidth
                                             variant="outlined"
                                             size="small"
-                                            label="Descrição"
-                                            name="descricao"
-                                            value={descricao}
-                                            onChange={(e) => setDescricao(e.target.value)}
+                                            label="Telefone"
+                                            name="telefone"
                                             autoComplete="off"
-                                            multiline
-                                            rows={4}
                                             sx={{
-                                                width: { xs: '100%', sm: '50%', md: '40%', lg: '95%' },
-
+                                              width: {
+                                                xs: "100%",
+                                                sm: "50%",
+                                                md: "40%",
+                                                lg: "47%",
+                                              },
                                             }}
                                             InputProps={{
-                                                startAdornment: (
-                                                    <InputAdornment position="start">
-                                                        <NotesIcon />
-                                                    </InputAdornment>
-                                                ),
+                                              startAdornment: (
+                                                <InputAdornment position="start">
+                                                  <Phone />
+                                                </InputAdornment>
+                                              ),
                                             }}
-                                        />
-
-
-                                    </div>
+                                          />
+                                    
+                                          <TextField
+                                            fullWidth
+                                            variant="outlined"
+                                            size="small"
+                                            label="CPF"
+                                            name="cpf"
+                                            autoComplete="off"
+                                            sx={{
+                                              width: {
+                                                xs: "100%",
+                                                sm: "50%",
+                                                md: "40%",
+                                                lg: "30%",
+                                              },
+                                            }}
+                                            InputProps={{
+                                              startAdornment: (
+                                                <InputAdornment position="start">
+                                                  <Article />
+                                                </InputAdornment>
+                                              ),
+                                            }}
+                                          />
+                                    
+                                          <TextField
+                                            fullWidth
+                                            variant="outlined"
+                                            size="small"
+                                            label="Estado"
+                                            name="estado"
+                                            autoComplete="off"
+                                            sx={{
+                                              width: {
+                                                xs: "100%",
+                                                sm: "50%",
+                                                md: "40%",
+                                                lg: "30%",
+                                              },
+                                            }}
+                                            InputProps={{
+                                              startAdornment: (
+                                                <InputAdornment position="start">
+                                                  <LocationOnIcon />
+                                                </InputAdornment>
+                                              ),
+                                            }}
+                                          />
+                                          <TextField
+                                            fullWidth
+                                            variant="outlined"
+                                            size="small"
+                                            label="Cidade"
+                                            name="cidade"
+                                            autoComplete="off"
+                                            sx={{
+                                              width: {
+                                                xs: "100%",
+                                                sm: "50%",
+                                                md: "40%",
+                                                lg: "32%",
+                                              },
+                                            }}
+                                            InputProps={{
+                                              startAdornment: (
+                                                <InputAdornment position="start">
+                                                  <LocationOnIcon />
+                                                </InputAdornment>
+                                              ),
+                                            }}
+                                          />
+                                          <TextField
+                                            fullWidth
+                                            variant="outlined"
+                                            size="small"
+                                            label="Endereço"
+                                            name="endereco"
+                                            autoComplete="off"
+                                            sx={{
+                                              width: {
+                                                xs: "100%",
+                                                sm: "50%",
+                                                md: "40%",
+                                                lg: "47%",
+                                              },
+                                            }}
+                                            InputProps={{
+                                              startAdornment: (
+                                                <InputAdornment position="start">
+                                                  <LocationOnIcon />
+                                                </InputAdornment>
+                                              ),
+                                            }}
+                                          />
+                                          <TextField
+                                            fullWidth
+                                            variant="outlined"
+                                            size="small"
+                                            label="Número"
+                                            name="numero"
+                                            autoComplete="off"
+                                            sx={{
+                                              width: {
+                                                xs: "100%",
+                                                sm: "50%",
+                                                md: "40%",
+                                                lg: "47%",
+                                              },
+                                            }}
+                                            InputProps={{
+                                              startAdornment: (
+                                                <InputAdornment position="start">
+                                                  <Numbers />
+                                                </InputAdornment>
+                                              ),
+                                            }}
+                                          />
+                                        </div>
 
 
 
@@ -207,54 +328,175 @@ const Clientes = () => {
                             <ModalLateral
                                 open={editando}
                                 handleClose={handleCloseEdicao}
-                                tituloModal="Editar Serviço"
+                                tituloModal="Editar Cliente"
                                 icon={<Edit />}
                                 tamanhoTitulo="75%"
                                 conteudo={
                                     <div className="">
-                                        <div className='mt-4 flex gap-3 flex-wrap'>
-                                            <TextField
-                                                fullWidth
-                                                variant="outlined"
-                                                size="small"
-                                                label="Nome"
-                                                name="nome"
-                                                value={nome}
-                                                onChange={(e) => setNome(e.target.value)}
-                                                autoComplete="off"
-                                                sx={{ width: { xs: '100%', sm: '50%', md: '40%', lg: '100%' } }}
-                                                InputProps={{
-                                                    startAdornment: (
-                                                        <InputAdornment position="start">
-                                                            <Work />
-                                                        </InputAdornment>
-                                                    ),
-                                                }}
-                                            />
-                                            <TextField
-                                                fullWidth
-                                                variant="outlined"
-                                                size="small"
-                                                label="Descrição"
-                                                name="descricao"
-                                                value={descricao}
-                                                onChange={(e) => setDescricao(e.target.value)}
-                                                autoComplete="off"
-                                                multiline
-                                                rows={4}
-                                                sx={{
-                                                    width: { xs: '100%', sm: '50%', md: '40%', lg: '100%' },
-
-                                                }}
-                                                InputProps={{
-                                                    startAdornment: (
-                                                        <InputAdornment position="start">
-                                                            <NotesIcon />
-                                                        </InputAdornment>
-                                                    ),
-                                                }}
-                                            />
-
+                                         <div className="flex w-full mt-4 flex-wrap items-center gap-4">
+                                          <TextField
+                                            fullWidth
+                                            variant="outlined"
+                                            size="small"
+                                            label="Nome Cliente"
+                                            name="nome"
+                                            autoComplete="off"
+                                            sx={{
+                                              width: {
+                                                xs: "100%",
+                                                sm: "50%",
+                                                md: "40%",
+                                                lg: "100%",
+                                              },
+                                            }}
+                                            InputProps={{
+                                              startAdornment: (
+                                                <InputAdornment position="start">
+                                                  <Person />
+                                                </InputAdornment>
+                                              ),
+                                            }}
+                                          />
+                                          <TextField
+                                            fullWidth
+                                            variant="outlined"
+                                            size="small"
+                                            label="Telefone"
+                                            name="telefone"
+                                            autoComplete="off"
+                                            sx={{
+                                              width: {
+                                                xs: "100%",
+                                                sm: "50%",
+                                                md: "40%",
+                                                lg: "100%",
+                                              },
+                                            }}
+                                            InputProps={{
+                                              startAdornment: (
+                                                <InputAdornment position="start">
+                                                  <Phone />
+                                                </InputAdornment>
+                                              ),
+                                            }}
+                                          />
+                                    
+                                          <TextField
+                                            fullWidth
+                                            variant="outlined"
+                                            size="small"
+                                            label="CPF"
+                                            name="cpf"
+                                            autoComplete="off"
+                                            sx={{
+                                              width: {
+                                                xs: "100%",
+                                                sm: "50%",
+                                                md: "40%",
+                                                lg: "100%",
+                                              },
+                                            }}
+                                            InputProps={{
+                                              startAdornment: (
+                                                <InputAdornment position="start">
+                                                  <Article />
+                                                </InputAdornment>
+                                              ),
+                                            }}
+                                          />
+                                    
+                                          <TextField
+                                            fullWidth
+                                            variant="outlined"
+                                            size="small"
+                                            label="Estado"
+                                            name="estado"
+                                            autoComplete="off"
+                                            sx={{
+                                              width: {
+                                                xs: "100%",
+                                                sm: "50%",
+                                                md: "40%",
+                                                lg: "100%",
+                                              },
+                                            }}
+                                            InputProps={{
+                                              startAdornment: (
+                                                <InputAdornment position="start">
+                                                  <LocationOnIcon />
+                                                </InputAdornment>
+                                              ),
+                                            }}
+                                          />
+                                          <TextField
+                                            fullWidth
+                                            variant="outlined"
+                                            size="small"
+                                            label="Cidade"
+                                            name="cidade"
+                                            autoComplete="off"
+                                            sx={{
+                                              width: {
+                                                xs: "100%",
+                                                sm: "50%",
+                                                md: "40%",
+                                                lg: "100%",
+                                              },
+                                            }}
+                                            InputProps={{
+                                              startAdornment: (
+                                                <InputAdornment position="start">
+                                                  <LocationOnIcon />
+                                                </InputAdornment>
+                                              ),
+                                            }}
+                                          />
+                                          <TextField
+                                            fullWidth
+                                            variant="outlined"
+                                            size="small"
+                                            label="Endereço"
+                                            name="endereco"
+                                            autoComplete="off"
+                                            sx={{
+                                              width: {
+                                                xs: "100%",
+                                                sm: "50%",
+                                                md: "40%",
+                                                lg: "100%",
+                                              },
+                                            }}
+                                            InputProps={{
+                                              startAdornment: (
+                                                <InputAdornment position="start">
+                                                  <LocationOnIcon />
+                                                </InputAdornment>
+                                              ),
+                                            }}
+                                          />
+                                          <TextField
+                                            fullWidth
+                                            variant="outlined"
+                                            size="small"
+                                            label="Número"
+                                            name="numero"
+                                            autoComplete="off"
+                                            sx={{
+                                              width: {
+                                                xs: "100%",
+                                                sm: "50%",
+                                                md: "40%",
+                                                lg: "100%",
+                                              },
+                                            }}
+                                            InputProps={{
+                                              startAdornment: (
+                                                <InputAdornment position="start">
+                                                  <Numbers />
+                                                </InputAdornment>
+                                              ),
+                                            }}
+                                          />
                                         </div>
 
 
