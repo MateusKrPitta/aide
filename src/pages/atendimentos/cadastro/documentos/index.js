@@ -25,7 +25,7 @@ const DocumentosAtendimento = () => {
           ]);
         }}
       />
-      <div className="w-[40%]">
+      <div className="w-full md:w-[40%]">
         <ButtonComponent
           startIcon={<AddCircleOutlineOutlined fontSize="small" />}
           title={"Adicionar Documentos"}
@@ -34,9 +34,6 @@ const DocumentosAtendimento = () => {
           onClick={() => document.getElementById("document-upload").click()}
         />
       </div>
-      {/* Botão para acionar o input file */}
-
-      {/* Lista de documentos adicionados */}
       <div className="flex flex-col w-[95%] gap-2 mt-2">
         {selectedDocuments.map((doc, index) => (
           <div

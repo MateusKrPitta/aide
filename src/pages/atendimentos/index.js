@@ -8,26 +8,16 @@ import {
   BottomNavigationAction,
   Box,
   InputAdornment,
-  MenuItem,
   TextField,
 } from "@mui/material";
 import {
-  AccountBalance,
   AddCircleOutline,
   AddCircleOutlineOutlined,
   Article,
-  Assignment,
-  AttachMoney,
-  CreditCard,
   DateRange,
   Edit,
-  LocationOnOutlined,
-  Money,
-  MoneyOutlined,
-  Numbers,
   Person,
   Person2,
-  Phone,
   Search,
   Work,
   WorkHistory,
@@ -35,7 +25,6 @@ import {
 import ButtonComponent from "../../components/button";
 import CentralModal from "../../components/modal-central";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
-
 import TableLoading from "../../components/loading/loading-table/loading";
 import TableComponent from "../../components/table";
 import { atendimentosCadastrados } from "../../entities/header/atendimentos";
@@ -210,7 +199,7 @@ const Atendimentos = () => {
                 <Box className="flex w-full items-center justify-start">
                   <BottomNavigation
                     showLabels
-                    className="w-[95%]"
+                    className="w-[95%] flex-wrap"
                     value={activeStep}
                     onChange={(event, newValue) => handleStepChange(newValue)}
                     sx={{
@@ -348,25 +337,28 @@ const Atendimentos = () => {
 
           <ModalLateral
             open={editando}
-            width={"800px"}
+            width={{
+              xs: "400px",
+              lg: "800px",
+            }}
             handleClose={handleCloseEdicao}
             tituloModal="Editar Atendimento"
             icon={<Edit />}
-            tamanhoTitulo="83%"
+            tamanhoTitulo="75%"
             conteudo={
               <div
-                className="w-full flex items-start gap-3 "
+                className="w-full flex items-start gap-3 flex-wrap"
                 style={{ maxHeight: "500px", overflow: "auto" }}
               >
                 <div
-                  className="flex flex-col items-center justify-center w-[20%] p-5"
+                  className="flex flex-col items-center justify-center w-full md:w-[20%] p-5"
                   style={{ border: "1px solid #9D4B5B", borderRadius: "10px" }}
                 >
                   <Person />
                   <label className="text-xs font-bold">Prestador</label>
                 </div>
                 <div
-                  className="flex flex-col gap-2 items-center justify-center w-[80%] p-5"
+                  className="flex flex-col gap-2 items-center justify-center w-full md:w-[80%] p-5"
                   style={{ border: "1px solid #9D4B5B", borderRadius: "10px" }}
                 >
                   <Acordion

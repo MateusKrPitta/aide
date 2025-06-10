@@ -23,7 +23,7 @@ const ClienteAtendimento = () => {
         autoComplete="off"
         sx={{
           width: {
-            xs: "100%",
+            xs: "60%",
             sm: "50%",
             md: "40%",
             lg: "47%",

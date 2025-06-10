@@ -68,10 +68,10 @@ const ServicoEditar = () => {
             borderRadius: "10px",
             padding: "10px",
           }}
-          className="flex w-[100%] items-center gap-3 justify-between"
+          className="flex w-[100%] items-center gap-3 justify-between flex-wrap"
           key={service}
         >
-          <label className="text-xs w-[30%] ">{service}</label>
+          <label className="text-xs  w-full md:w-[30%] ">{service}</label>
           <div className="flex w-[70%] flex-wrap gap-2 items-center">
             <TextField
               select

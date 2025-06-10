@@ -6,7 +6,7 @@ import HeaderCadastro from "../../../components/navbars/cadastro";
 import CentralModal from "../../../components/modal-central";
 import MenuMobile from "../../../components/menu-mobile";
 import ModalLateral from "../../../components/modal-lateral";
-import { Edit, Work } from "@mui/icons-material";
+import { Category, Edit, Work } from "@mui/icons-material";
 import { InputAdornment, TextField } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
@@ -15,8 +15,9 @@ import { motion } from "framer-motion";
 import TableLoading from "../../../components/loading/loading-table/loading";
 import TableComponent from "../../../components/table";
 import { servicoCadastrados } from "../../../entities/header/cadastro/servico";
+import { categoriaCadastrados } from "../../../entities/header/cadastro/categoria";
 
-const Servicos = () => {
+const Categoria = () => {
   const [editando, setEditando] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cadastroUsuario, setCadastroUsuario] = useState(false);
@@ -25,31 +26,15 @@ const Servicos = () => {
   const [listaServicos, setListaServicos] = useState([
     {
       id: 1,
-      nome: "Manutenção de Computadores",
-      descricao:
-        "Serviço completo de manutenção preventiva e corretiva para computadores",
+      nome: "Cliente 01",
     },
     {
       id: 2,
-      nome: "Desenvolvimento Web",
-      descricao: "Criação de sites e aplicações web personalizadas",
+      nome: "Cliente 02",
     },
     {
       id: 3,
-      nome: "Consultoria em TI",
-      descricao:
-        "Análise e recomendação de soluções tecnológicas para empresas",
-    },
-    {
-      id: 4,
-      nome: "Redes e Infraestrutura",
-      descricao: "Instalação e configuração de redes corporativas",
-    },
-    {
-      id: 5,
-      nome: "Suporte Técnico",
-      descricao:
-        "Atendimento remoto e presencial para resolução de problemas técnicos",
+      nome: "Cliente 02",
     },
   ]);
   const FecharCadastroUsuario = () => {
@@ -80,7 +65,7 @@ const Servicos = () => {
           variants={fadeIn}
           transition={{ duration: 0.9 }}
         >
-          <HeaderPerfil pageTitle="Serviços" />
+          <HeaderPerfil pageTitle="Categoria" />
 
           <div className=" items-center justify-center lg:justify-start w-full flex mt-[95px] gap-2 flex-wrap md:items-start pl-2">
             <div className="hidden md:block md:w-[60%] lg:w-[14%]">
@@ -92,7 +77,7 @@ const Servicos = () => {
                   fullWidth
                   variant="outlined"
                   size="small"
-                  label="Buscar usuário"
+                  label="Pesquisar"
                   autoComplete="off"
                   sx={{ width: { xs: "72%", sm: "50%", md: "40%", lg: "40%" } }}
                   InputProps={{
@@ -117,7 +102,7 @@ const Servicos = () => {
                   <TableLoading />
                 ) : listaServicos.length > 0 ? (
                   <TableComponent
-                    headers={servicoCadastrados}
+                    headers={categoriaCadastrados}
                     rows={listaServicos}
                     actionsLabel={"Ações"}
                     actionCalls={{
@@ -142,7 +127,7 @@ const Servicos = () => {
                 icon={<AddCircleOutlineIcon fontSize="small" />}
                 open={cadastroUsuario}
                 onClose={FecharCadastroUsuario}
-                title="Cadastrar Serviço"
+                title="Cadastrar Categoria"
               >
                 <div className="overflow-y-auto overflow-x-hidden max-h-[300px]">
                   <div className="mt-4 flex gap-3 flex-wrap">
@@ -161,29 +146,7 @@ const Servicos = () => {
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
-                            <Work />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      label="Descrição"
-                      name="descricao"
-                      value={descricao}
-                      onChange={(e) => setDescricao(e.target.value)}
-                      autoComplete="off"
-                      multiline
-                      rows={4}
-                      sx={{
-                        width: { xs: "100%", sm: "50%", md: "40%", lg: "95%" },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <NotesIcon />
+                            <Category />
                           </InputAdornment>
                         ),
                       }}
@@ -205,11 +168,11 @@ const Servicos = () => {
               <ModalLateral
                 open={editando}
                 handleClose={handleCloseEdicao}
-                tituloModal="Editar Serviço"
+                tituloModal="Editar Categoria"
                 icon={<Edit />}
                 tamanhoTitulo="75%"
                 conteudo={
-                  <div className="">
+                  <div className="w-full">
                     <div className="mt-4 flex gap-3 flex-wrap">
                       <TextField
                         fullWidth
@@ -236,33 +199,6 @@ const Servicos = () => {
                           ),
                         }}
                       />
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        label="Descrição"
-                        name="descricao"
-                        value={descricao}
-                        onChange={(e) => setDescricao(e.target.value)}
-                        autoComplete="off"
-                        multiline
-                        rows={4}
-                        sx={{
-                          width: {
-                            xs: "100%",
-                            sm: "50%",
-                            md: "40%",
-                            lg: "100%",
-                          },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <NotesIcon />
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
                     </div>
 
                     <div className="flex w-[100%] items-end justify-end mt-2 ">
@@ -285,4 +221,4 @@ const Servicos = () => {
   );
 };
 
-export default Servicos;
+export default Categoria;
