@@ -8,15 +8,19 @@ import TransformIcon from "@mui/icons-material/Transform";
 import MenuMobile from "../../../components/menu-mobile";
 import ModalLateral from "../../../components/modal-lateral";
 import {
+  AddCircleOutline,
+  Article,
+  Category,
   DateRange,
   FilterAlt,
   InfoRounded,
   MonetizationOn,
+  Money,
   Person,
   Person2,
   Print,
 } from "@mui/icons-material";
-import { IconButton, InputAdornment, TextField } from "@mui/material";
+import { IconButton, InputAdornment, MenuItem, TextField } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { motion } from "framer-motion";
 import TableLoading from "../../../components/loading/loading-table/loading";
@@ -25,23 +29,24 @@ import HeaderFinanceiro from "../../../components/navbars/financeiro";
 import { headerAide } from "../../../entities/header/financeiro/aide";
 
 const RelatorioAide = () => {
+  const [cadastroUsuario, setCadastroUsuario] = useState(false);
   const [loading, setLoading] = useState(false);
   const [filtro, setFiltro] = useState(false);
   const [informacoes, setInformacoes] = useState(false);
   const [listaUsuarios, setListaUsuarios] = useState([
     {
-      pretadores: "João Silva",
+      tipo: "Entrada",
       data: "01/02/2025",
-      cliente: "Maria Oliveira",
+      assunto: "Pagamento Cliente",
       valor: "R$ 200,00",
-      status: "Pago",
+      categoria: "Marketing",
     },
     {
-      pretadores: "Roberta Gonsalvez",
-      data: "02/02/2025",
+      tipo: "Saída",
+      data: "01/02/2025",
+      assunto: "Conta Luz",
       valor: "R$ 200,00",
-      cliente: "Ricardo Oliveira",
-      status: "Pendente",
+      categoria: "Contas",
     },
   ]);
 
@@ -49,6 +54,10 @@ const RelatorioAide = () => {
 
   const Informacoes = () => {
     setInformacoes(true);
+  };
+
+  const FecharCadastroUsuario = () => {
+    setCadastroUsuario(false);
   };
 
   const handleClosInformacoes = () => {
@@ -94,6 +103,13 @@ const RelatorioAide = () => {
                       </InputAdornment>
                     ),
                   }}
+                />
+                <ButtonComponent
+                  startIcon={<AddCircleOutline fontSize="small" />}
+                  title={"Cadastrar"}
+                  subtitle={"Cadastrar"}
+                  buttonSize="large"
+                  onClick={() => setCadastroUsuario(true)}
                 />
                 <IconButton
                   title="Filtro"
@@ -159,7 +175,7 @@ const RelatorioAide = () => {
                     padding: "10px",
                   }}
                 >
-                  <MonetizationOnIcon /> Total Pago: R$ 200,00
+                  <MonetizationOnIcon /> Total Entradas: R$ 200,00
                 </label>
               </div>
               <div className="flex items-center justify-center md:justify-end mt-4 mr-9 w-full">
@@ -173,7 +189,7 @@ const RelatorioAide = () => {
                     padding: "10px",
                   }}
                 >
-                  <MonetizationOnIcon /> Total Pendente: R$ 200,00
+                  <MonetizationOnIcon /> Total Saídas: R$ 200,00
                 </label>
               </div>
               <div className="flex items-center justify-center md:justify-end mt-4 mr-9 w-full">
@@ -189,7 +205,130 @@ const RelatorioAide = () => {
                   <MonetizationOnIcon /> Total: R$ 400,00
                 </label>
               </div>
+              <CentralModal
+                tamanhoTitulo={"81%"}
+                maxHeight={"90vh"}
+                top={"20%"}
+                left={"28%"}
+                width={"500px"}
+                icon={<AddCircleOutline fontSize="small" />}
+                open={cadastroUsuario}
+                onClose={FecharCadastroUsuario}
+                title="Cadastrar Entrada/Saída"
+              >
+                <div className="overflow-y-auto overflow-x-hidden max-h-[300px]">
+                  <div className="mt-4 flex gap-3 flex-wrap">
+                    <TextField
+                      select
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      label="Tipo"
+                      defaultValue="entrada"
+                      sx={{
+                        width: { xs: "100%", sm: "50%", md: "40%", lg: "40%" },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <TransformIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                    >
+                      <MenuItem value="entrada">Entrada</MenuItem>
+                      <MenuItem value="saida">Saída</MenuItem>
+                    </TextField>
 
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      label="Assunto "
+                      name="Assunto"
+                      autoComplete="off"
+                      sx={{
+                        width: { xs: "100%", sm: "50%", md: "40%", lg: "50%" },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Article />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      label="Observação "
+                      name="Observação"
+                      autoComplete="off"
+                      sx={{
+                        width: { xs: "100%", sm: "50%", md: "40%", lg: "93%" },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Article />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    <TextField
+                      select
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      label="Categoria"
+                      defaultValue="entrada"
+                      sx={{
+                        width: { xs: "100%", sm: "50%", md: "40%", lg: "45%" },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Category />
+                          </InputAdornment>
+                        ),
+                      }}
+                    >
+                      <MenuItem value="entrada">Categoria 01</MenuItem>
+                      <MenuItem value="saida">Categoria 02</MenuItem>
+                    </TextField>
+
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      label="Valor "
+                      name="Valor"
+                      autoComplete="off"
+                      sx={{
+                        width: { xs: "100%", sm: "50%", md: "40%", lg: "40%" },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Money />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex w-[96%] items-end justify-end mt-2 ">
+                    <ButtonComponent
+                      startIcon={<AddCircleOutline fontSize="small" />}
+                      title={"Cadastrar"}
+                      subtitle={"Cadastrar"}
+                      // onClick={CadastrarUsuario}
+                      buttonSize="large"
+                    />
+                  </div>
+                </div>
+              </CentralModal>
               <CentralModal
                 tamanhoTitulo={"81%"}
                 maxHeight={"90vh"}
@@ -240,39 +379,47 @@ const RelatorioAide = () => {
                       }}
                     />
                     <TextField
+                      select
                       fullWidth
                       variant="outlined"
                       size="small"
-                      label="Prestador"
-                      autoComplete="off"
+                      label="Tipo"
+                      defaultValue="entrada"
                       sx={{
-                        width: { xs: "100%", sm: "50%", md: "40%", lg: "100%" },
+                        width: { xs: "100%", sm: "50%", md: "40%", lg: "40%" },
                       }}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
-                            <Person />
+                            <TransformIcon />
                           </InputAdornment>
                         ),
                       }}
-                    />
+                    >
+                      <MenuItem value="entrada">Entrada</MenuItem>
+                      <MenuItem value="saida">Saída</MenuItem>
+                    </TextField>
                     <TextField
+                      select
                       fullWidth
                       variant="outlined"
                       size="small"
-                      label="Cliente"
-                      autoComplete="off"
+                      label="Categoria"
+                      defaultValue="entrada"
                       sx={{
-                        width: { xs: "100%", sm: "50%", md: "40%", lg: "100%" },
+                        width: { xs: "100%", sm: "50%", md: "40%", lg: "50%" },
                       }}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
-                            <Person2 />
+                            <Category />
                           </InputAdornment>
                         ),
                       }}
-                    />
+                    >
+                      <MenuItem value="entrada">Categoria 01</MenuItem>
+                      <MenuItem value="saida">Categoria 01</MenuItem>
+                    </TextField>
                     <div className="flex items-end justify-end w-full">
                       <ButtonComponent
                         startIcon={<SearchIcon fontSize="small" />}
@@ -293,51 +440,104 @@ const RelatorioAide = () => {
                 tamanhoTitulo="75%"
                 conteudo={
                   <div className="flex flex-wrap w-full items-center gap-4">
-                    <label className="text-sm w-full font-bold">
-                      Serviços:
-                    </label>
-                    <div
-                      className="w-full flex items-center"
-                      style={{
-                        backgroundColor: "#CCCCCC",
-                        borderRadius: "10px",
-                        padding: "10px",
+                    <TextField
+                      select
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      label="Tipo"
+                      defaultValue="entrada"
+                      sx={{
+                        width: { xs: "100%", sm: "50%", md: "40%", lg: "40%" },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <TransformIcon />
+                          </InputAdornment>
+                        ),
                       }}
                     >
-                      <label className="text-xs font-semibold w-[70%]">
-                        Postagem de Notícias
-                      </label>
-                      <label
-                        className="p-1 text-xs w-[30%] flex items-center justify-center"
-                        style={{
-                          backgroundColor: "white",
-                          borderRadius: "10px",
-                        }}
-                      >
-                        R$ 2.000,00
-                      </label>
-                    </div>
-                    <div className="flex items-end justify-end w-full">
-                      <label
-                        className="w-[70%] text-sm font-bold flex items-center justify-center gap-3"
-                        style={{
-                          backgroundColor: "#9D4B5B",
-                          color: "white",
-                          borderRadius: "10px",
-                          padding: "10px",
-                        }}
-                      >
-                        <MonetizationOn fontSize="small" /> Total: R$ 2.000,00
-                      </label>
-                    </div>
-                    <div className="flex items-end justify-end w-full">
-                      <ButtonComponent
-                        startIcon={<TransformIcon fontSize="small" />}
-                        title={"Repassar Valor"}
-                        subtitle={"Repassar Valor"}
-                        buttonSize="large"
-                      />
-                    </div>
+                      <MenuItem value="entrada">Entrada</MenuItem>
+                      <MenuItem value="saida">Saída</MenuItem>
+                    </TextField>
+
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      label="Assunto "
+                      name="Assunto"
+                      autoComplete="off"
+                      sx={{
+                        width: { xs: "100%", sm: "50%", md: "40%", lg: "50%" },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Article />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      label="Observação "
+                      name="Observação"
+                      autoComplete="off"
+                      sx={{
+                        width: { xs: "100%", sm: "50%", md: "40%", lg: "93%" },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Article />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    <TextField
+                      select
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      label="Categoria"
+                      defaultValue="entrada"
+                      sx={{
+                        width: { xs: "100%", sm: "50%", md: "40%", lg: "45%" },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Category />
+                          </InputAdornment>
+                        ),
+                      }}
+                    >
+                      <MenuItem value="entrada">Categoria 01</MenuItem>
+                      <MenuItem value="saida">Categoria 02</MenuItem>
+                    </TextField>
+
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      label="Valor "
+                      name="Valor"
+                      autoComplete="off"
+                      sx={{
+                        width: { xs: "100%", sm: "50%", md: "40%", lg: "40%" },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Money />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
                   </div>
                 }
               />

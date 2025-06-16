@@ -10,6 +10,7 @@ import {
   Article,
   Close,
   Edit,
+  Mail,
   Numbers,
   Person,
   Phone,
@@ -246,7 +247,7 @@ const Prestadores = () => {
                           xs: "47%",
                           sm: "50%",
                           md: "40%",
-                          lg: "30%",
+                          lg: "44%",
                         },
                       }}
                       InputProps={{
@@ -257,7 +258,29 @@ const Prestadores = () => {
                         ),
                       }}
                     />
-
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      label="Email"
+                      name="telefone"
+                      autoComplete="off"
+                      sx={{
+                        width: {
+                          xs: "100%",
+                          sm: "50%",
+                          md: "40%",
+                          lg: "50%",
+                        },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Mail />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
                     <TextField
                       fullWidth
                       variant="outlined"
@@ -270,7 +293,7 @@ const Prestadores = () => {
                           xs: "100%",
                           sm: "50%",
                           md: "40%",
-                          lg: "30%",
+                          lg: "40%",
                         },
                       }}
                       InputProps={{
@@ -293,7 +316,7 @@ const Prestadores = () => {
                           xs: "100%",
                           sm: "50%",
                           md: "40%",
-                          lg: "32%",
+                          lg: "54%",
                         },
                       }}
                       InputProps={{
@@ -471,6 +494,29 @@ const Prestadores = () => {
                           startAdornment: (
                             <InputAdornment position="start">
                               <Article />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                      <TextField
+                        fullWidth
+                        variant="outlined"
+                        size="small"
+                        label="Email"
+                        name="telefone"
+                        autoComplete="off"
+                        sx={{
+                          width: {
+                            xs: "100%",
+                            sm: "50%",
+                            md: "40%",
+                            lg: "100%",
+                          },
+                        }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Mail />
                             </InputAdornment>
                           ),
                         }}

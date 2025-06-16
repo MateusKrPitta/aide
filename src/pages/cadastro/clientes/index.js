@@ -10,6 +10,7 @@ import {
   Article,
   Category,
   Edit,
+  Mail,
   Numbers,
   Person,
   Phone,
@@ -206,7 +207,7 @@ const Clientes = () => {
                       fullWidth
                       variant="outlined"
                       size="small"
-                      label="CPF"
+                      label="CPF/CNPJ"
                       name="cpf"
                       autoComplete="off"
                       sx={{
@@ -214,7 +215,7 @@ const Clientes = () => {
                           xs: "47%",
                           sm: "50%",
                           md: "40%",
-                          lg: "30%",
+                          lg: "44%",
                         },
                       }}
                       InputProps={{
@@ -225,7 +226,52 @@ const Clientes = () => {
                         ),
                       }}
                     />
-
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      label="Email"
+                      name="telefone"
+                      autoComplete="off"
+                      sx={{
+                        width: {
+                          xs: "100%",
+                          sm: "50%",
+                          md: "40%",
+                          lg: "50%",
+                        },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Mail />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      label="Categoria"
+                      name="numero"
+                      autoComplete="off"
+                      sx={{
+                        width: {
+                          xs: "47%",
+                          sm: "50%",
+                          md: "40%",
+                          lg: "29%",
+                        },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Category />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
                     <TextField
                       fullWidth
                       variant="outlined"
@@ -318,29 +364,6 @@ const Clientes = () => {
                         ),
                       }}
                     />
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      label="Categoria"
-                      name="numero"
-                      autoComplete="off"
-                      sx={{
-                        width: {
-                          xs: "47%",
-                          sm: "50%",
-                          md: "40%",
-                          lg: "27%",
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Category />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
                   </div>
 
                   <div className="flex w-[96%] items-end justify-end mt-2 ">
@@ -415,7 +438,7 @@ const Clientes = () => {
                         fullWidth
                         variant="outlined"
                         size="small"
-                        label="CPF"
+                        label="CPF/CNPJ"
                         name="cpf"
                         autoComplete="off"
                         sx={{
@@ -430,6 +453,29 @@ const Clientes = () => {
                           startAdornment: (
                             <InputAdornment position="start">
                               <Article />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                      <TextField
+                        fullWidth
+                        variant="outlined"
+                        size="small"
+                        label="Email"
+                        name="telefone"
+                        autoComplete="off"
+                        sx={{
+                          width: {
+                            xs: "100%",
+                            sm: "50%",
+                            md: "40%",
+                            lg: "100%",
+                          },
+                        }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Mail />
                             </InputAdornment>
                           ),
                         }}
