@@ -24,6 +24,8 @@ import {
   Work,
   AttachMoney,
   Close,
+  LocationOn,
+  MonetizationOn,
 } from "@mui/icons-material";
 import QueryBuilderIcon from "@mui/icons-material/QueryBuilder";
 import ButtonComponent from "../../components/button";
@@ -48,21 +50,30 @@ const PalestrasCursos = () => {
   const [lista, setLista] = useState([
     {
       id: 1,
+      nome: "Como ensinar?",
       cliente: "Lojas ACME",
+      valor: "R$ 400",
       data: "20/05/2025",
+      statusPagamento: "Pago",
       local: "Hotel Nova Andradina",
       horário: "10:00",
     },
     {
       id: 2,
+      nome: "Como devo me comportar?",
       cliente: "Clinica Vital",
+      valor: "R$ 100",
+      statusPagamento: "Pendente",
       data: "20/05/2025",
       local: "Hotel Nova Andradina",
       horário: "13:00",
     },
     {
       id: 3,
+      nome: "Aprendizagem do dia a dia",
       cliente: "Indústria Têxtil LTDA",
+      valor: "R$ 200",
+      statusPagamento: "Pendente",
       data: "20/05/2025",
       local: "Hotel Nova Andradina",
       horário: "11:00",
@@ -261,19 +272,85 @@ const PalestrasCursos = () => {
                       variants={fadeIn}
                       transition={{ duration: 0.9 }}
                     >
-                      <div className="flex w-full gap-2 items-center">
+                      <div className="flex w-full flex-wrap gap-2 items-center">
                         <TextField
                           fullWidth
                           variant="outlined"
                           size="small"
-                          label="Nome"
+                          label="Nome da Palestra"
                           autoComplete="off"
                           sx={{
                             width: {
                               xs: "72%",
                               sm: "50%",
                               md: "40%",
-                              lg: "60%",
+                              lg: "48%",
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Article />
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                        <TextField
+                          fullWidth
+                          variant="outlined"
+                          size="small"
+                          label="Tipo de Palestra"
+                          autoComplete="off"
+                          sx={{
+                            width: {
+                              xs: "72%",
+                              sm: "50%",
+                              md: "40%",
+                              lg: "45%",
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Article />
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                        <TextField
+                          fullWidth
+                          variant="outlined"
+                          size="small"
+                          label="Endereço"
+                          autoComplete="off"
+                          sx={{
+                            width: {
+                              xs: "72%",
+                              sm: "50%",
+                              md: "40%",
+                              lg: "95%",
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <LocationOn />
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                        <TextField
+                          fullWidth
+                          variant="outlined"
+                          size="small"
+                          label="Cliente"
+                          autoComplete="off"
+                          sx={{
+                            width: {
+                              xs: "72%",
+                              sm: "50%",
+                              md: "40%",
+                              lg: "40%",
                             },
                           }}
                           InputProps={{
@@ -349,6 +426,7 @@ const PalestrasCursos = () => {
                             ),
                           }}
                         />
+
                         <TextField
                           fullWidth
                           variant="outlined"
@@ -618,25 +696,91 @@ const PalestrasCursos = () => {
                       variants={fadeIn}
                       transition={{ duration: 0.9 }}
                     >
-                      <div className="flex w-full gap-2 items-center">
+                      <div className="flex w-full gap-2 flex-wrap items-center">
                         <TextField
                           fullWidth
                           variant="outlined"
                           size="small"
-                          label="Nome"
+                          label="Nome da Palestra"
                           autoComplete="off"
                           sx={{
                             width: {
                               xs: "72%",
                               sm: "50%",
                               md: "40%",
-                              lg: "60%",
+                              lg: "48%",
                             },
                           }}
                           InputProps={{
                             startAdornment: (
                               <InputAdornment position="start">
-                                <Person />
+                                <Article />
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                        <TextField
+                          fullWidth
+                          variant="outlined"
+                          size="small"
+                          label="Tipo de Palestra"
+                          autoComplete="off"
+                          sx={{
+                            width: {
+                              xs: "72%",
+                              sm: "50%",
+                              md: "40%",
+                              lg: "45%",
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Article />
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                        <TextField
+                          fullWidth
+                          variant="outlined"
+                          size="small"
+                          label="Endereço"
+                          autoComplete="off"
+                          sx={{
+                            width: {
+                              xs: "72%",
+                              sm: "50%",
+                              md: "40%",
+                              lg: "95%",
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <LocationOn />
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                        <TextField
+                          fullWidth
+                          variant="outlined"
+                          size="small"
+                          label="Nome do Cliente"
+                          autoComplete="off"
+                          sx={{
+                            width: {
+                              xs: "72%",
+                              sm: "50%",
+                              md: "40%",
+                              lg: "48%",
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Article />
                               </InputAdornment>
                             ),
                           }}

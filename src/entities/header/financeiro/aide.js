@@ -3,6 +3,5 @@ export const headerAide = [
   { key: "data", label: "Data" },
   { key: "assunto", label: "Assunto" },
   { key: "categoria", label: "Categoria" },
-
   { key: "valor", label: "Valor" },
 ];

@@ -28,7 +28,7 @@ import TableComponent from "../../../components/table";
 import HeaderFinanceiro from "../../../components/navbars/financeiro";
 import { headerAide } from "../../../entities/header/financeiro/aide";
 
-const RelatorioAide = () => {
+const FluxoCaixa = () => {
   const [cadastroUsuario, setCadastroUsuario] = useState(false);
   const [loading, setLoading] = useState(false);
   const [filtro, setFiltro] = useState(false);
@@ -81,7 +81,7 @@ const RelatorioAide = () => {
           variants={fadeIn}
           transition={{ duration: 0.9 }}
         >
-          <HeaderPerfil pageTitle="Relatorio Aidê" />
+          <HeaderPerfil pageTitle="Fluxo de Caixa" />
 
           <div className=" items-center justify-center lg:justify-start w-full flex mt-[95px] gap-2 flex-wrap md:items-start pl-2">
             <div className="hidden md:block md:w-[60%] lg:w-[14%]">
@@ -202,7 +202,7 @@ const RelatorioAide = () => {
                     padding: "10px",
                   }}
                 >
-                  <MonetizationOnIcon /> Total: R$ 400,00
+                  <MonetizationOnIcon /> Total: R$ 200,00
                 </label>
               </div>
               <CentralModal
@@ -549,4 +549,4 @@ const RelatorioAide = () => {
   );
 };
 
-export default RelatorioAide;
+export default FluxoCaixa;

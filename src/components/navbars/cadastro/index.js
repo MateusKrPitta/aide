@@ -2,7 +2,14 @@ import React from "react";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import ButtonComponent from "../../button";
 import { useNavigate } from "react-router-dom";
-import { Category, People, Person, Person2, Work } from "@mui/icons-material";
+import {
+  Category,
+  InfoRounded,
+  People,
+  Person,
+  Person2,
+  Work,
+} from "@mui/icons-material";
 import Categoria from "../../../pages/cadastro/categoria";
 
 const HeaderCadastro = () => {
@@ -26,6 +33,9 @@ const HeaderCadastro = () => {
         break;
       case "categoria":
         navigate("/cadastro/categoria");
+        break;
+      case "tipo-palestra":
+        navigate("/cadastro/tipo-palestra");
         break;
 
       default:
@@ -65,6 +75,13 @@ const HeaderCadastro = () => {
         title="Serviços"
         buttonSize="large"
         onClick={() => handleNavigation("servicos")}
+        className="w-[35%] sm:w-[50%] md:w-[40%] lg:w-[100%]"
+      />
+      <ButtonComponent
+        startIcon={<InfoRounded fontSize="small" />}
+        title="Tipo Palestra"
+        buttonSize="large"
+        onClick={() => handleNavigation("tipo-palestra")}
         className="w-[35%] sm:w-[50%] md:w-[40%] lg:w-[100%]"
       />
       <ButtonComponent

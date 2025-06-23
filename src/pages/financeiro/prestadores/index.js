@@ -15,8 +15,9 @@ import {
   Person,
   Person2,
   Print,
+  Save,
 } from "@mui/icons-material";
-import { IconButton, InputAdornment, TextField } from "@mui/material";
+import { IconButton, InputAdornment, MenuItem, TextField } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { motion } from "framer-motion";
 import TableLoading from "../../../components/loading/loading-table/loading";
@@ -188,7 +189,7 @@ const RelatorioPrestadores = () => {
                     padding: "10px",
                   }}
                 >
-                  <MonetizationOnIcon /> Total: R$ 400,00
+                  <MonetizationOnIcon /> Total: R$ 200,00
                 </label>
               </div>
 
@@ -319,6 +320,27 @@ const RelatorioPrestadores = () => {
                         R$ 200,00
                       </label>
                     </div>
+                    <div
+                      className="w-full flex items-center"
+                      style={{
+                        backgroundColor: "#CCCCCC",
+                        borderRadius: "10px",
+                        padding: "10px",
+                      }}
+                    >
+                      <label className="text-xs font-semibold w-[70%]">
+                        Comissão
+                      </label>
+                      <label
+                        className="p-1 text-xs w-[30%] flex items-center justify-center"
+                        style={{
+                          backgroundColor: "white",
+                          borderRadius: "10px",
+                        }}
+                      >
+                        R$ 100,00
+                      </label>
+                    </div>
                     <div className="flex items-end justify-end w-full">
                       <label
                         className="w-[70%] text-sm font-bold flex items-center justify-center gap-3"
@@ -329,14 +351,68 @@ const RelatorioPrestadores = () => {
                           padding: "10px",
                         }}
                       >
-                        <MonetizationOn fontSize="small" /> Total: R$ 2.000,00
+                        <MonetizationOn fontSize="small" /> Total: R$ 300,00
                       </label>
+                    </div>
+                    <div className="flex items-end justify-end gap-2 w-full">
+                      <TextField
+                        select
+                        fullWidth
+                        variant="outlined"
+                        size="small"
+                        label="Status Pagamento"
+                        defaultValue="entrada"
+                        sx={{
+                          width: {
+                            xs: "100%",
+                            sm: "50%",
+                            md: "40%",
+                            lg: "45%",
+                          },
+                        }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <MonetizationOn />
+                            </InputAdornment>
+                          ),
+                        }}
+                      >
+                        <MenuItem value="entrada">Pendente</MenuItem>
+                        <MenuItem value="saida">Pago</MenuItem>
+                      </TextField>
+                      <TextField
+                        select
+                        fullWidth
+                        variant="outlined"
+                        size="small"
+                        label="Status Comissão"
+                        defaultValue="entrada"
+                        sx={{
+                          width: {
+                            xs: "100%",
+                            sm: "50%",
+                            md: "40%",
+                            lg: "45%",
+                          },
+                        }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <MonetizationOn />
+                            </InputAdornment>
+                          ),
+                        }}
+                      >
+                        <MenuItem value="entrada">Pendente</MenuItem>
+                        <MenuItem value="saida">Pago</MenuItem>
+                      </TextField>
                     </div>
                     <div className="flex items-end justify-end w-full">
                       <ButtonComponent
-                        startIcon={<TransformIcon fontSize="small" />}
-                        title={"Repassar Valor"}
-                        subtitle={"Repassar Valor"}
+                        startIcon={<Save fontSize="small" />}
+                        title={"Salvar"}
+                        subtitle={"Salvar"}
                         buttonSize="large"
                       />
                     </div>

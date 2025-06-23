@@ -1,7 +1,7 @@
 import React from "react";
 import ButtonComponent from "../../button";
 import { useNavigate } from "react-router-dom";
-import { People, Person, Work } from "@mui/icons-material";
+import { MonetizationOn, People, Person, Work } from "@mui/icons-material";
 
 const HeaderFinanceiro = () => {
   const navigate = useNavigate();
@@ -16,8 +16,8 @@ const HeaderFinanceiro = () => {
       case "prestadores":
         navigate("/financeiro/prestadores");
         break;
-      case "aide":
-        navigate("/financeiro/aide");
+      case "fluxo-caixa":
+        navigate("/financeiro/fluxo-caixa");
         break;
 
       default:
@@ -29,10 +29,10 @@ const HeaderFinanceiro = () => {
   return (
     <div className=" w-[100%] items-center justify-center flex flex-wrap lg:justify-start gap-2 md:gap-1">
       <ButtonComponent
-        startIcon={<Work fontSize="small" />}
-        title="Aidê"
+        startIcon={<MonetizationOn fontSize="small" />}
+        title="Fluxo de Caixa"
         buttonSize="large"
-        onClick={() => handleNavigation("aide")}
+        onClick={() => handleNavigation("fluxo-caixa")}
         className="w-[35%] sm:w-[50%] md:w-[40%] lg:w-[100%]"
       />
 

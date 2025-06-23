@@ -100,14 +100,14 @@ const Navbar = ({ user }) => {
             </button>
 
             <button
-              onClick={() => handleNavigate("/atendimentos")}
+              onClick={() => handleNavigate("/servico")}
               className={`flex items-center bg-white text-primary font-bold rounded p-3 px-2 py-2 gap-2 text-sm 
-                    ${activeRoute === "/atendimentos" ? "border-[#9D4B5B]" : ""}
+                    ${activeRoute === "/servico" ? "border-[#9D4B5B]" : ""}
                     transition duration-300 ease-in-out hover:bg-[#f1f1f1]`}
-              title="Atendimentos"
+              title="Serviços"
             >
               <AddToQueueIcon fontSize={"small"} />
-              <span>Atendimentos</span>
+              <span>Serviços</span>
             </button>
 
             <button

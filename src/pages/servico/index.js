@@ -38,7 +38,7 @@ import ClienteEditar from "./editar/cliente";
 import ServicoEditar from "./editar/servico";
 import DocumentosEditar from "./editar/documentos";
 
-const Atendimentos = () => {
+const Servico = () => {
   const [editando, setEditando] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -133,7 +133,7 @@ const Atendimentos = () => {
           variants={fadeIn}
           transition={{ duration: 0.9 }}
         >
-          <HeaderPerfil pageTitle="Atendimentos" />
+          <HeaderPerfil pageTitle="Serviço" />
 
           <div className=" items-center justify-center lg:justify-start w-full mt-[95px] gap-2 flex-wrap md:items-start pl-2">
             <div className="w-[100%] itens-center mt-2 ml-2 sm:mt-0 md:flex md:justify-start flex-col lg:w-[95%]">
@@ -142,7 +142,7 @@ const Atendimentos = () => {
                   fullWidth
                   variant="outlined"
                   size="small"
-                  label="Buscar Atendimento"
+                  label="Buscar Serviço"
                   autoComplete="off"
                   sx={{ width: { xs: "72%", sm: "50%", md: "40%", lg: "40%" } }}
                   InputProps={{
@@ -192,7 +192,7 @@ const Atendimentos = () => {
             icon={<AddCircleOutline fontSize="small" />}
             open={cadastro}
             onClose={FecharCadastro}
-            title="Cadastrar Atendimento"
+            title="Cadastrar Serviço"
           >
             <div className="overflow-y-auto overflow-x-hidden max-h-[300px]">
               <div className="mt-4 flex gap-3 flex-wrap">
@@ -342,7 +342,7 @@ const Atendimentos = () => {
               lg: "800px",
             }}
             handleClose={handleCloseEdicao}
-            tituloModal="Editar Atendimento"
+            tituloModal="Editar Serviço"
             icon={<Edit />}
             tamanhoTitulo="75%"
             conteudo={
@@ -447,4 +447,4 @@ const Atendimentos = () => {
   );
 };
 
-export default Atendimentos;
+export default Servico;

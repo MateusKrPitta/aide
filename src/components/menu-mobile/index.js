@@ -108,7 +108,7 @@ const MenuMobile = () => {
           Palestras e Cursos
         </MenuItem>
         <MenuItem
-          onClick={() => handleNavigate("/atendimentos")}
+          onClick={() => handleNavigate("/servico")}
           style={{
             color: "black",
             gap: "8px",
@@ -119,7 +119,7 @@ const MenuMobile = () => {
           }}
         >
           <AddToQueueIcon style={{ color: "#9D4B5B" }} />
-          Atendimentos
+          Serviços
         </MenuItem>
         <MenuItem
           onClick={() => handleNavigate("/financeiro")}

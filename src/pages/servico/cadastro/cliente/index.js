@@ -18,6 +18,29 @@ const ClienteAtendimento = () => {
         fullWidth
         variant="outlined"
         size="small"
+        label="Nome do Serviço"
+        name="nome"
+        autoComplete="off"
+        sx={{
+          width: {
+            xs: "60%",
+            sm: "50%",
+            md: "40%",
+            lg: "35%",
+          },
+        }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Article />
+            </InputAdornment>
+          ),
+        }}
+      />
+      <TextField
+        fullWidth
+        variant="outlined"
+        size="small"
         label="Nome Cliente"
         name="nome"
         autoComplete="off"
@@ -26,7 +49,7 @@ const ClienteAtendimento = () => {
             xs: "60%",
             sm: "50%",
             md: "40%",
-            lg: "47%",
+            lg: "40%",
           },
         }}
         InputProps={{
