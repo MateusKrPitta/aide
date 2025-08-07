@@ -24,8 +24,6 @@ import TableComponent from "../../../components/table";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import { criarCliente } from "../../../service/post/clientes";
 import CustomToast from "../../../components/toast";
-import MaskedFieldCpf from "../../../utils/mascaras/cpf";
-import MaskedFieldPhone from "../../../utils/mascaras/telefone";
 import { buscarClientes } from "../../../service/get/clientes";
 import { clientesCadastrados } from "../../../entities/header/cadastro/clientes";
 import { cadastrosClientes } from "../../../entities/class/clientes";
@@ -49,6 +47,38 @@ const Clientes = () => {
   const [clientes, setClientes] = useState([]);
   const [clienteEditando, setClienteEditando] = useState(null);
   const [pesquisar, setPesquisar] = useState("");
+
+  const formatCPF = (value) => {
+    const cleaned = value.replace(/\D/g, "");
+
+    if (cleaned.length <= 3) return cleaned;
+    if (cleaned.length <= 6)
+      return `${cleaned.slice(0, 3)}.${cleaned.slice(3)}`;
+    if (cleaned.length <= 9)
+      return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(
+        6
+      )}`;
+    return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(
+      6,
+      9
+    )}-${cleaned.slice(9, 11)}`;
+  };
+
+  const formatPhone = (value) => {
+    const cleaned = value.replace(/\D/g, "");
+
+    if (cleaned.length <= 2) return cleaned;
+    if (cleaned.length <= 6)
+      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
+    if (cleaned.length <= 10)
+      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(
+        6
+      )}`;
+    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(
+      7,
+      11
+    )}`;
+  };
 
   const filteredClients = clientes.filter((cliente) =>
     cliente.nome.toLowerCase().includes(pesquisar.toLowerCase())
@@ -101,7 +131,6 @@ const Clientes = () => {
       });
     } catch (error) {
       console.error("Erro ao cadastrar cliente:", error);
-      CustomToast({ type: "error", message: "Erro ao cadastrar cliente" });
     } finally {
       setLoading(false);
     }
@@ -338,35 +367,52 @@ const Clientes = () => {
                         ),
                       }}
                     />
-                    <MaskedFieldPhone
-                      type="telefone"
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
                       label="Telefone"
-                      width={"47%"}
                       value={telefone}
                       onChange={(e) => {
-                        if (
-                          e.target.value.replace(/\D/g, "").length <= 11 ||
-                          e.target.value === ""
-                        ) {
-                          setTelefone(e.target.value);
-                        }
+                        const formatted = formatPhone(e.target.value);
+                        setTelefone(formatted);
                       }}
-                      icon={<Phone />}
-                      iconSize={30}
-                      labelSize="small"
+                      sx={{ width: "47%" }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Phone />
+                          </InputAdornment>
+                        ),
+                      }}
+                      inputProps={{
+                        maxLength: 16,
+                      }}
                     />
 
-                    <MaskedFieldCpf
-                      type="cpf"
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
                       label="CPF"
                       value={cpf}
-                      onChange={(e) => setCpf(e.target.value)}
-                      icon={<Article />}
-                      iconSize={24}
-                      labelSize="small"
-                      width="44%"
-                      autoComplete="off"
+                      onChange={(e) => {
+                        const formatted = formatCPF(e.target.value);
+                        setCpf(formatted);
+                      }}
+                      sx={{ width: "44%" }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Article />
+                          </InputAdornment>
+                        ),
+                      }}
+                      inputProps={{
+                        maxLength: 14,
+                      }}
                     />
+
                     <TextField
                       fullWidth
                       variant="outlined"
@@ -577,41 +623,56 @@ const Clientes = () => {
                           ),
                         }}
                       />
-                      <MaskedFieldPhone
-                        type="telefone"
+
+                      <TextField
+                        fullWidth
+                        variant="outlined"
+                        size="small"
                         label="Telefone"
-                        width={"48%"}
                         value={clienteEditando?.telefone || ""}
                         onChange={(e) => {
-                          if (
-                            e.target.value.replace(/\D/g, "").length <= 11 ||
-                            e.target.value === ""
-                          ) {
-                            setClienteEditando({
-                              ...clienteEditando,
-                              telefone: e.target.value,
-                            });
-                          }
+                          const formatted = formatPhone(e.target.value);
+                          setClienteEditando({
+                            ...clienteEditando,
+                            telefone: formatted,
+                          });
                         }}
-                        icon={<Phone />}
-                        iconSize={24}
-                        labelSize="small"
+                        sx={{ width: "48%" }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Phone />
+                            </InputAdornment>
+                          ),
+                        }}
+                        inputProps={{
+                          maxLength: 16,
+                        }}
                       />
-
-                      <MaskedFieldCpf
-                        type="cpf"
+                      <TextField
+                        fullWidth
+                        variant="outlined"
+                        size="small"
                         label="CPF"
                         value={clienteEditando?.cpf_cnpj || ""}
                         onChange={(e) => {
+                          const formatted = formatCPF(e.target.value);
                           setClienteEditando({
                             ...clienteEditando,
-                            cpf_cnpj: e.target.value,
+                            cpf_cnpj: formatted,
                           });
                         }}
-                        icon={<Article />}
-                        iconSize={24}
-                        labelSize="small"
-                        width="47%"
+                        sx={{ width: "47%" }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Article />
+                            </InputAdornment>
+                          ),
+                        }}
+                        inputProps={{
+                          maxLength: 14,
+                        }}
                         autoComplete="off"
                       />
                       <TextField
@@ -644,7 +705,6 @@ const Clientes = () => {
                           ),
                         }}
                       />
-
                       <TextField
                         fullWidth
                         variant="outlined"
@@ -768,7 +828,6 @@ const Clientes = () => {
                           ),
                         }}
                       />
-
                       <TextField
                         fullWidth
                         variant="outlined"

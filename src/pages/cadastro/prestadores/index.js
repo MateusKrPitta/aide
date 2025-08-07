@@ -25,8 +25,6 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import CloseIcon from "@mui/icons-material/Close";
 import { criarPrestador } from "../../../service/post/prestadores";
 import CustomToast from "../../../components/toast";
-import MaskedFieldPhone from "../../../utils/mascaras/telefone";
-import MaskedFieldCpf from "../../../utils/mascaras/cpf";
 import { buscarServico } from "../../../service/get/servicos";
 import { buscarPretadores } from "../../../service/get/prestadores";
 import { atualizarPrestadores } from "../../../service/put/prestadores";
@@ -56,6 +54,38 @@ const Prestadores = () => {
   const filteredPrestadores = listaPrestadores.filter((prestador) =>
     prestador.nome.toLowerCase().includes(pesquisar.toLowerCase())
   );
+
+  const formatCPF = (value) => {
+    const cleaned = value.replace(/\D/g, "");
+
+    if (cleaned.length <= 3) return cleaned;
+    if (cleaned.length <= 6)
+      return `${cleaned.slice(0, 3)}.${cleaned.slice(3)}`;
+    if (cleaned.length <= 9)
+      return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(
+        6
+      )}`;
+    return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(
+      6,
+      9
+    )}-${cleaned.slice(9, 11)}`;
+  };
+
+  const formatPhone = (value) => {
+    const cleaned = value.replace(/\D/g, "");
+
+    if (cleaned.length <= 2) return cleaned;
+    if (cleaned.length <= 6)
+      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
+    if (cleaned.length <= 10)
+      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(
+        6
+      )}`;
+    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(
+      7,
+      11
+    )}`;
+  };
 
   const validarCamposCadastro = () => {
     return (
@@ -202,7 +232,6 @@ const Prestadores = () => {
       setLoading(true);
       const response = await buscarServico();
 
-      // Filtrar apenas serviços ativos
       const servicosAtivos = response.data.filter((servico) => servico.ativo);
 
       const servicosParaSelect = servicosAtivos
@@ -441,34 +470,51 @@ const Prestadores = () => {
                         ),
                       }}
                     />
-                    <MaskedFieldPhone
-                      type="telefone"
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
                       label="Telefone"
-                      width={"47%"}
                       value={telefone}
                       onChange={(e) => {
-                        if (
-                          e.target.value.replace(/\D/g, "").length <= 11 ||
-                          e.target.value === ""
-                        ) {
-                          setTelefone(e.target.value);
-                        }
+                        const formatted = formatPhone(e.target.value);
+                        setTelefone(formatted);
                       }}
-                      icon={<Phone />}
-                      iconSize={30}
-                      labelSize="small"
+                      sx={{ width: "47%" }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Phone />
+                          </InputAdornment>
+                        ),
+                      }}
+                      inputProps={{
+                        maxLength: 16,
+                      }}
                     />
 
-                    <MaskedFieldCpf
-                      type="cpf"
+                    {/* Campo de CPF */}
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
                       label="CPF"
                       value={cpf}
-                      onChange={(e) => setCpf(e.target.value)}
-                      icon={<Article />}
-                      iconSize={24}
-                      labelSize="small"
-                      width="44%"
-                      autoComplete="off"
+                      onChange={(e) => {
+                        const formatted = formatCPF(e.target.value);
+                        setCpf(formatted);
+                      }}
+                      sx={{ width: "44%" }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Article />
+                          </InputAdornment>
+                        ),
+                      }}
+                      inputProps={{
+                        maxLength: 14,
+                      }}
                     />
                     <TextField
                       fullWidth
@@ -708,33 +754,49 @@ const Prestadores = () => {
                           ),
                         }}
                       />
-                      <MaskedFieldPhone
-                        type="telefone"
+                      <TextField
+                        fullWidth
+                        variant="outlined"
+                        size="small"
                         label="Telefone"
-                        width={"43%"}
                         value={telefone}
                         onChange={(e) => {
-                          if (
-                            e.target.value.replace(/\D/g, "").length <= 11 ||
-                            e.target.value === ""
-                          ) {
-                            setTelefone(e.target.value);
-                          }
+                          const formatted = formatPhone(e.target.value);
+                          setTelefone(formatted);
                         }}
-                        icon={<Phone />}
-                        iconSize={30}
-                        labelSize="small"
+                        sx={{ width: "43%" }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Phone />
+                            </InputAdornment>
+                          ),
+                        }}
+                        inputProps={{
+                          maxLength: 16,
+                        }}
                       />
-
-                      <MaskedFieldCpf
-                        type="cpf"
+                      <TextField
+                        fullWidth
+                        variant="outlined"
+                        size="small"
                         label="CPF"
                         value={cpf}
-                        onChange={(e) => setCpf(e.target.value)}
-                        icon={<Article />}
-                        iconSize={24}
-                        labelSize="small"
-                        width="44%"
+                        onChange={(e) => {
+                          const formatted = formatCPF(e.target.value);
+                          setCpf(formatted);
+                        }}
+                        sx={{ width: "44%" }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Article />
+                            </InputAdornment>
+                          ),
+                        }}
+                        inputProps={{
+                          maxLength: 14,
+                        }}
                         autoComplete="off"
                       />
                       <TextField
@@ -761,7 +823,6 @@ const Prestadores = () => {
                           ),
                         }}
                       />
-
                       <TextField
                         fullWidth
                         variant="outlined"
@@ -863,7 +924,6 @@ const Prestadores = () => {
                           ),
                         }}
                       />
-
                       <Autocomplete
                         multiple
                         style={{ width: "100%" }}

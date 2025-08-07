@@ -1,52 +1,46 @@
 import React from "react";
-import MaskedInput from "react-text-mask";
+import InputMask from "react-input-mask";
 import { TextField, InputAdornment } from "@mui/material";
-import { Icon } from '@mui/material';
+import { Article } from "@mui/icons-material";
 
 const MaskedFieldCpf = ({
-  type,
+  type = "cpf",
   label,
   value,
   onChange,
-  icon,
+  icon = <Article />,
   iconSize = 24,
-  labelSize = 'medium',
-  width = '100%'
+  labelSize = "medium",
+  width = "100%",
+  ...props
 }) => {
-
-  const mask = type === "cpf"
-    ? [/\d/, /\d/, /\d/, ".", /\d/, /\d/, /\d/, ".", /\d/, /\d/, /\d/, "-", /\d/, /\d/]
-    : ['(', /\d/, /\d/, ')', ' ', /\d/, /\d/, /\d/, /\d/, /\d/, '-', /\d/, /\d/, /\d/, /\d/];
+  const mask = type === "cnpj" ? "99.999.999/9999-99" : "999.999.999-99";
 
   return (
-    <MaskedInput
-      mask={mask}
-      value={value}
-      onChange={onChange}
-      guide={true}
-      render={(ref, props) => (
+    <InputMask mask={mask} value={value || ""} onChange={onChange} {...props}>
+      {() => (
         <TextField
-          {...props}
-          inputRef={ref}
           variant="outlined"
           size="small"
           fullWidth
           label={label}
+          value={value || ""}
+          onChange={onChange}
           InputLabelProps={{
             shrink: true,
-            style: { fontSize: labelSize === 'small' ? '0.75rem' : '1rem' }
+            style: { fontSize: labelSize === "small" ? "0.75rem" : "1rem" },
           }}
           InputProps={{
-            startAdornment: icon ? (
+            startAdornment: (
               <InputAdornment position="start">
-                <Icon style={{ fontSize: iconSize }}>{icon}</Icon>
+                {React.cloneElement(icon, { style: { fontSize: iconSize } })}
               </InputAdornment>
-            ) : null,
+            ),
           }}
           sx={{ width }}
         />
       )}
-    />
+    </InputMask>
   );
 };
 

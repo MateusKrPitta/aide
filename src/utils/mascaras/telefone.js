@@ -1,86 +1,46 @@
 import React from "react";
-import MaskedInput from "react-text-mask";
+import InputMask from "react-input-mask";
 import { TextField, InputAdornment } from "@mui/material";
-import { Icon } from "@mui/material";
+import { Phone } from "@mui/icons-material";
 
 const MaskedFieldPhone = ({
-  type,
+  type = "telefone",
   label,
   value,
   onChange,
-  icon,
+  icon = <Phone />,
   iconSize = 24,
   labelSize = "medium",
-  width = width,
+  width = "100%",
+  ...props
 }) => {
-  const mask =
-    type === "telefone"
-      ? [
-          "(",
-          /\d/,
-          /\d/,
-          ")",
-          " ",
-          /\d/,
-          /\d/,
-          /\d/,
-          /\d/,
-          /\d/,
-          "-",
-          /\d/,
-          /\d/,
-          /\d/,
-          /\d/,
-        ]
-      : [
-          /\d/,
-          /\d/,
-          ".",
-          /\d/,
-          /\d/,
-          /\d/,
-          ".",
-          /\d/,
-          /\d/,
-          /\d/,
-          "/",
-          /\d/,
-          /\d/,
-          /\d/,
-          /\d/,
-          "-",
-          /\d/,
-          /\d/,
-        ];
+  const mask = "(99) 99999-9999";
 
   return (
-    <MaskedInput
-      mask={mask}
-      value={value}
-      onChange={onChange}
-      render={(ref, props) => (
+    <InputMask mask={mask} value={value || ""} onChange={onChange} {...props}>
+      {() => (
         <TextField
-          {...props}
-          inputRef={ref}
           variant="outlined"
           size="small"
           fullWidth
           label={label}
+          value={value || ""}
+          onChange={onChange}
           InputLabelProps={{
             shrink: true,
             style: { fontSize: labelSize === "small" ? "0.75rem" : "1rem" },
           }}
           InputProps={{
-            startAdornment: icon ? (
+            startAdornment: (
               <InputAdornment position="start">
-                <Icon style={{ fontSize: iconSize }}>{icon}</Icon>
+                {React.cloneElement(icon, { style: { fontSize: iconSize } })}
               </InputAdornment>
-            ) : null,
+            ),
           }}
           sx={{ width }}
         />
       )}
-    />
+    </InputMask>
   );
 };
 
