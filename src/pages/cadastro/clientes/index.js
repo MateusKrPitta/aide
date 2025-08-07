@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Navbar from "../../../components/navbars/header";
 import HeaderPerfil from "../../../components/navbars/perfil";
 import ButtonComponent from "../../../components/button";
@@ -8,7 +8,6 @@ import MenuMobile from "../../../components/menu-mobile";
 import ModalLateral from "../../../components/modal-lateral";
 import {
   Article,
-  Category,
   Edit,
   Mail,
   Numbers,
@@ -19,55 +18,168 @@ import {
 import { InputAdornment, TextField } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import NotesIcon from "@mui/icons-material/Notes";
 import { motion } from "framer-motion";
 import TableLoading from "../../../components/loading/loading-table/loading";
 import TableComponent from "../../../components/table";
-import { servicoCadastrados } from "../../../entities/header/cadastro/servico";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
+import { criarCliente } from "../../../service/post/clientes";
+import CustomToast from "../../../components/toast";
+import MaskedFieldCpf from "../../../utils/mascaras/cpf";
+import MaskedFieldPhone from "../../../utils/mascaras/telefone";
+import { buscarClientes } from "../../../service/get/clientes";
+import { clientesCadastrados } from "../../../entities/header/cadastro/clientes";
+import { cadastrosClientes } from "../../../entities/class/clientes";
+import { atualizarClientes } from "../../../service/put/clientes";
+import { reativarCliente } from "../../../service/post/reativa-cliente";
+import { inativarCliente } from "../../../service/post/inativa-cliente";
 
 const Clientes = () => {
   const [editando, setEditando] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cadastroUsuario, setCadastroUsuario] = useState(false);
   const [nome, setNome] = useState("");
-  const [descricao, setDescricao] = useState("");
-  const [listaServicos, setListaServicos] = useState([
-    {
-      id: 1,
-      nome: "Manutenção de Computadores",
-      descricao:
-        "Serviço completo de manutenção preventiva e corretiva para computadores",
-    },
-    {
-      id: 2,
-      nome: "Desenvolvimento Web",
-      descricao: "Criação de sites e aplicações web personalizadas",
-    },
-    {
-      id: 3,
-      nome: "Consultoria em TI",
-      descricao:
-        "Análise e recomendação de soluções tecnológicas para empresas",
-    },
-    {
-      id: 4,
-      nome: "Redes e Infraestrutura",
-      descricao: "Instalação e configuração de redes corporativas",
-    },
-    {
-      id: 5,
-      nome: "Suporte Técnico",
-      descricao:
-        "Atendimento remoto e presencial para resolução de problemas técnicos",
-    },
-  ]);
+  const [telefone, setTelefone] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [email, setEmail] = useState("");
+  const [estado, setEstado] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [endereco, setEndereco] = useState("");
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [clientes, setClientes] = useState([]);
+  const [clienteEditando, setClienteEditando] = useState(null);
+  const [pesquisar, setPesquisar] = useState("");
+
+  const filteredClients = clientes.filter((cliente) =>
+    cliente.nome.toLowerCase().includes(pesquisar.toLowerCase())
+  );
+
+  const validarCamposCadastro = () => {
+    return (
+      nome.trim() !== "" &&
+      email.trim() !== "" &&
+      telefone.trim() !== "" &&
+      cpf.trim() !== "" &&
+      cidade.trim() !== "" &&
+      endereco.trim() !== "" &&
+      numero.trim() !== "" &&
+      estado !== null
+    );
+  };
+
+  const CadastrarCliente = async () => {
+    try {
+      setLoading(true);
+      await criarCliente(
+        nome,
+        telefone,
+        cpf,
+        email,
+        estado,
+        cidade,
+        endereco,
+        numero,
+        complemento
+      );
+
+      setNome("");
+      setTelefone("");
+      setCpf("");
+      setEmail("");
+      setEstado("");
+      setCidade("");
+      setEndereco("");
+      setNumero("");
+      setComplemento("");
+
+      setCadastroUsuario(false);
+      await carregarClientes();
+
+      CustomToast({
+        type: "success",
+        message: "Cliente cadastrado com sucesso!",
+      });
+    } catch (error) {
+      console.error("Erro ao cadastrar cliente:", error);
+      CustomToast({ type: "error", message: "Erro ao cadastrar cliente" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const carregarClientes = async () => {
+    try {
+      setLoading(true);
+      const response = await buscarClientes();
+      setClientes(response.data || []);
+    } catch (error) {
+      console.error("Erro ao carregar clientes:", error);
+      setClientes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const salvarEdicao = async () => {
+    try {
+      setLoading(true);
+
+      await atualizarClientes(
+        clienteEditando.id,
+        clienteEditando.nome,
+        clienteEditando.telefone,
+        clienteEditando.email,
+        clienteEditando.estado,
+        clienteEditando.cidade,
+        clienteEditando.endereco,
+        clienteEditando.cpf_cnpj,
+        clienteEditando.complemento
+      );
+
+      await carregarClientes();
+
+      CustomToast({
+        type: "success",
+        message: "Cliente atualizado com sucesso!",
+      });
+
+      handleCloseEdicao();
+    } catch (error) {
+      console.error("Erro ao atualizar cliente:", error);
+      CustomToast({
+        type: "error",
+        message: error.response?.data?.message || "Erro ao atualizar cliente",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const FecharCadastroUsuario = () => {
+    setNome("");
+    setEmail("");
+    setCidade("");
+    setCpf("");
+    setTelefone("");
+    setEndereco("");
+    setEstado("");
+    setNumero("");
+    setComplemento("");
     setCadastroUsuario(false);
   };
 
   const handleCloseEdicao = () => {
     setEditando(false);
+    setNome("");
+    setEmail("");
+    setCidade("");
+    setCpf("");
+    setTelefone("");
+    setEndereco("");
+    setEstado("");
+    setNumero("");
+    setComplemento("");
+    setClienteEditando(null);
   };
 
   const fadeIn = {
@@ -75,8 +187,39 @@ const Clientes = () => {
     visible: { opacity: 1 },
   };
 
-  const EditarOpcao = () => {
+  const EditarOpcao = (cliente) => {
+    setClienteEditando(cliente);
     setEditando(true);
+  };
+
+  useEffect(() => {
+    carregarClientes();
+  }, []);
+
+  const AlternarAtivacaoCliente = async (cliente) => {
+    setLoading(true);
+    try {
+      if (cliente.ativo) {
+        await inativarCliente(cliente.id);
+      } else {
+        await reativarCliente(cliente.id);
+      }
+
+      CustomToast({
+        type: "success",
+        message: `Cliente ${
+          cliente.ativo ? "inativado" : "reativado"
+        } com sucesso!`,
+      });
+      await carregarClientes();
+    } catch (error) {
+      CustomToast({
+        type: "error",
+        message: error.response?.data?.message,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
   return (
     <div className="flex w-full ">
@@ -104,6 +247,8 @@ const Clientes = () => {
                   size="small"
                   label="Buscar usuário"
                   autoComplete="off"
+                  value={pesquisar}
+                  onChange={(e) => setPesquisar(e.target.value)}
                   sx={{ width: { xs: "72%", sm: "50%", md: "40%", lg: "40%" } }}
                   InputProps={{
                     startAdornment: (
@@ -124,21 +269,33 @@ const Clientes = () => {
 
               <div className="w-full">
                 {loading ? (
-                  <TableLoading />
-                ) : listaServicos.length > 0 ? (
+                  <div className="w-full flex items-center h-[300px] flex-col gap-3 justify-center">
+                    <TableLoading />
+                    <label className="text-xs text-primary">
+                      Carregando Informações !
+                    </label>
+                  </div>
+                ) : filteredClients && filteredClients.length > 0 ? (
                   <TableComponent
-                    headers={servicoCadastrados}
-                    rows={listaServicos}
+                    headers={clientesCadastrados}
+                    rows={cadastrosClientes(filteredClients)}
                     actionsLabel={"Ações"}
                     actionCalls={{
-                      edit: EditarOpcao,
-                      inactivate: "",
+                      edit: (row) =>
+                        EditarOpcao(
+                          filteredClients.find((c) => c.id === row.id)
+                        ),
+                      inactivate: AlternarAtivacaoCliente,
                     }}
                   />
                 ) : (
                   <div className="text-center flex items-center mt-28 justify-center gap-5 flex-col text-primary">
                     <TableLoading />
-                    <label className="text-sm">Serviço não encontrado!</label>
+                    <label className="text-sm">
+                      {pesquisar
+                        ? "Nenhum cliente encontrado para sua pesquisa!"
+                        : "Nenhum cliente cadastrado!"}
+                    </label>
                   </div>
                 )}
               </div>
@@ -162,6 +319,8 @@ const Clientes = () => {
                       size="small"
                       label="Nome Cliente"
                       name="nome"
+                      value={nome}
+                      onChange={(e) => setNome(e.target.value)}
                       autoComplete="off"
                       sx={{
                         width: {
@@ -179,59 +338,43 @@ const Clientes = () => {
                         ),
                       }}
                     />
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      size="small"
+                    <MaskedFieldPhone
+                      type="telefone"
                       label="Telefone"
-                      name="telefone"
-                      autoComplete="off"
-                      sx={{
-                        width: {
-                          xs: "48%",
-                          sm: "50%",
-                          md: "40%",
-                          lg: "47%",
-                        },
+                      width={"47%"}
+                      value={telefone}
+                      onChange={(e) => {
+                        if (
+                          e.target.value.replace(/\D/g, "").length <= 11 ||
+                          e.target.value === ""
+                        ) {
+                          setTelefone(e.target.value);
+                        }
                       }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Phone />
-                          </InputAdornment>
-                        ),
-                      }}
+                      icon={<Phone />}
+                      iconSize={30}
+                      labelSize="small"
                     />
 
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      label="CPF/CNPJ"
-                      name="cpf"
+                    <MaskedFieldCpf
+                      type="cpf"
+                      label="CPF"
+                      value={cpf}
+                      onChange={(e) => setCpf(e.target.value)}
+                      icon={<Article />}
+                      iconSize={24}
+                      labelSize="small"
+                      width="44%"
                       autoComplete="off"
-                      sx={{
-                        width: {
-                          xs: "47%",
-                          sm: "50%",
-                          md: "40%",
-                          lg: "44%",
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Article />
-                          </InputAdornment>
-                        ),
-                      }}
                     />
                     <TextField
                       fullWidth
                       variant="outlined"
                       size="small"
                       label="Email"
-                      name="telefone"
+                      name="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       autoComplete="off"
                       sx={{
                         width: {
@@ -249,42 +392,26 @@ const Clientes = () => {
                         ),
                       }}
                     />
+
                     <TextField
                       fullWidth
                       variant="outlined"
                       size="small"
-                      label="Categoria"
-                      name="numero"
+                      label="Estado (Sigla)"
+                      value={estado}
+                      onChange={(e) => {
+                        const value = e.target.value
+                          .toUpperCase()
+                          .substring(0, 3);
+                        setEstado(value);
+                      }}
                       autoComplete="off"
                       sx={{
                         width: {
-                          xs: "47%",
+                          xs: "100%",
                           sm: "50%",
                           md: "40%",
-                          lg: "29%",
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Category />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      label="Estado"
-                      name="estado"
-                      autoComplete="off"
-                      sx={{
-                        width: {
-                          xs: "48%",
-                          sm: "50%",
-                          md: "40%",
-                          lg: "30%",
+                          lg: "20%",
                         },
                       }}
                       InputProps={{
@@ -301,6 +428,8 @@ const Clientes = () => {
                       size="small"
                       label="Cidade"
                       name="cidade"
+                      value={cidade}
+                      onChange={(e) => setCidade(e.target.value)}
                       autoComplete="off"
                       sx={{
                         width: {
@@ -324,13 +453,15 @@ const Clientes = () => {
                       size="small"
                       label="Endereço"
                       name="endereco"
+                      value={endereco}
+                      onChange={(e) => setEndereco(e.target.value)}
                       autoComplete="off"
                       sx={{
                         width: {
                           xs: "100%",
                           sm: "50%",
                           md: "40%",
-                          lg: "47%",
+                          lg: "39%",
                         },
                       }}
                       InputProps={{
@@ -347,6 +478,9 @@ const Clientes = () => {
                       size="small"
                       label="Número"
                       name="numero"
+                      type="number"
+                      value={numero}
+                      onChange={(e) => setNumero(e.target.value)}
                       autoComplete="off"
                       sx={{
                         width: {
@@ -364,6 +498,31 @@ const Clientes = () => {
                         ),
                       }}
                     />
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      label="Complemento"
+                      name="complemento"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Article />
+                          </InputAdornment>
+                        ),
+                      }}
+                      value={complemento}
+                      onChange={(e) => setComplemento(e.target.value)}
+                      autoComplete="off"
+                      sx={{
+                        width: {
+                          xs: "100%",
+                          sm: "50%",
+                          md: "40%",
+                          lg: "30%",
+                        },
+                      }}
+                    />
                   </div>
 
                   <div className="flex w-[96%] items-end justify-end mt-2 ">
@@ -371,8 +530,9 @@ const Clientes = () => {
                       startIcon={<AddCircleOutlineIcon fontSize="small" />}
                       title={"Cadastrar"}
                       subtitle={"Cadastrar"}
-                      // onClick={CadastrarUsuario}
+                      onClick={CadastrarCliente}
                       buttonSize="large"
+                      disabled={!validarCamposCadastro() || loading}
                     />
                   </div>
                 </div>
@@ -393,6 +553,13 @@ const Clientes = () => {
                         size="small"
                         label="Nome Cliente"
                         name="nome"
+                        value={clienteEditando?.nome || ""}
+                        onChange={(e) =>
+                          setClienteEditando({
+                            ...clienteEditando,
+                            nome: e.target.value,
+                          })
+                        }
                         autoComplete="off"
                         sx={{
                           width: {
@@ -410,59 +577,56 @@ const Clientes = () => {
                           ),
                         }}
                       />
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        size="small"
+                      <MaskedFieldPhone
+                        type="telefone"
                         label="Telefone"
-                        name="telefone"
-                        autoComplete="off"
-                        sx={{
-                          width: {
-                            xs: "100%",
-                            sm: "50%",
-                            md: "40%",
-                            lg: "100%",
-                          },
+                        width={"48%"}
+                        value={clienteEditando?.telefone || ""}
+                        onChange={(e) => {
+                          if (
+                            e.target.value.replace(/\D/g, "").length <= 11 ||
+                            e.target.value === ""
+                          ) {
+                            setClienteEditando({
+                              ...clienteEditando,
+                              telefone: e.target.value,
+                            });
+                          }
                         }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Phone />
-                            </InputAdornment>
-                          ),
-                        }}
+                        icon={<Phone />}
+                        iconSize={24}
+                        labelSize="small"
                       />
 
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        label="CPF/CNPJ"
-                        name="cpf"
+                      <MaskedFieldCpf
+                        type="cpf"
+                        label="CPF"
+                        value={clienteEditando?.cpf_cnpj || ""}
+                        onChange={(e) => {
+                          setClienteEditando({
+                            ...clienteEditando,
+                            cpf_cnpj: e.target.value,
+                          });
+                        }}
+                        icon={<Article />}
+                        iconSize={24}
+                        labelSize="small"
+                        width="47%"
                         autoComplete="off"
-                        sx={{
-                          width: {
-                            xs: "100%",
-                            sm: "50%",
-                            md: "40%",
-                            lg: "100%",
-                          },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Article />
-                            </InputAdornment>
-                          ),
-                        }}
                       />
                       <TextField
                         fullWidth
                         variant="outlined"
                         size="small"
                         label="Email"
-                        name="telefone"
+                        name="email"
+                        value={clienteEditando?.email || ""}
+                        onChange={(e) =>
+                          setClienteEditando({
+                            ...clienteEditando,
+                            email: e.target.value,
+                          })
+                        }
                         autoComplete="off"
                         sx={{
                           width: {
@@ -485,15 +649,24 @@ const Clientes = () => {
                         fullWidth
                         variant="outlined"
                         size="small"
-                        label="Estado"
-                        name="estado"
+                        label="Estado (Sigla)"
+                        value={clienteEditando?.estado || ""}
+                        onChange={(e) => {
+                          const value = e.target.value
+                            .toUpperCase()
+                            .substring(0, 3);
+                          setClienteEditando({
+                            ...clienteEditando,
+                            estado: value,
+                          });
+                        }}
                         autoComplete="off"
                         sx={{
                           width: {
                             xs: "100%",
                             sm: "50%",
                             md: "40%",
-                            lg: "100%",
+                            lg: "35%",
                           },
                         }}
                         InputProps={{
@@ -510,13 +683,20 @@ const Clientes = () => {
                         size="small"
                         label="Cidade"
                         name="cidade"
+                        value={clienteEditando?.cidade || ""}
+                        onChange={(e) =>
+                          setClienteEditando({
+                            ...clienteEditando,
+                            cidade: e.target.value,
+                          })
+                        }
                         autoComplete="off"
                         sx={{
                           width: {
                             xs: "100%",
                             sm: "50%",
                             md: "40%",
-                            lg: "100%",
+                            lg: "60%",
                           },
                         }}
                         InputProps={{
@@ -533,13 +713,20 @@ const Clientes = () => {
                         size="small"
                         label="Endereço"
                         name="endereco"
+                        value={clienteEditando?.endereco || ""}
+                        onChange={(e) =>
+                          setClienteEditando({
+                            ...clienteEditando,
+                            endereco: e.target.value,
+                          })
+                        }
                         autoComplete="off"
                         sx={{
                           width: {
                             xs: "100%",
                             sm: "50%",
                             md: "40%",
-                            lg: "100%",
+                            lg: "67%",
                           },
                         }}
                         InputProps={{
@@ -554,15 +741,23 @@ const Clientes = () => {
                         fullWidth
                         variant="outlined"
                         size="small"
+                        type="number"
                         label="Número"
                         name="numero"
+                        value={clienteEditando?.numero || ""}
+                        onChange={(e) =>
+                          setClienteEditando({
+                            ...clienteEditando,
+                            numero: e.target.value,
+                          })
+                        }
                         autoComplete="off"
                         sx={{
                           width: {
                             xs: "100%",
                             sm: "50%",
                             md: "40%",
-                            lg: "100%",
+                            lg: "28%",
                           },
                         }}
                         InputProps={{
@@ -573,27 +768,35 @@ const Clientes = () => {
                           ),
                         }}
                       />
+
                       <TextField
                         fullWidth
                         variant="outlined"
                         size="small"
-                        label="Categoria"
-                        name="numero"
+                        label="Complemento"
+                        name="complemento"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Article />
+                            </InputAdornment>
+                          ),
+                        }}
+                        value={clienteEditando?.complemento || ""}
+                        onChange={(e) =>
+                          setClienteEditando({
+                            ...clienteEditando,
+                            complemento: e.target.value,
+                          })
+                        }
                         autoComplete="off"
                         sx={{
                           width: {
                             xs: "100%",
                             sm: "50%",
                             md: "40%",
-                            lg: "100%",
+                            lg: "30%",
                           },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Category />
-                            </InputAdornment>
-                          ),
                         }}
                       />
                     </div>
@@ -604,7 +807,7 @@ const Clientes = () => {
                         title={"Salvar"}
                         subtitle={"Salvar"}
                         buttonSize="large"
-                        //onClick={EditarUsuario}
+                        onClick={salvarEdicao}
                       />
                     </div>
                   </div>

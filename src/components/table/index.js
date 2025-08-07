@@ -11,6 +11,7 @@ import {
   IconButton,
   TextField,
 } from "@mui/material";
+import { TablePagination } from "@mui/material";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
@@ -32,6 +33,8 @@ const TableComponent = ({
   selectedCheckboxes,
   setSelectedCheckboxes,
 }) => {
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [pageList, setPageList] = useState([]);
   const hasActions = Object.keys(actionCalls).length > 0;
   const actionTypes = Object.keys(actionCalls);
@@ -80,6 +83,15 @@ const TableComponent = ({
     }
   }, [rows]);
 
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
   const userTipo = localStorage.getItem("tipo");
   const location = useLocation();
 
@@ -121,29 +133,29 @@ const TableComponent = ({
           <VisibilityOutlinedIcon fontSize={"small"} />
         </IconButton>
       ),
-      edit: (
-        <IconButton
-          onClick={() => actionCalls.edit(row)}
-          title="Editar Dados"
-          className="view-button"
-          sx={{
-            color: "#9D4B5B",
-            border: "1px solid #9D4B5B",
-            "&:hover": {
-              color: "#fff",
-              backgroundColor: "#9D4B5B",
+      edit: row.tipo !== "Serviço" &&
+        row.tipoOrigem !== "Prestador" &&
+        row.tipo !== "Palestra/Curso" && (
+          <IconButton
+            onClick={() => actionCalls.edit(row)}
+            title="Editar Dados"
+            className="view-button"
+            sx={{
+              color: "#9D4B5B",
               border: "1px solid #9D4B5B",
-            },
-          }}
-        >
-          <EditIcon fontSize={"small"} />
-        </IconButton>
-      ),
-      delete: row.status !== "Pagamento Realizado" &&
-        !(
-          location.pathname.includes("/cadastro/produto") &&
-          String(localStorage.getItem("tipo")) === "3"
-        ) && (
+              "&:hover": {
+                color: "#fff",
+                backgroundColor: "#9D4B5B",
+                border: "1px solid #9D4B5B",
+              },
+            }}
+          >
+            <EditIcon fontSize={"small"} />
+          </IconButton>
+        ),
+      delete: row.tipo !== "Serviço" &&
+        row.tipoOrigem !== "Prestador" &&
+        row.tipo !== "Palestra/Curso" && (
           <IconButton
             onClick={() => actionCalls.delete(row)}
             title="Excluir Registro"
@@ -182,37 +194,19 @@ const TableComponent = ({
       inactivate: (
         <IconButton
           onClick={() => actionCalls.inactivate(row)}
-          title={
-            row.ativo === "Ativo" || row.ativo === true
-              ? "Inativar Registro"
-              : "Reativar Registro"
-          }
+          title={row.ativo ? "Inativar Registro" : "Reativar Registro"}
           className="inactivate-button"
           sx={{
-            color:
-              row.ativo === "Ativo" || row.ativo === true
-                ? "#ff9800"
-                : "#4caf50",
-            border: `1px solid ${
-              row.ativo === "Ativo" || row.ativo === true
-                ? "#ff9800"
-                : "#4caf50"
-            }`,
+            color: row.ativo ? "#ff9800" : "#4caf50",
+            border: `1px solid ${row.ativo ? "#ff9800" : "#4caf50"}`,
             "&:hover": {
               color: "#fff",
-              backgroundColor:
-                row.ativo === "Ativo" || row.ativo === true
-                  ? "#ff9800"
-                  : "#4caf50",
-              border: `1px solid ${
-                row.ativo === "Ativo" || row.ativo === true
-                  ? "#e68a00"
-                  : "#388e3c"
-              }`,
+              backgroundColor: row.ativo ? "#ff9800" : "#4caf50",
+              border: `1px solid ${row.ativo ? "#e68a00" : "#388e3c"}`,
             },
           }}
         >
-          {row.ativo === "Ativo" || row.ativo === true ? (
+          {row.ativo ? (
             <BlockOutlinedIcon fontSize="small" />
           ) : (
             <CheckCircleOutlineIcon fontSize="small" />
@@ -282,6 +276,11 @@ const TableComponent = ({
     });
   };
 
+  const paginatedRows = pageList.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
   useEffect(() => {
     setPageList(rows);
   }, [rows]);
@@ -289,7 +288,7 @@ const TableComponent = ({
   return (
     <TableContainer
       component={Paper}
-      style={{ maxHeight: "430px", overflowY: "auto" }}
+      style={{ maxHeight: "370px", overflowY: "auto" }}
       className="scrollbar"
     >
       <Table stickyHeader>
@@ -313,7 +312,7 @@ const TableComponent = ({
         </TableHead>
 
         <TableBody>
-          {pageList.map((row, rowIndex) => (
+          {paginatedRows.map((row, rowIndex) => (
             <TableRow key={row.id} style={rowStyle ? rowStyle(row) : {}}>
               {headersList.map(
                 ({ key, label, sort, type }) =>
@@ -359,7 +358,7 @@ const TableComponent = ({
                             : row.tipo === "desperdicio"
                             ? "#000000"
                             : "transparent",
-                        color: "#fff",
+                        color: "black",
                       }}
                     >
                       {row.tipo === "3" ? "Desperdício" : row[key]}
@@ -372,7 +371,11 @@ const TableComponent = ({
                         type="number"
                         value={row[key] || ""}
                         onChange={(e) =>
-                          handleInputChange(rowIndex, key, e.target.value)
+                          handleInputChange(
+                            page * rowsPerPage + rowIndex,
+                            key,
+                            e.target.value
+                          )
                         }
                         variant="outlined"
                         size="small"
@@ -392,6 +395,16 @@ const TableComponent = ({
           ))}
         </TableBody>
       </Table>
+      <TablePagination
+        component="div"
+        count={pageList.length}
+        page={page}
+        onPageChange={handleChangePage}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+        rowsPerPageOptions={[5, 10, 25, 50, 100]}
+        labelRowsPerPage="Linhas por página"
+      />
     </TableContainer>
   );
 };

@@ -7,11 +7,12 @@ import CentralModal from "../../../components/modal-central";
 import Checkbox from "@mui/material/Checkbox";
 import MenuMobile from "../../../components/menu-mobile";
 import ModalLateral from "../../../components/modal-lateral";
-import { Edit, Numbers, Phone, Work } from "@mui/icons-material";
+import { Edit } from "@mui/icons-material";
 import {
   FormControlLabel,
-  IconButton,
   InputAdornment,
+  Radio,
+  RadioGroup,
   TextField,
 } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
@@ -19,64 +20,91 @@ import SearchIcon from "@mui/icons-material/Search";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import NotesIcon from "@mui/icons-material/Notes";
 import { Password } from "@mui/icons-material";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
 import { motion } from "framer-motion";
 import TableLoading from "../../../components/loading/loading-table/loading";
 import TableComponent from "../../../components/table";
 import { usuarioCadastrados } from "../../../entities/header/usuario";
+import { criarUsuarios } from "../../../service/post/usuario";
+import CustomToast from "../../../components/toast";
+import { cadastrosUsuarios } from "../../../entities/class/usuario";
+import { buscarUsuarios } from "../../../service/get/usuario";
+import { inativarUsuario } from "../../../service/put/inativar-usuario";
+import { reativarUsuario } from "../../../service/put/reativar-usuario";
+import { atualizarUsuario } from "../../../service/put/usuario";
+
 const Usuario = () => {
   const [editando, setEditando] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cadastroUsuario, setCadastroUsuario] = useState(false);
-  const [editUser, setEditUser] = useState(null);
+  const [usuariosCadastrados, setUsuariosCadastrados] = useState([]);
   const [permissao, setPermissao] = useState(null);
+  const [username, setUsername] = useState("");
+  const [telefone, setTelefone] = useState("");
+  const [usuarioEditando, setUsuarioEditando] = useState(null);
+  const [pesquisar, setPesquisar] = useState("");
 
   const [nomeCompleto, setNomeCompleto] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [listaUsuarios, setListaUsuarios] = useState([
-    {
-      nome: "João Silva",
-      cpf: "123.456.789-00",
-      telefone: "(11) 99999-9999",
-      tipo: "Administrador",
-    },
-    {
-      nome: "Maria Oliveira",
-      cpf: "987.654.321-00",
-      telefone: "(11) 98888-8888",
-      tipo: "Funcionário",
-    },
-    {
-      nome: "Carlos Souza",
-      cpf: "456.789.123-00",
-      telefone: "(11) 97777-7777",
-      tipo: "Cliente",
-    },
-    {
-      nome: "Ana Pereira",
-      cpf: "789.123.456-00",
-      telefone: "(11) 96666-6666",
-      tipo: "Funcionário",
-    },
-    {
-      nome: "Pedro Costa",
-      cpf: "321.654.987-00",
-      telefone: "(11) 95555-5555",
-      tipo: "Cliente",
-    },
-  ]);
 
   const FecharCadastroUsuario = () => {
     setCadastroUsuario(false);
+    setUsuarioEditando(null);
+    setNomeCompleto("");
+    setEmail("");
+    setSenha("");
+    setUsername("");
+    setTelefone("");
+    setPermissao(null);
+  };
+
+  const usuariosFiltrados = usuariosCadastrados.filter((usuario) => {
+    const termo = pesquisar.toLowerCase();
+    return (
+      usuario.nome?.toLowerCase().includes(termo) ||
+      usuario.username?.toLowerCase().includes(termo) ||
+      usuario.email?.toLowerCase().includes(termo)
+    );
+  });
+
+  const EditarOpcao = (usuario) => {
+    setUsuarioEditando(usuario);
+    setNomeCompleto(usuario.nome);
+    setEmail(usuario.email);
+    setUsername(usuario.username || "");
+    setTelefone(usuario.telefone || "");
+    setPermissao(usuario.permissao || null);
+    setEditando(true);
   };
 
   const handleCloseEdicao = () => {
     setEditando(false);
+    setUsuarioEditando(null);
+    setNomeCompleto("");
+    setEmail("");
+    setSenha("");
+    setUsername("");
+    setTelefone("");
+    setPermissao(null);
   };
 
-  const EditarOpcao = () => {
-    setEditando(true);
+  const validarCamposCadastro = () => {
+    return (
+      nomeCompleto.trim() !== "" &&
+      email.trim() !== "" &&
+      senha.trim() !== "" &&
+      username.trim() !== "" &&
+      permissao !== null
+    );
+  };
+
+  const validarCamposEdicao = () => {
+    return (
+      nomeCompleto.trim() !== "" &&
+      email.trim() !== "" &&
+      username.trim() !== "" &&
+      permissao !== null
+    );
   };
 
   const fadeIn = {
@@ -84,6 +112,107 @@ const Usuario = () => {
     visible: { opacity: 1 },
   };
 
+  const CadastrarUsuario = async () => {
+    setLoading(true);
+
+    try {
+      await criarUsuarios(
+        nomeCompleto,
+        username,
+        email,
+        senha,
+        telefone.replace(/\D/g, ""),
+        permissao
+      );
+
+      CustomToast({
+        type: "success",
+        message: "Usuário cadastrado com sucesso!",
+      });
+
+      setNomeCompleto("");
+      setEmail("");
+      setSenha("");
+      setUsername("");
+      setTelefone("");
+      setPermissao(null);
+
+      buscarUsuariosCadastradas();
+      setCadastroUsuario(false);
+    } catch (error) {
+      console.error("Erro ao cadastrar usuário:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const EditarUsuario = async () => {
+    setLoading(true);
+    try {
+      await atualizarUsuario(
+        usuarioEditando.id,
+        nomeCompleto,
+        username,
+        email,
+        telefone.replace(/\D/g, ""),
+        permissao
+      );
+
+      await buscarUsuariosCadastradas();
+      handleCloseEdicao();
+    } catch (error) {
+      console.error("Erro ao editar usuário:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const buscarUsuariosCadastradas = async () => {
+    try {
+      setLoading(true);
+      const response = await buscarUsuarios();
+      setUsuariosCadastrados(response.data.data || []);
+    } catch (error) {
+      const errorMessage = error.response?.data?.errors?.nome;
+      CustomToast({
+        type: "error",
+        message: errorMessage,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const AlternarAtivacaoUsuario = async (usuario) => {
+    setLoading(true);
+    try {
+      if (usuario.ativo) {
+        await inativarUsuario(usuario.id);
+      } else {
+        await reativarUsuario(usuario.id);
+      }
+
+      CustomToast({
+        type: "success",
+        message: `Usuario ${
+          usuario.ativo ? "inativado" : "reativado"
+        } com sucesso!`,
+      });
+      await buscarUsuariosCadastradas();
+    } catch (error) {
+      CustomToast({
+        type: "error",
+        message:
+          error.response?.data?.message ||
+          "Erro ao alterar status do prestador",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    buscarUsuariosCadastradas();
+  }, []);
   return (
     <div className="flex w-full ">
       <Navbar />
@@ -110,6 +239,8 @@ const Usuario = () => {
                   size="small"
                   label="Buscar usuário"
                   autoComplete="off"
+                  value={pesquisar}
+                  onChange={(e) => setPesquisar(e.target.value)}
                   sx={{ width: { xs: "72%", sm: "50%", md: "40%", lg: "40%" } }}
                   InputProps={{
                     startAdornment: (
@@ -119,6 +250,7 @@ const Usuario = () => {
                     ),
                   }}
                 />
+
                 <ButtonComponent
                   startIcon={<AddCircleOutlineIcon fontSize="small" />}
                   title={"Cadastrar"}
@@ -129,21 +261,30 @@ const Usuario = () => {
               </div>
               <div className="w-full flex">
                 {loading ? (
-                  <TableLoading />
-                ) : listaUsuarios.length > 0 ? (
+                  <div className="w-full flex items-center h-[300px] flex-col gap-3 justify-center">
+                    <TableLoading />
+                    <label className="text-xs text-primary">
+                      Carregando Informações !
+                    </label>
+                  </div>
+                ) : usuariosCadastrados.length > 0 ? (
                   <TableComponent
                     headers={usuarioCadastrados}
-                    rows={listaUsuarios}
+                    rows={cadastrosUsuarios(usuariosFiltrados)}
                     actionsLabel={"Ações"}
                     actionCalls={{
-                      edit: EditarOpcao,
-                      inactivate: "",
+                      edit: (usuario) => EditarOpcao(usuario),
+                      inactivate: AlternarAtivacaoUsuario,
                     }}
                   />
                 ) : (
-                  <div className="text-center flex items-center mt-28 justify-center gap-5 flex-col text-primary">
+                  <div className="text-center flex items-center w-full mt-28 justify-center gap-5 flex-col text-primary">
                     <TableLoading />
-                    <label className="text-sm">Serviço não encontrado!</label>
+                    <label className="text-sm">
+                      {pesquisar
+                        ? "Nenhum usuário encontrado para sua pesquisa!"
+                        : "Nenhum usuário encontrado!"}
+                    </label>
                   </div>
                 )}
               </div>
@@ -153,7 +294,7 @@ const Usuario = () => {
                 maxHeight={"90vh"}
                 top={"20%"}
                 left={"28%"}
-                width={"620px"}
+                width={"450px"}
                 icon={<AddCircleOutlineIcon fontSize="small" />}
                 open={cadastroUsuario}
                 onClose={FecharCadastroUsuario}
@@ -171,7 +312,7 @@ const Usuario = () => {
                       onChange={(e) => setNomeCompleto(e.target.value)}
                       autoComplete="off"
                       sx={{
-                        width: { xs: "100%", sm: "50%", md: "40%", lg: "47%" },
+                        width: { xs: "100%", sm: "50%", md: "40%", lg: "100%" },
                       }}
                       InputProps={{
                         startAdornment: (
@@ -191,7 +332,7 @@ const Usuario = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       autoComplete="off"
                       sx={{
-                        width: { xs: "48%", sm: "43%", md: "45%", lg: "47%" },
+                        width: { xs: "48%", sm: "43%", md: "45%", lg: "100%" },
                       }}
                       InputProps={{
                         startAdornment: (
@@ -226,8 +367,10 @@ const Usuario = () => {
                       fullWidth
                       variant="outlined"
                       size="small"
-                      label="Telefone"
-                      name="telefone"
+                      label="Username"
+                      name="Username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
                       autoComplete="off"
                       sx={{
                         width: { xs: "47%", sm: "50%", md: "40%", lg: "47%" },
@@ -235,116 +378,7 @@ const Usuario = () => {
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
-                            <Phone />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      label="CEP"
-                      name="cep"
-                      autoComplete="off"
-                      sx={{
-                        width: { xs: "48%", sm: "50%", md: "40%", lg: "47%" },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <LocationOnIcon />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      label="Estado"
-                      name="estado"
-                      autoComplete="off"
-                      sx={{
-                        width: { xs: "47%", sm: "50%", md: "40%", lg: "47%" },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <LocationOnIcon />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      label="Cidade"
-                      name="cidade"
-                      autoComplete="off"
-                      sx={{
-                        width: { xs: "48%", sm: "50%", md: "40%", lg: "47%" },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <LocationOnIcon />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      label="Bairro"
-                      name="Bairro"
-                      autoComplete="off"
-                      sx={{
-                        width: { xs: "100%", sm: "50%", md: "40%", lg: "47%" },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <LocationOnIcon />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      label="Rua"
-                      name="Rua"
-                      autoComplete="off"
-                      sx={{
-                        width: { xs: "100%", sm: "50%", md: "40%", lg: "47%" },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <LocationOnIcon />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      label="Número"
-                      name="numero"
-                      type="number"
-                      autoComplete="off"
-                      sx={{
-                        width: { xs: "100%", sm: "50%", md: "40%", lg: "47%" },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Numbers />
+                            <PersonIcon />
                           </InputAdornment>
                         ),
                       }}
@@ -391,8 +425,9 @@ const Usuario = () => {
                       startIcon={<AddCircleOutlineIcon fontSize="small" />}
                       title={"Cadastrar"}
                       subtitle={"Cadastrar"}
-                      // onClick={CadastrarUsuario}
+                      onClick={CadastrarUsuario}
                       buttonSize="large"
+                      disabled={!validarCamposCadastro() || loading}
                     />
                   </div>
                 </div>
@@ -411,7 +446,7 @@ const Usuario = () => {
                         fullWidth
                         variant="outlined"
                         size="small"
-                        label="Nome Completo"
+                        label="Username"
                         name="nome"
                         value={nomeCompleto}
                         onChange={(e) => setNomeCompleto(e.target.value)}
@@ -473,227 +508,32 @@ const Usuario = () => {
                           ),
                         }}
                       />
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        label="Telefone"
-                        name="telefone"
-                        autoComplete="off"
-                        sx={{
-                          width: {
-                            xs: "100%",
-                            sm: "50%",
-                            md: "40%",
-                            lg: "47%",
-                          },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Phone />
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        label="CEP"
-                        name="cep"
-                        autoComplete="off"
-                        sx={{
-                          width: {
-                            xs: "100%",
-                            sm: "50%",
-                            md: "40%",
-                            lg: "47%",
-                          },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <LocationOnIcon />
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        label="Estado"
-                        name="estado"
-                        autoComplete="off"
-                        sx={{
-                          width: {
-                            xs: "100%",
-                            sm: "50%",
-                            md: "40%",
-                            lg: "47%",
-                          },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <LocationOnIcon />
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        label="Cidade"
-                        name="cidade"
-                        autoComplete="off"
-                        sx={{
-                          width: {
-                            xs: "100%",
-                            sm: "50%",
-                            md: "40%",
-                            lg: "47%",
-                          },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <LocationOnIcon />
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        label="Bairro"
-                        name="Bairro"
-                        autoComplete="off"
-                        sx={{
-                          width: {
-                            xs: "100%",
-                            sm: "50%",
-                            md: "40%",
-                            lg: "47%",
-                          },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <LocationOnIcon />
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        label="Rua"
-                        name="Rua"
-                        autoComplete="off"
-                        sx={{
-                          width: {
-                            xs: "100%",
-                            sm: "50%",
-                            md: "40%",
-                            lg: "47%",
-                          },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <LocationOnIcon />
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        label="Número"
-                        name="numero"
-                        type="number"
-                        autoComplete="off"
-                        sx={{
-                          width: {
-                            xs: "100%",
-                            sm: "50%",
-                            md: "40%",
-                            lg: "47%",
-                          },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Numbers />
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        label="Serviço"
-                        name="servico"
-                        autoComplete="off"
-                        sx={{
-                          width: {
-                            xs: "100%",
-                            sm: "50%",
-                            md: "40%",
-                            lg: "47%",
-                          },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Work />
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
                     </div>
 
                     <div className="w-full flex items-center mt-4 ml-2 font-bold mb-1">
                       <label className="w-[70%] text-xs">Permissão</label>
                     </div>
-                    <div className="flex flex-col gap-1 w-[95%]  border-[1px] p-3 rounded-lg">
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            size="small"
-                            checked={permissao === 1}
-                            onChange={() => setPermissao(1)}
-                          />
-                        }
-                        label="Administrador"
-                      />
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            size="small"
-                            checked={permissao === 2}
-                            onChange={() => setPermissao(2)}
-                          />
-                        }
-                        label="Cliente"
-                      />
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            size="small"
-                            checked={permissao === 3}
-                            onChange={() => setPermissao(3)}
-                          />
-                        }
-                        label="Funcionário"
-                      />
+                    <div className="flex flex-col gap-1 w-[95%] border-[1px] p-3 rounded-lg">
+                      <RadioGroup
+                        value={permissao}
+                        onChange={(e) => setPermissao(Number(e.target.value))}
+                      >
+                        <FormControlLabel
+                          value={1}
+                          control={<Radio size="small" />}
+                          label="Administrador"
+                        />
+                        <FormControlLabel
+                          value={2}
+                          control={<Radio size="small" />}
+                          label="Cliente"
+                        />
+                        <FormControlLabel
+                          value={3}
+                          control={<Radio size="small" />}
+                          label="Funcionário"
+                        />
+                      </RadioGroup>
                     </div>
 
                     <div className="flex w-[96%] items-end justify-end mt-2 ">
@@ -702,7 +542,8 @@ const Usuario = () => {
                         title={"Salvar"}
                         subtitle={"Salvar"}
                         buttonSize="large"
-                        //onClick={EditarUsuario}
+                        onClick={EditarUsuario}
+                        disabled={!validarCamposEdicao() || loading}
                       />
                     </div>
                   </div>

@@ -3,125 +3,48 @@ import MenuMobile from "../../components/menu-mobile";
 import HeaderPerfil from "../../components/navbars/perfil";
 import Navbar from "../../components/navbars/header";
 import { motion } from "framer-motion";
-import {
-  BottomNavigation,
-  BottomNavigationAction,
-  Box,
-  InputAdornment,
-  MenuItem,
-  TextField,
-} from "@mui/material";
-import {
-  AddCircle,
-  AddCircleOutline,
-  AddCircleOutlineOutlined,
-  Article,
-  DateRange,
-  Edit,
-  Numbers,
-  Person,
-  Search,
-  Work,
-  AttachMoney,
-  Close,
-  LocationOn,
-  MonetizationOn,
-} from "@mui/icons-material";
-import QueryBuilderIcon from "@mui/icons-material/QueryBuilder";
-import ButtonComponent from "../../components/button";
-import CentralModal from "../../components/modal-central";
+import { InputAdornment, TextField } from "@mui/material";
+import { Search } from "@mui/icons-material";
 import TableLoading from "../../components/loading/loading-table/loading";
 import TableComponent from "../../components/table";
-import ModalLateral from "../../components/modal-lateral";
 import { palestraCursosLista } from "../../entities/header/palestra-curso";
-import ButtonClose from "../../components/buttons/button-close";
+import CadastrarPalestra from "./cadastrar-palestra";
+import EditarPalestra from "./editar-palestra";
+import { buscarPalestraCurso } from "../../service/get/palestra-curso";
+import CustomToast from "../../components/toast";
+import { cadastrosPalestraCurso } from "../../entities/class/palestra-cursos";
+import { deletarPalestra } from "../../service/delete/palestra";
 
 const PalestrasCursos = () => {
   const [editando, setEditando] = useState(false);
-  const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [efeito, setEfeito] = useState(false);
-  const [cadastro, setCadastro] = useState(false);
-  const [selectedDocuments, setSelectedDocuments] = useState([]);
-  const [selectedLecture, setSelectedLecture] = useState("");
-  const [selectedLectures, setSelectedLectures] = useState([]);
-  const [valor, setValor] = useState("");
+  const [palestraEditando, setPalestraEditando] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [lista, setLista] = useState([]);
 
-  const [lista, setLista] = useState([
-    {
-      id: 1,
-      nome: "Como ensinar?",
-      cliente: "Lojas ACME",
-      valor: "R$ 400",
-      data: "20/05/2025",
-      statusPagamento: "Pago",
-      local: "Hotel Nova Andradina",
-      horário: "10:00",
-    },
-    {
-      id: 2,
-      nome: "Como devo me comportar?",
-      cliente: "Clinica Vital",
-      valor: "R$ 100",
-      statusPagamento: "Pendente",
-      data: "20/05/2025",
-      local: "Hotel Nova Andradina",
-      horário: "13:00",
-    },
-    {
-      id: 3,
-      nome: "Aprendizagem do dia a dia",
-      cliente: "Indústria Têxtil LTDA",
-      valor: "R$ 200",
-      statusPagamento: "Pendente",
-      data: "20/05/2025",
-      local: "Hotel Nova Andradina",
-      horário: "11:00",
-    },
-  ]);
+  const handleEditar = (id) => {
+    const palestraParaEditar = lista.find((item) => item.id === id);
 
-  const handleCloseEdicao = () => {
-    setEditando(false);
-  };
-
-  const EditarOpcao = () => {
+    setPalestraEditando(palestraParaEditar);
+    buscarPalestras();
     setEditando(true);
   };
 
-  const FecharCadastro = () => {
-    setCadastro(false);
-  };
-
-  const handleStepChange = (step) => {
-    setActiveStep(step);
-  };
-
-  const handleAddLecture = () => {
-    if (selectedLecture) {
-      setSelectedLectures([
-        ...selectedLectures,
-        {
-          id: Date.now(),
-          name: selectedLecture,
-          price: valor || 0,
-          date: "",
-          time: "",
-        },
-      ]);
-      setSelectedLecture("");
-      setValor("");
-    }
-  };
-
-  const handleRemoveLecture = (id) => {
-    setSelectedLectures(
-      selectedLectures.filter((lecture) => lecture.id !== id)
+  const handleSalvarEdicao = (palestraAtualizada) => {
+    setLista(
+      lista.map((item) =>
+        item.id === palestraAtualizada.id ? palestraAtualizada : item
+      )
     );
+    setEditando(false);
+    buscarPalestras();
+    setPalestraEditando(null);
   };
 
-  const handleValorChange = (e) => {
-    const value = e.target.value.replace(/[^0-9.]/g, "");
-    setValor(value);
+  const handleCancelarEdicao = () => {
+    setEditando(false);
+    setPalestraEditando(null);
   };
 
   useEffect(() => {
@@ -135,6 +58,50 @@ const PalestrasCursos = () => {
   const fadeIn = {
     hidden: { opacity: 0 },
     visible: { opacity: 1 },
+  };
+
+  const buscarPalestras = async () => {
+    try {
+      setLoading(true);
+      const response = await buscarPalestraCurso();
+      const palestrasFormatadas = cadastrosPalestraCurso(response.data);
+      setLista(palestrasFormatadas);
+    } catch (error) {
+      const errorMessage = error.response?.data?.errors?.nome;
+      CustomToast({
+        type: "error",
+        message: errorMessage || "Erro ao buscar palestras",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    buscarPalestras();
+  }, []);
+
+  const filteredList = lista.filter((item) =>
+    Object.values(item).some(
+      (value) =>
+        value &&
+        value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
+
+  const handleDeletar = async (id) => {
+    try {
+      setLoading(true);
+      await deletarPalestra(id);
+
+      buscarPalestras();
+    } catch (error) {
+      CustomToast({
+        type: "error",
+        message: error.response?.data?.message || "Erro ao excluir palestra",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -161,6 +128,8 @@ const PalestrasCursos = () => {
                   size="small"
                   label="Pesquisar"
                   autoComplete="off"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   sx={{ width: { xs: "72%", sm: "50%", md: "40%", lg: "40%" } }}
                   InputProps={{
                     startAdornment: (
@@ -170,880 +139,56 @@ const PalestrasCursos = () => {
                     ),
                   }}
                 />
-                <ButtonComponent
-                  startIcon={<AddCircleOutlineOutlined fontSize="small" />}
-                  title={"Cadastrar"}
-                  subtitle={"Cadastrar"}
-                  buttonSize="large"
-                  onClick={() => setCadastro(true)}
-                />
+                <CadastrarPalestra onSuccess={buscarPalestras} />
               </div>
-              <div className="w-full flex">
+              <div className="w-full flex justify-center">
                 {loading ? (
-                  <TableLoading />
-                ) : lista.length > 0 ? (
-                  <TableComponent
-                    headers={palestraCursosLista}
-                    rows={lista}
-                    actionsLabel={"Ações"}
-                    actionCalls={{
-                      edit: EditarOpcao,
-                      delete: "",
-                    }}
-                  />
-                ) : (
-                  <div className="text-center flex items-center mt-28 justify-center gap-5 flex-col text-primary">
+                  <div className="w-full flex items-center h-[300px] flex-col gap-3 justify-center">
                     <TableLoading />
-                    <label className="text-sm">Serviço não encontrado!</label>
+                    <label className="text-xs text-primary">
+                      Carregando Informações !
+                    </label>
+                  </div>
+                ) : filteredList.length > 0 ? (
+                  <>
+                    <TableComponent
+                      headers={palestraCursosLista}
+                      rows={filteredList}
+                      actionsLabel={"Ações"}
+                      actionCalls={{
+                        edit: (row) => handleEditar(row.id),
+                        delete: (row) => handleDeletar(row.id),
+                      }}
+                    />
+                    {editando && (
+                      <EditarPalestra
+                        open={editando}
+                        onClose={handleCancelarEdicao}
+                        onSave={handleSalvarEdicao}
+                        palestra={palestraEditando}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center flex items-center mt-28 w-full h-full justify-center gap-5 flex-col text-primary">
+                    {lista.length === 0 ? (
+                      <div className="flex w-full flex-col mt-12 gap-2 justify-center itens-center">
+                        <TableLoading />
+                        <label className="text-sm">
+                          Nenhuma palestra encontrada!
+                        </label>
+                      </div>
+                    ) : (
+                      <label className="text-sm flex  mt-12 flex-col gap-2">
+                        <TableLoading />
+                        Nenhuma palestra encontrada!
+                      </label>
+                    )}
                   </div>
                 )}
               </div>
             </div>
           </div>
-          <CentralModal
-            tamanhoTitulo={"81%"}
-            maxHeight={"90vh"}
-            top={"20%"}
-            left={"28%"}
-            width={"550px"}
-            icon={<AddCircleOutline fontSize="small" />}
-            open={cadastro}
-            onClose={FecharCadastro}
-            title="Cadastrar Palestra ou Curso"
-          >
-            <div className="overflow-y-auto overflow-x-hidden max-h-[300px]">
-              <div className="mt-4 flex gap-3 flex-wrap">
-                <Box className="flex w-full items-center justify-start">
-                  <BottomNavigation
-                    showLabels
-                    className="w-[95%] flex flex-wrap"
-                    value={activeStep}
-                    onChange={(event, newValue) => handleStepChange(newValue)}
-                    sx={{
-                      width: "fit-content",
-                      border: "1px solid #9D4B5B",
-                      backgroundColor: "#9D4B5B",
-                      height: "100%",
-                      borderRadius: 2,
-                      paddingX: "24px",
-                      paddingY: "12px",
-                      gap: "24px",
-                    }}
-                  >
-                    {[
-                      { label: "Cliente", icon: <Person /> },
-                      { label: "Trabalho", icon: <Work /> },
-                      { label: "Documentos", icon: <Article /> },
-                    ].map((item, index) => (
-                      <BottomNavigationAction
-                        key={index}
-                        label={item.label}
-                        icon={item.icon}
-                        sx={{
-                          minWidth: activeStep === index ? "180px" : "100px",
-                          height: "45px",
-                          display: "flex",
-                          flexDirection: "column",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          borderRadius: "8px",
-                          color: activeStep === index ? "#9D4B5B" : "#ffffff",
-                          backgroundColor:
-                            activeStep === index ? "#ffffff" : "#9D4B5B",
-                          transition: "all 0.3s ease",
-                          "&:hover": {
-                            backgroundColor:
-                              activeStep === index ? "#ffffff" : "#cf7889",
-                          },
-                          "&.Mui-selected": {
-                            color: "#9D4B5B",
-                          },
-                        }}
-                      />
-                    ))}
-                  </BottomNavigation>
-                </Box>
-                {activeStep === 0 && (
-                  <div className="flex w-full flex-wrap gap-3 font-bold mt-4">
-                    <motion.div
-                      style={{ width: "100%" }}
-                      initial="hidden"
-                      animate="visible"
-                      variants={fadeIn}
-                      transition={{ duration: 0.9 }}
-                    >
-                      <div className="flex w-full flex-wrap gap-2 items-center">
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Nome da Palestra"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "72%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "48%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Article />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Tipo de Palestra"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "72%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "45%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Article />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Endereço"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "72%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "95%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <LocationOn />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Cliente"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "72%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "40%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Person />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <ButtonComponent
-                          startIcon={<AddCircle fontSize="small" />}
-                          title={"Adicionar"}
-                          subtitle={"Adicionar"}
-                          buttonSize="large"
-                        />
-                      </div>
-                    </motion.div>
-                  </div>
-                )}
-                {activeStep === 1 && (
-                  <div className="flex w-full flex-wrap gap-3 font-bold mt-4">
-                    <motion.div
-                      style={{ width: "100%" }}
-                      initial="hidden"
-                      animate="visible"
-                      variants={fadeIn}
-                      transition={{ duration: 0.9 }}
-                    >
-                      <div className="flex w-[95%] items-center gap-3 flex-wrap">
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Horário"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "45%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "30%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <QueryBuilderIcon />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Data"
-                          type="date"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "51%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "33%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <DateRange />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Seções"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "30%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "30%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Numbers />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <TextField
-                          select
-                          fullWidth
-                          label="Selecione a palestra ou curso"
-                          value={selectedLecture}
-                          onChange={(e) => setSelectedLecture(e.target.value)}
-                          sx={{
-                            width: {
-                              xs: "66%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "40%",
-                            },
-                          }}
-                          variant="outlined"
-                          size="small"
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Article />
-                              </InputAdornment>
-                            ),
-                          }}
-                        >
-                          <MenuItem value="">Selecione</MenuItem>
-                          <MenuItem value="Treinamento 01">
-                            Treinamento 01
-                          </MenuItem>
-                          <MenuItem value="Curso Avançado">
-                            Curso Avançado
-                          </MenuItem>
-                          <MenuItem value="Workshop">Workshop</MenuItem>
-                        </TextField>
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Valor"
-                          value={valor}
-                          onChange={handleValorChange}
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "50%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "30%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <AttachMoney />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <ButtonComponent
-                          startIcon={<AddCircle fontSize="small" />}
-                          title={"Adicionar"}
-                          subtitle={"Adicionar"}
-                          buttonSize="large"
-                          onClick={handleAddLecture}
-                        />
-                      </div>
-
-                      {selectedLectures.length > 0 && (
-                        <div className="mt-4 w-[95%]">
-                          <label className="font-bold text-xs mb-2">
-                            Palestras/Cursos Selecionados:
-                          </label>
-                          <div className="space-y-2">
-                            {selectedLectures.map((lecture) => (
-                              <div
-                                key={lecture.id}
-                                className="flex justify-between items-center p-2 border rounded"
-                              >
-                                <div>
-                                  <span className="font-medium">
-                                    {lecture.name}
-                                  </span>
-                                  <span className="ml-2 text-gray-600">
-                                    R$ {parseFloat(lecture.price).toFixed(2)}
-                                  </span>
-                                </div>
-                                <button
-                                  onClick={() =>
-                                    handleRemoveLecture(lecture.id)
-                                  }
-                                  className="text-red-500 hover:text-red-700"
-                                >
-                                  <Close />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </motion.div>
-                  </div>
-                )}
-                {activeStep === 2 && (
-                  <div className="flex w-full flex-wrap gap-3 font-bold mt-4">
-                    <motion.div
-                      style={{ width: "100%" }}
-                      initial="hidden"
-                      animate="visible"
-                      variants={fadeIn}
-                      transition={{ duration: 0.9 }}
-                    >
-                      <div className="flex w-full flex-col gap-4">
-                        {/* Input para upload de arquivos */}
-                        <input
-                          type="file"
-                          id="document-upload"
-                          accept=".pdf"
-                          multiple
-                          style={{ display: "none" }}
-                          onChange={(e) => {
-                            const files = Array.from(e.target.files);
-                            setSelectedDocuments((prev) => [
-                              ...prev,
-                              ...files.map((file) => ({
-                                name: file.name,
-                                file: file,
-                              })),
-                            ]);
-                          }}
-                        />
-                        <div className="w-[40%]">
-                          <ButtonComponent
-                            startIcon={
-                              <AddCircleOutlineOutlined fontSize="small" />
-                            }
-                            title={"Adicionar Documentos"}
-                            subtitle={"Adicionar Documentos"}
-                            buttonSize="large"
-                            onClick={() =>
-                              document.getElementById("document-upload").click()
-                            }
-                          />
-                        </div>
-                        {/* Botão para acionar o input file */}
-
-                        {/* Lista de documentos adicionados */}
-                        <div className="flex flex-col w-[95%] gap-2 mt-2">
-                          {selectedDocuments.map((doc, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center justify-between p-2 border border-primary rounded"
-                            >
-                              <div className="flex items-center gap-2">
-                                <Article fontSize="small" />
-                                <label className="text-xs">{doc.name}</label>
-                              </div>
-                              <ButtonClose
-                                funcao={() => {
-                                  setSelectedDocuments((prev) =>
-                                    prev.filter((_, i) => i !== index)
-                                  );
-                                }}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </motion.div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </CentralModal>
-
-          <ModalLateral
-            open={editando}
-            width={{
-              xs: "400px",
-              lg: "550px",
-            }}
-            handleClose={handleCloseEdicao}
-            tituloModal="Editar Informações"
-            icon={<Edit />}
-            tamanhoTitulo="75%"
-            conteudo={
-              <div
-                className="w-full flex-col flex items-start gap-3 "
-                style={{ maxHeight: "500px", overflow: "auto" }}
-              >
-                <Box className="flex w-full items-center justify-start">
-                  <BottomNavigation
-                    showLabels
-                    className="w-[95%] flex-wrap"
-                    value={activeStep}
-                    onChange={(event, newValue) => handleStepChange(newValue)}
-                    sx={{
-                      width: "fit-content",
-                      border: "1px solid #9D4B5B",
-                      backgroundColor: "#9D4B5B",
-                      height: "100%",
-                      borderRadius: 2,
-                      paddingX: "24px",
-                      paddingY: "12px",
-                      gap: "24px",
-                    }}
-                  >
-                    {[
-                      { label: "Cliente", icon: <Person /> },
-                      { label: "Trabalho", icon: <Work /> },
-                      { label: "Documentos", icon: <Article /> },
-                    ].map((item, index) => (
-                      <BottomNavigationAction
-                        key={index}
-                        label={item.label}
-                        icon={item.icon}
-                        sx={{
-                          minWidth: activeStep === index ? "180px" : "100px",
-                          height: "45px",
-                          display: "flex",
-                          flexDirection: "column",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          borderRadius: "8px",
-                          color: activeStep === index ? "#9D4B5B" : "#ffffff",
-                          backgroundColor:
-                            activeStep === index ? "#ffffff" : "#9D4B5B",
-                          transition: "all 0.3s ease",
-                          "&:hover": {
-                            backgroundColor:
-                              activeStep === index ? "#ffffff" : "#cf7889",
-                          },
-                          "&.Mui-selected": {
-                            color: "#9D4B5B",
-                          },
-                        }}
-                      />
-                    ))}
-                  </BottomNavigation>
-                </Box>
-                {activeStep === 0 && (
-                  <div className="flex w-full flex-wrap gap-3 font-bold mt-4">
-                    <motion.div
-                      style={{ width: "100%" }}
-                      initial="hidden"
-                      animate="visible"
-                      variants={fadeIn}
-                      transition={{ duration: 0.9 }}
-                    >
-                      <div className="flex w-full gap-2 flex-wrap items-center">
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Nome da Palestra"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "72%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "48%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Article />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Tipo de Palestra"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "72%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "45%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Article />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Endereço"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "72%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "95%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <LocationOn />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Nome do Cliente"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "72%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "48%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Article />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <ButtonComponent
-                          startIcon={<AddCircle fontSize="small" />}
-                          title={"Adicionar"}
-                          subtitle={"Adicionar"}
-                          buttonSize="large"
-                        />
-                      </div>
-                    </motion.div>
-                  </div>
-                )}
-                {activeStep === 1 && (
-                  <div className="flex w-full flex-wrap gap-3 font-bold mt-4">
-                    <motion.div
-                      style={{ width: "100%" }}
-                      initial="hidden"
-                      animate="visible"
-                      variants={fadeIn}
-                      transition={{ duration: 0.9 }}
-                    >
-                      <div className="flex w-[100%] items-center gap-3 flex-wrap">
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Horário"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "41%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "30%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <QueryBuilderIcon />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Data"
-                          type="date"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "55%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "33%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <DateRange />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Seções"
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "30%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "30%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Numbers />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <TextField
-                          select
-                          fullWidth
-                          label="Selecione a palestra ou curso"
-                          value={selectedLecture}
-                          onChange={(e) => setSelectedLecture(e.target.value)}
-                          sx={{
-                            width: {
-                              xs: "65%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "40%",
-                            },
-                          }}
-                          variant="outlined"
-                          size="small"
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Article />
-                              </InputAdornment>
-                            ),
-                          }}
-                        >
-                          <MenuItem value="">Selecione</MenuItem>
-                          <MenuItem value="Treinamento 01">
-                            Treinamento 01
-                          </MenuItem>
-                          <MenuItem value="Curso Avançado">
-                            Curso Avançado
-                          </MenuItem>
-                          <MenuItem value="Workshop">Workshop</MenuItem>
-                        </TextField>
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Valor"
-                          value={valor}
-                          onChange={handleValorChange}
-                          autoComplete="off"
-                          sx={{
-                            width: {
-                              xs: "50%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "30%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <AttachMoney />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <ButtonComponent
-                          startIcon={<AddCircle fontSize="small" />}
-                          title={"Adicionar"}
-                          subtitle={"Adicionar"}
-                          buttonSize="large"
-                          onClick={handleAddLecture}
-                        />
-                      </div>
-
-                      {selectedLectures.length > 0 && (
-                        <div className="mt-4 w-[95%]">
-                          <label className="font-bold text-xs mb-2">
-                            Palestras/Cursos Selecionados:
-                          </label>
-                          <div className="space-y-2">
-                            {selectedLectures.map((lecture) => (
-                              <div
-                                key={lecture.id}
-                                className="flex justify-between items-center p-2 border rounded"
-                              >
-                                <div>
-                                  <span className="font-medium">
-                                    {lecture.name}
-                                  </span>
-                                  <span className="ml-2 text-gray-600">
-                                    R$ {parseFloat(lecture.price).toFixed(2)}
-                                  </span>
-                                </div>
-                                <button
-                                  onClick={() =>
-                                    handleRemoveLecture(lecture.id)
-                                  }
-                                  className="text-red-500 hover:text-red-700"
-                                >
-                                  <Close />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </motion.div>
-                  </div>
-                )}
-                {activeStep === 2 && (
-                  <div className="flex w-full flex-wrap gap-3 font-bold mt-4">
-                    <motion.div
-                      style={{ width: "100%" }}
-                      initial="hidden"
-                      animate="visible"
-                      variants={fadeIn}
-                      transition={{ duration: 0.9 }}
-                    >
-                      <div className="flex w-full flex-col gap-4">
-                        {/* Input para upload de arquivos */}
-                        <input
-                          type="file"
-                          id="document-upload"
-                          accept=".pdf"
-                          multiple
-                          style={{ display: "none" }}
-                          onChange={(e) => {
-                            const files = Array.from(e.target.files);
-                            setSelectedDocuments((prev) => [
-                              ...prev,
-                              ...files.map((file) => ({
-                                name: file.name,
-                                file: file,
-                              })),
-                            ]);
-                          }}
-                        />
-                        <div className="w-[40%]">
-                          <ButtonComponent
-                            startIcon={
-                              <AddCircleOutlineOutlined fontSize="small" />
-                            }
-                            title={"Adicionar Documentos"}
-                            subtitle={"Adicionar Documentos"}
-                            buttonSize="large"
-                            onClick={() =>
-                              document.getElementById("document-upload").click()
-                            }
-                          />
-                        </div>
-                        {/* Botão para acionar o input file */}
-
-                        {/* Lista de documentos adicionados */}
-                        <div className="flex flex-col w-[95%] gap-2 mt-2">
-                          {selectedDocuments.map((doc, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center justify-between p-2 border border-primary rounded"
-                            >
-                              <div className="flex items-center gap-2">
-                                <Article fontSize="small" />
-                                <label className="text-xs">{doc.name}</label>
-                              </div>
-                              <ButtonClose
-                                funcao={() => {
-                                  setSelectedDocuments((prev) =>
-                                    prev.filter((_, i) => i !== index)
-                                  );
-                                }}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </motion.div>
-                  </div>
-                )}
-              </div>
-            }
-          />
         </motion.div>
       </div>
     </div>

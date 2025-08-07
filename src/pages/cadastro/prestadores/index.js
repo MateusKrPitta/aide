@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Navbar from "../../../components/navbars/header";
 import HeaderPerfil from "../../../components/navbars/perfil";
 import ButtonComponent from "../../../components/button";
@@ -8,108 +8,326 @@ import MenuMobile from "../../../components/menu-mobile";
 import ModalLateral from "../../../components/modal-lateral";
 import {
   Article,
-  Close,
   Edit,
   Mail,
   Numbers,
   Person,
   Phone,
-  Work,
 } from "@mui/icons-material";
-import {
-  Autocomplete,
-  Box,
-  Chip,
-  FormControl,
-  InputAdornment,
-  InputLabel,
-  MenuItem,
-  Select,
-  TextField,
-} from "@mui/material";
+import { Autocomplete, Chip, InputAdornment, TextField } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import NotesIcon from "@mui/icons-material/Notes";
 import { motion } from "framer-motion";
 import TableLoading from "../../../components/loading/loading-table/loading";
 import TableComponent from "../../../components/table";
-import { servicoCadastrados } from "../../../entities/header/cadastro/servico";
+import { prestadoresCadastrados } from "../../../entities/header/cadastro/prestadores";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import CloseIcon from "@mui/icons-material/Close";
+import { criarPrestador } from "../../../service/post/prestadores";
+import CustomToast from "../../../components/toast";
+import MaskedFieldPhone from "../../../utils/mascaras/telefone";
+import MaskedFieldCpf from "../../../utils/mascaras/cpf";
+import { buscarServico } from "../../../service/get/servicos";
+import { buscarPretadores } from "../../../service/get/prestadores";
+import { atualizarPrestadores } from "../../../service/put/prestadores";
+import { inativarPrestador } from "../../../service/post/inativar-prestador";
+import { reativarPrestador } from "../../../service/post/reativar-prestador";
 
 const Prestadores = () => {
   const [editando, setEditando] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cadastroUsuario, setCadastroUsuario] = useState(false);
   const [nome, setNome] = useState("");
-  const [descricao, setDescricao] = useState("");
+  const [telefone, setTelefone] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [email, setEmail] = useState("");
+  const [estado, setEstado] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [endereco, setEndereco] = useState("");
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [servicosCadastrados, setServicosCadastrados] = useState([]);
   const [servicosSelecionados, setServicosSelecionados] = useState([]);
-  const [todosServicos] = useState([
-    { id: 1, nome: "Manutenção de Computadores" },
-    { id: 2, nome: "Desenvolvimento Web" },
-    { id: 3, nome: "Consultoria em TI" },
-    { id: 4, nome: "Redes e Infraestrutura" },
-    { id: 5, nome: "Suporte Técnico" },
-  ]);
+  const [todosServicos, setTodosServicos] = useState([]);
+  const [listaPrestadores, setListaPrestadores] = useState([]);
+  const [prestadorEditando, setPrestadorEditando] = useState(null);
+  const [pesquisar, setPesquisar] = useState("");
 
-  const [listaServicos, setListaServicos] = useState([
-    {
-      id: 1,
-      nome: "Manutenção de Computadores",
-      descricao:
-        "Serviço completo de manutenção preventiva e corretiva para computadores",
-    },
-    {
-      id: 2,
-      nome: "Desenvolvimento Web",
-      descricao: "Criação de sites e aplicações web personalizadas",
-    },
-    {
-      id: 3,
-      nome: "Consultoria em TI",
-      descricao:
-        "Análise e recomendação de soluções tecnológicas para empresas",
-    },
-    {
-      id: 4,
-      nome: "Redes e Infraestrutura",
-      descricao: "Instalação e configuração de redes corporativas",
-    },
-    {
-      id: 5,
-      nome: "Suporte Técnico",
-      descricao:
-        "Atendimento remoto e presencial para resolução de problemas técnicos",
-    },
-  ]);
-  const FecharCadastroUsuario = () => {
-    setCadastroUsuario(false);
-  };
+  const filteredPrestadores = listaPrestadores.filter((prestador) =>
+    prestador.nome.toLowerCase().includes(pesquisar.toLowerCase())
+  );
 
-  const handleCloseEdicao = () => {
-    setEditando(false);
-  };
-
-  const removerServico = (servicoId) => {
-    setServicosSelecionados(
-      servicosSelecionados.filter((id) => id !== servicoId)
+  const validarCamposCadastro = () => {
+    return (
+      nome.trim() !== "" &&
+      telefone.replace(/\D/g, "").length >= 10 &&
+      cpf.replace(/\D/g, "").length === 11 &&
+      email.trim() !== "" &&
+      validarEmail(email) &&
+      estado.trim().length === 2 &&
+      cidade.trim() !== "" &&
+      endereco.trim() !== "" &&
+      numero.trim() !== "" &&
+      servicosSelecionados.length > 0
     );
   };
 
-  const handleServicoChange = (event) => {
-    const { value } = event.target;
-    // Adiciona apenas se não estiver já selecionado
-    setServicosSelecionados(value);
+  const validarEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
+  const FecharCadastroUsuario = () => {
+    setNome("");
+    setTelefone("");
+    setCpf("");
+    setEmail("");
+    setEstado("");
+    setCidade("");
+    setEndereco("");
+    setNumero("");
+    setComplemento("");
+    setServicosSelecionados([]);
+    setCadastroUsuario(false);
+  };
+
+  const fechaModalEdicao = () => {
+    setEditando(false);
+
+    setNome("");
+    setTelefone("");
+    setCpf("");
+    setEmail("");
+    setEstado("");
+    setCidade("");
+    setEndereco("");
+    setNumero("");
+    setComplemento("");
+    setServicosSelecionados([]);
+    setPrestadorEditando(null);
+  };
+
+  const CadastrarPrestador = async () => {
+    try {
+      setLoading(true);
+
+      await criarPrestador(
+        nome,
+        telefone,
+        cpf,
+        email,
+        estado,
+        cidade,
+        endereco,
+        numero,
+        complemento,
+        servicosSelecionados
+      );
+
+      CustomToast({
+        type: "success",
+        message: "Prestador cadastrado com sucesso!",
+      });
+      await buscarPrestadoresCadastrados();
+
+      setCadastroUsuario(false);
+
+      setNome("");
+      setTelefone("");
+      setCpf("");
+      setEmail("");
+      setEstado("");
+      setCidade("");
+      setEndereco("");
+      setNumero("");
+      setComplemento("");
+      setServicosSelecionados([]);
+      buscarPrestadoresCadastrados();
+    } catch (error) {
+      console.error("Erro ao cadastrar prestador:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const validarCamposEdicao = () => {
+    return (
+      nome.trim() !== "" &&
+      telefone.replace(/\D/g, "").length >= 10 &&
+      email.trim() !== "" &&
+      validarEmail(email) &&
+      estado.trim().length === 2 &&
+      cidade.trim() !== "" &&
+      endereco.trim() !== "" &&
+      numero.trim() !== "" &&
+      servicosSelecionados.length > 0
+    );
+  };
+
+  const buscarPrestadoresCadastrados = async () => {
+    try {
+      setLoading(true);
+      const response = await buscarPretadores();
+
+      const prestadoresFormatados = response.data.map((prestador) => ({
+        id: prestador.id,
+        nome: prestador.nome,
+        telefone: prestador.telefone,
+        cpf: prestador.cpf,
+        email: prestador.email,
+        endereco: prestador.endereco,
+        numero: prestador.numero,
+        cidade: prestador.cidade,
+        estado: prestador.estado,
+        servicos:
+          prestador.servicos?.map((s) => s.nome).join(", ") || "Nenhum serviço",
+        ativo: prestador.ativo,
+        statusLabel: prestador.ativo ? "Ativo" : "Inativo",
+        servicosArray: prestador.servicos || [],
+      }));
+
+      setListaPrestadores(prestadoresFormatados);
+    } catch (error) {
+      CustomToast({
+        type: "error",
+        message: error.response?.data?.message || "Erro ao buscar prestadores",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const buscarServicoCadastradas = async () => {
+    try {
+      setLoading(true);
+      const response = await buscarServico();
+
+      // Filtrar apenas serviços ativos
+      const servicosAtivos = response.data.filter((servico) => servico.ativo);
+
+      const servicosParaSelect = servicosAtivos
+        .map((servico) => ({
+          id: servico.id,
+          nome: servico.nome,
+        }))
+        .sort((a, b) => a.nome.localeCompare(b.nome));
+
+      setTodosServicos(servicosParaSelect);
+      setServicosCadastrados(servicosAtivos || []);
+    } catch (error) {
+      const errorMessage = error.response?.data?.errors?.nome;
+      CustomToast({
+        type: "error",
+        message: errorMessage || "Erro ao buscar serviços",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const EditarPrestador = async () => {
+    try {
+      setLoading(true);
+
+      if (!prestadorEditando) {
+        CustomToast({
+          type: "error",
+          message: "Nenhum prestador selecionado para edição",
+        });
+        return;
+      }
+
+      await atualizarPrestadores(
+        prestadorEditando.id,
+        nome,
+        telefone,
+        email,
+        estado,
+        cidade,
+        endereco,
+        servicosSelecionados
+      );
+
+      CustomToast({
+        type: "success",
+        message: "Prestador atualizado com sucesso!",
+      });
+
+      await buscarPrestadoresCadastrados();
+
+      fechaModalEdicao();
+    } catch (error) {
+      console.error("Erro ao atualizar prestador:", error);
+      CustomToast({
+        type: "error",
+        message: error.response?.data?.message || "Erro ao atualizar prestador",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fadeIn = {
     hidden: { opacity: 0 },
     visible: { opacity: 1 },
   };
-
-  const EditarOpcao = () => {
+  const EditarOpcao = (prestador) => {
+    setPrestadorEditando(prestador);
     setEditando(true);
+
+    setNome(prestador.nome);
+    setTelefone(prestador.telefone);
+    setCpf(prestador.cpf);
+    setEmail(prestador.email);
+    setEstado(prestador.estado);
+    setCidade(prestador.cidade);
+    setEndereco(prestador.endereco || "");
+    setNumero(prestador.numero || "");
+    setComplemento(prestador.complemento || "");
+
+    const servicosIds =
+      prestador.servicosArray?.map((servico) => servico.id) || [];
+    setServicosSelecionados(servicosIds);
   };
+
+  const AlternarAtivacaoPrestador = async (prestador) => {
+    setLoading(true);
+    try {
+      if (prestador.ativo) {
+        await inativarPrestador(prestador.id);
+      } else {
+        await reativarPrestador(prestador.id);
+      }
+
+      CustomToast({
+        type: "success",
+        message: `Prestador ${
+          prestador.ativo ? "inativado" : "reativado"
+        } com sucesso!`,
+      });
+      await buscarPrestadoresCadastrados();
+    } catch (error) {
+      CustomToast({
+        type: "error",
+        message:
+          error.response?.data?.message ||
+          "Erro ao alterar status do prestador",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    buscarPrestadoresCadastrados();
+    buscarServicoCadastradas();
+  }, []);
+
+  useEffect(() => {
+    if (cadastroUsuario && todosServicos.length === 0) {
+      buscarServicoCadastradas();
+    }
+  }, [cadastroUsuario]);
   return (
     <div className="flex w-full ">
       <Navbar />
@@ -136,6 +354,8 @@ const Prestadores = () => {
                   size="small"
                   label="Buscar Prestador"
                   autoComplete="off"
+                  value={pesquisar}
+                  onChange={(e) => setPesquisar(e.target.value)}
                   sx={{ width: { xs: "72%", sm: "50%", md: "40%", lg: "40%" } }}
                   InputProps={{
                     startAdornment: (
@@ -156,21 +376,30 @@ const Prestadores = () => {
 
               <div className="w-full">
                 {loading ? (
-                  <TableLoading />
-                ) : listaServicos.length > 0 ? (
+                  <div className="w-full flex items-center h-[300px] flex-col gap-3 justify-center">
+                    <TableLoading />
+                    <label className="text-xs text-primary">
+                      Carregando Informações !
+                    </label>
+                  </div>
+                ) : filteredPrestadores.length > 0 ? (
                   <TableComponent
-                    headers={servicoCadastrados}
-                    rows={listaServicos}
+                    headers={prestadoresCadastrados}
+                    rows={filteredPrestadores}
                     actionsLabel={"Ações"}
                     actionCalls={{
                       edit: EditarOpcao,
-                      inactivate: "",
+                      inactivate: AlternarAtivacaoPrestador,
                     }}
                   />
                 ) : (
                   <div className="text-center flex items-center mt-28 justify-center gap-5 flex-col text-primary">
                     <TableLoading />
-                    <label className="text-sm">Serviço não encontrado!</label>
+                    <label className="text-sm">
+                      {pesquisar
+                        ? "Nenhum prestador encontrado para sua pesquisa!"
+                        : "Nenhum prestador encontrado!"}
+                    </label>
                   </div>
                 )}
               </div>
@@ -192,8 +421,9 @@ const Prestadores = () => {
                       fullWidth
                       variant="outlined"
                       size="small"
-                      label="Nome Cliente"
-                      name="nome"
+                      label="Nome"
+                      value={nome}
+                      onChange={(e) => setNome(e.target.value)}
                       autoComplete="off"
                       sx={{
                         width: {
@@ -211,59 +441,42 @@ const Prestadores = () => {
                         ),
                       }}
                     />
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      size="small"
+                    <MaskedFieldPhone
+                      type="telefone"
                       label="Telefone"
-                      name="telefone"
-                      autoComplete="off"
-                      sx={{
-                        width: {
-                          xs: "48%",
-                          sm: "50%",
-                          md: "40%",
-                          lg: "47%",
-                        },
+                      width={"47%"}
+                      value={telefone}
+                      onChange={(e) => {
+                        if (
+                          e.target.value.replace(/\D/g, "").length <= 11 ||
+                          e.target.value === ""
+                        ) {
+                          setTelefone(e.target.value);
+                        }
                       }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Phone />
-                          </InputAdornment>
-                        ),
-                      }}
+                      icon={<Phone />}
+                      iconSize={30}
+                      labelSize="small"
                     />
 
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      size="small"
+                    <MaskedFieldCpf
+                      type="cpf"
                       label="CPF"
-                      name="cpf"
+                      value={cpf}
+                      onChange={(e) => setCpf(e.target.value)}
+                      icon={<Article />}
+                      iconSize={24}
+                      labelSize="small"
+                      width="44%"
                       autoComplete="off"
-                      sx={{
-                        width: {
-                          xs: "47%",
-                          sm: "50%",
-                          md: "40%",
-                          lg: "44%",
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Article />
-                          </InputAdornment>
-                        ),
-                      }}
                     />
                     <TextField
                       fullWidth
                       variant="outlined"
                       size="small"
                       label="Email"
-                      name="telefone"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       autoComplete="off"
                       sx={{
                         width: {
@@ -285,8 +498,62 @@ const Prestadores = () => {
                       fullWidth
                       variant="outlined"
                       size="small"
-                      label="Estado"
-                      name="estado"
+                      label="Estado (Sigla)"
+                      value={estado}
+                      onChange={(e) => {
+                        const value = e.target.value
+                          .toUpperCase()
+                          .substring(0, 3);
+                        setEstado(value);
+                      }}
+                      autoComplete="off"
+                      sx={{
+                        width: {
+                          xs: "100%",
+                          sm: "50%",
+                          md: "40%",
+                          lg: "20%",
+                        },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <LocationOnIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      label="Cidade"
+                      value={cidade}
+                      onChange={(e) => setCidade(e.target.value)}
+                      autoComplete="off"
+                      sx={{
+                        width: {
+                          xs: "100%",
+                          sm: "50%",
+                          md: "40%",
+                          lg: "30%",
+                        },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <LocationOnIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      label="Endereço"
+                      value={endereco}
+                      onChange={(e) => setEndereco(e.target.value)}
                       autoComplete="off"
                       sx={{
                         width: {
@@ -308,67 +575,46 @@ const Prestadores = () => {
                       fullWidth
                       variant="outlined"
                       size="small"
-                      label="Cidade"
-                      name="cidade"
-                      autoComplete="off"
-                      sx={{
-                        width: {
-                          xs: "100%",
-                          sm: "50%",
-                          md: "40%",
-                          lg: "54%",
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <LocationOnIcon />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      label="Endereço"
-                      name="endereco"
-                      autoComplete="off"
-                      sx={{
-                        width: {
-                          xs: "100%",
-                          sm: "50%",
-                          md: "40%",
-                          lg: "47%",
-                        },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <LocationOnIcon />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      size="small"
                       label="Número"
-                      name="numero"
+                      value={numero}
+                      onChange={(e) => setNumero(e.target.value)}
                       autoComplete="off"
                       sx={{
                         width: {
                           xs: "100%",
                           sm: "50%",
                           md: "40%",
-                          lg: "47%",
+                          lg: "20%",
                         },
                       }}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
                             <Numbers />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      label="Complemento"
+                      value={complemento}
+                      onChange={(e) => setComplemento(e.target.value)}
+                      autoComplete="off"
+                      sx={{
+                        width: {
+                          xs: "100%",
+                          sm: "50%",
+                          md: "40%",
+                          lg: "45%",
+                        },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Article />
                           </InputAdornment>
                         ),
                       }}
@@ -392,18 +638,27 @@ const Prestadores = () => {
                         <TextField
                           {...params}
                           label="Serviços"
-                          placeholder="Digite para buscar serviços..."
+                          placeholder={
+                            todosServicos.length === 0
+                              ? "Nenhum serviço ativo disponível"
+                              : "Digite para buscar serviços..."
+                          }
+                          disabled={todosServicos.length === 0}
                         />
                       )}
                       renderTags={(value, getTagProps) =>
                         value.map((option, index) => (
                           <Chip
+                            key={option.id}
                             label={option.nome}
                             {...getTagProps({ index })}
                             deleteIcon={<CloseIcon />}
                           />
                         ))
                       }
+                      loading={loading}
+                      loadingText="Carregando serviços..."
+                      noOptionsText="Nenhum serviço encontrado"
                     />
                   </div>
 
@@ -412,8 +667,9 @@ const Prestadores = () => {
                       startIcon={<AddCircleOutlineIcon fontSize="small" />}
                       title={"Cadastrar"}
                       subtitle={"Cadastrar"}
-                      // onClick={CadastrarUsuario}
+                      onClick={CadastrarPrestador}
                       buttonSize="large"
+                      disabled={!validarCamposCadastro() || loading}
                     />
                   </div>
                 </div>
@@ -421,7 +677,7 @@ const Prestadores = () => {
 
               <ModalLateral
                 open={editando}
-                handleClose={handleCloseEdicao}
+                handleClose={fechaModalEdicao}
                 tituloModal="Editar Prestador"
                 icon={<Edit />}
                 tamanhoTitulo="75%"
@@ -433,7 +689,8 @@ const Prestadores = () => {
                         variant="outlined"
                         size="small"
                         label="Nome Cliente"
-                        name="nome"
+                        value={nome}
+                        onChange={(e) => setNome(e.target.value)}
                         autoComplete="off"
                         sx={{
                           width: {
@@ -451,59 +708,42 @@ const Prestadores = () => {
                           ),
                         }}
                       />
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        size="small"
+                      <MaskedFieldPhone
+                        type="telefone"
                         label="Telefone"
-                        name="telefone"
-                        autoComplete="off"
-                        sx={{
-                          width: {
-                            xs: "100%",
-                            sm: "50%",
-                            md: "40%",
-                            lg: "100%",
-                          },
+                        width={"43%"}
+                        value={telefone}
+                        onChange={(e) => {
+                          if (
+                            e.target.value.replace(/\D/g, "").length <= 11 ||
+                            e.target.value === ""
+                          ) {
+                            setTelefone(e.target.value);
+                          }
                         }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Phone />
-                            </InputAdornment>
-                          ),
-                        }}
+                        icon={<Phone />}
+                        iconSize={30}
+                        labelSize="small"
                       />
 
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        size="small"
+                      <MaskedFieldCpf
+                        type="cpf"
                         label="CPF"
-                        name="cpf"
+                        value={cpf}
+                        onChange={(e) => setCpf(e.target.value)}
+                        icon={<Article />}
+                        iconSize={24}
+                        labelSize="small"
+                        width="44%"
                         autoComplete="off"
-                        sx={{
-                          width: {
-                            xs: "100%",
-                            sm: "50%",
-                            md: "40%",
-                            lg: "100%",
-                          },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Article />
-                            </InputAdornment>
-                          ),
-                        }}
                       />
                       <TextField
                         fullWidth
                         variant="outlined"
                         size="small"
                         label="Email"
-                        name="telefone"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         autoComplete="off"
                         sx={{
                           width: {
@@ -526,15 +766,21 @@ const Prestadores = () => {
                         fullWidth
                         variant="outlined"
                         size="small"
-                        label="Estado"
-                        name="estado"
+                        label="Estado (Sigla)"
+                        value={estado}
+                        onChange={(e) => {
+                          const value = e.target.value
+                            .toUpperCase()
+                            .substring(0, 3);
+                          setEstado(value);
+                        }}
                         autoComplete="off"
                         sx={{
                           width: {
                             xs: "100%",
                             sm: "50%",
                             md: "40%",
-                            lg: "100%",
+                            lg: "30%",
                           },
                         }}
                         InputProps={{
@@ -550,14 +796,15 @@ const Prestadores = () => {
                         variant="outlined"
                         size="small"
                         label="Cidade"
-                        name="cidade"
+                        value={cidade}
+                        onChange={(e) => setCidade(e.target.value)}
                         autoComplete="off"
                         sx={{
                           width: {
                             xs: "100%",
                             sm: "50%",
                             md: "40%",
-                            lg: "100%",
+                            lg: "65%",
                           },
                         }}
                         InputProps={{
@@ -573,7 +820,8 @@ const Prestadores = () => {
                         variant="outlined"
                         size="small"
                         label="Endereço"
-                        name="endereco"
+                        value={endereco}
+                        onChange={(e) => setEndereco(e.target.value)}
                         autoComplete="off"
                         sx={{
                           width: {
@@ -596,7 +844,8 @@ const Prestadores = () => {
                         variant="outlined"
                         size="small"
                         label="Número"
-                        name="numero"
+                        value={numero}
+                        onChange={(e) => setNumero(e.target.value)}
                         autoComplete="off"
                         sx={{
                           width: {
@@ -614,10 +863,11 @@ const Prestadores = () => {
                           ),
                         }}
                       />
+
                       <Autocomplete
                         multiple
                         style={{ width: "100%" }}
-                        id="servicos-select"
+                        id="servicos-select-edit"
                         options={todosServicos}
                         getOptionLabel={(option) => option.nome}
                         value={todosServicos.filter((servico) =>
@@ -639,12 +889,16 @@ const Prestadores = () => {
                         renderTags={(value, getTagProps) =>
                           value.map((option, index) => (
                             <Chip
+                              key={option.id}
                               label={option.nome}
                               {...getTagProps({ index })}
                               deleteIcon={<CloseIcon />}
                             />
                           ))
                         }
+                        loading={loading}
+                        loadingText="Carregando serviços..."
+                        noOptionsText="Nenhum serviço encontrado"
                       />
                     </div>
 
@@ -654,7 +908,8 @@ const Prestadores = () => {
                         title={"Salvar"}
                         subtitle={"Salvar"}
                         buttonSize="large"
-                        //onClick={EditarUsuario}
+                        onClick={EditarPrestador}
+                        disabled={!validarCamposEdicao() || loading}
                       />
                     </div>
                   </div>

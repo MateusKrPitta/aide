@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Navbar from "../../../components/navbars/header";
 import HeaderPerfil from "../../../components/navbars/perfil";
 import ButtonComponent from "../../../components/button";
@@ -10,39 +10,59 @@ import { Category, Edit, Work } from "@mui/icons-material";
 import { InputAdornment, TextField } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import NotesIcon from "@mui/icons-material/Notes";
 import { motion } from "framer-motion";
 import TableLoading from "../../../components/loading/loading-table/loading";
 import TableComponent from "../../../components/table";
-import { servicoCadastrados } from "../../../entities/header/cadastro/servico";
-import { categoriaCadastrados } from "../../../entities/header/cadastro/categoria";
+import CustomToast from "../../../components/toast";
+import { criarTipoPalestra } from "../../../service/post/tipo-palestra";
+import { listarTiposPalestra } from "../../../service/get/tipo-palestra";
+import { tipopalestrasCadastrados } from "../../../entities/header/cadastro/tipo-palestra";
+import { atualizarTipoPalestra } from "../../../service/put/tipo-palestra";
+import { inativarTipoPalestra } from "../../../service/post/inativar-tipo-palestra";
+import { reativarTipoPalestra } from "../../../service/post/reativar-tipo-palestar";
 
 const TipoPalestra = () => {
   const [editando, setEditando] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [tipoEditando, setTipoEditando] = useState(null);
   const [cadastroUsuario, setCadastroUsuario] = useState(false);
   const [nome, setNome] = useState("");
-  const [descricao, setDescricao] = useState("");
-  const [listaServicos, setListaServicos] = useState([
-    {
-      id: 1,
-      nome: "Palestra 01",
-    },
-    {
-      id: 2,
-      nome: "Curso 02",
-    },
-    {
-      id: 3,
-      nome: "Palestra 02",
-    },
-  ]);
+  const [tiposPalestra, setTiposPalestra] = useState([]);
+  const [pesquisar, setPesquisar] = useState("");
+  const dadosParaTabela = tiposPalestra
+    .filter((tipo) => tipo.nome.toLowerCase().includes(pesquisar.toLowerCase()))
+    .map((tipo) => ({
+      id: tipo.id,
+      nome: tipo.nome,
+      ativo: tipo.ativo,
+      status: tipo.ativo ? "Ativo" : "Inativo",
+    }));
+
+  const filteredTiposPalestra = tiposPalestra
+    .filter((tipo) => tipo.nome.toLowerCase().includes(pesquisar.toLowerCase()))
+    .map((tipo) => ({
+      id: tipo.id,
+      nome: tipo.nome,
+      ativo: tipo.ativo,
+      status: tipo.ativo ? "Ativo" : "Inativo",
+    }));
+
   const FecharCadastroUsuario = () => {
     setCadastroUsuario(false);
+    setNome("");
   };
 
   const handleCloseEdicao = () => {
     setEditando(false);
+    setNome("");
+  };
+
+  const validarCamposCadastro = () => {
+    return nome.trim() !== "";
+  };
+
+  const validarCamposEdicao = () => {
+    return nome.trim() !== "";
   };
 
   const fadeIn = {
@@ -50,9 +70,115 @@ const TipoPalestra = () => {
     visible: { opacity: 1 },
   };
 
-  const EditarOpcao = () => {
+  const EditarOpcao = (tipo) => {
+    setTipoEditando(tipo);
+    setNome(tipo.nome);
     setEditando(true);
   };
+
+  const CadastrarTipoPalestra = async () => {
+    if (!nome) {
+      CustomToast({ type: "error", message: "O nome é obrigatório" });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await criarTipoPalestra(nome);
+
+      CustomToast({
+        type: "success",
+        message: "Tipo de palestra cadastrado com sucesso!",
+      });
+      FecharCadastroUsuario();
+      buscarTipoPalestraCadastradas();
+    } catch (error) {
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const SalvarEdicao = async () => {
+    if (!nome) {
+      CustomToast({ type: "error", message: "O nome é obrigatório" });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await atualizarTipoPalestra(tipoEditando.id, nome);
+
+      CustomToast({
+        type: "success",
+        message: "Tipo de palestra atualizado com sucesso!",
+      });
+
+      setTiposPalestra((prev) =>
+        prev.map((item) =>
+          item.id === tipoEditando.id ? { ...item, nome } : item
+        )
+      );
+
+      handleCloseEdicao();
+    } catch (error) {
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const buscarTipoPalestraCadastradas = async () => {
+    try {
+      setLoading(true);
+      const response = await listarTiposPalestra();
+      setTiposPalestra(response.data || []);
+    } catch (error) {
+      const errorMessage = error.response?.data?.errors?.nome;
+      CustomToast({
+        type: "error",
+        message: errorMessage || "Erro ao buscar tipos de palestra",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInativarReativar = async (row) => {
+    setLoading(true);
+    try {
+      const tipoCompleto = tiposPalestra.find((t) => t.id === row.id);
+
+      if (!tipoCompleto) {
+        throw new Error("Tipo de palestra não encontrado");
+      }
+
+      if (tipoCompleto.ativo) {
+        await inativarTipoPalestra(tipoCompleto.id);
+        CustomToast({
+          type: "success",
+          message: "Tipo de palestra inativado com sucesso!",
+        });
+      } else {
+        await reativarTipoPalestra(tipoCompleto.id);
+        CustomToast({
+          type: "success",
+          message: "Tipo de palestra reativado com sucesso!",
+        });
+      }
+
+      setTiposPalestra((prev) =>
+        prev.map((item) =>
+          item.id === tipoCompleto.id ? { ...item, ativo: !item.ativo } : item
+        )
+      );
+    } catch (error) {
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    buscarTipoPalestraCadastradas();
+  }, []);
   return (
     <div className="flex w-full flex-">
       <Navbar />
@@ -77,8 +203,10 @@ const TipoPalestra = () => {
                   fullWidth
                   variant="outlined"
                   size="small"
-                  label="Pesquisar"
+                  label="Pesquisar o Tipo Palestra"
                   autoComplete="off"
+                  value={pesquisar}
+                  onChange={(e) => setPesquisar(e.target.value)}
                   sx={{ width: { xs: "72%", sm: "50%", md: "40%", lg: "40%" } }}
                   InputProps={{
                     startAdornment: (
@@ -99,21 +227,30 @@ const TipoPalestra = () => {
 
               <div className="w-full">
                 {loading ? (
-                  <TableLoading />
-                ) : listaServicos.length > 0 ? (
+                  <div className="w-full flex items-center h-[300px] flex-col gap-3 justify-center">
+                    <TableLoading />
+                    <label className="text-xs text-primary">
+                      Carregando Informações !
+                    </label>
+                  </div>
+                ) : tiposPalestra.length > 0 ? (
                   <TableComponent
-                    headers={categoriaCadastrados}
-                    rows={listaServicos}
+                    headers={tipopalestrasCadastrados}
+                    rows={filteredTiposPalestra}
                     actionsLabel={"Ações"}
                     actionCalls={{
                       edit: EditarOpcao,
-                      inactivate: "",
+                      inactivate: handleInativarReativar,
                     }}
                   />
                 ) : (
                   <div className="text-center flex items-center mt-28 justify-center gap-5 flex-col text-primary">
                     <TableLoading />
-                    <label className="text-sm">Serviço não encontrado!</label>
+                    <label className="text-sm">
+                      {pesquisar
+                        ? "Nenhum tipo de palestra encontrado para sua pesquisa!"
+                        : "Nenhum tipo de palestra encontrado!"}
+                    </label>
                   </div>
                 )}
               </div>
@@ -158,8 +295,9 @@ const TipoPalestra = () => {
                       startIcon={<AddCircleOutlineIcon fontSize="small" />}
                       title={"Cadastrar"}
                       subtitle={"Cadastrar"}
-                      // onClick={CadastrarUsuario}
+                      onClick={CadastrarTipoPalestra}
                       buttonSize="large"
+                      disabled={!validarCamposCadastro() || loading}
                     />
                   </div>
                 </div>
@@ -207,7 +345,8 @@ const TipoPalestra = () => {
                         title={"Salvar"}
                         subtitle={"Salvar"}
                         buttonSize="large"
-                        //onClick={EditarUsuario}
+                        onClick={SalvarEdicao}
+                        disabled={!validarCamposEdicao() || loading}
                       />
                     </div>
                   </div>

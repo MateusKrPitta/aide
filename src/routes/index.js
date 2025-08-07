@@ -14,32 +14,143 @@ import RelatorioPrestadores from "../pages/financeiro/prestadores/index.js";
 import FluxoCaixa from "../pages/financeiro/fluxo-caixa/index.js";
 import Categoria from "../pages/cadastro/categoria/index.js";
 import TipoPalestra from "../pages/cadastro/tipo-palestra/index.js";
+import ContasPagar from "../pages/financeiro/contas-pagar/index.js";
+import ContasReceber from "../pages/financeiro/contas-receber/index.js";
+import PrivateRoute from "../components/private-route/index.js";
 
 const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<LoginPage />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/servico" element={<Servico />} />
-      <Route path="/cadastro" element={<Cadastro />} />
-      <Route path="/cadastro/usuario" element={<Usuario />} />
-      <Route path="/cadastro/prestadores" element={<Prestadores />} />
-      <Route path="/cadastro/servicos" element={<Servicos />} />
-      <Route path="/cadastro/clientes" element={<Clientes />} />
-      <Route path="/cadastro/categoria" element={<Categoria />} />
-      <Route path="/cadastro/tipo-palestra" element={<TipoPalestra />} />
 
-      <Route path="/palestras-cursos" element={<PalestrasCursos />} />
-      <Route path="/financeiro" element={<Financeiro />} />
+      <Route
+        path="/dashboard"
+        element={
+          <PrivateRoute>
+            <Dashboard />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/servico"
+        element={
+          <PrivateRoute>
+            <Servico />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/cadastro"
+        element={
+          <PrivateRoute>
+            <Cadastro />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/cadastro/usuario"
+        element={
+          <PrivateRoute>
+            <Usuario />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/cadastro/prestadores"
+        element={
+          <PrivateRoute>
+            <Prestadores />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/cadastro/servicos"
+        element={
+          <PrivateRoute>
+            <Servicos />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/cadastro/clientes"
+        element={
+          <PrivateRoute>
+            <Clientes />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/cadastro/categoria"
+        element={
+          <PrivateRoute>
+            <Categoria />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/cadastro/tipo-palestra"
+        element={
+          <PrivateRoute>
+            <TipoPalestra />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/palestras-cursos"
+        element={
+          <PrivateRoute>
+            <PalestrasCursos />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/financeiro"
+        element={
+          <PrivateRoute>
+            <Financeiro />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/financeiro/contas-pagar"
+        element={
+          <PrivateRoute>
+            <ContasPagar />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/financeiro/contas-receber"
+        element={
+          <PrivateRoute>
+            <ContasReceber />
+          </PrivateRoute>
+        }
+      />
       <Route
         path="/financeiro/palestras-cursos"
-        element={<RelatorioPalestrasCursos />}
+        element={
+          <PrivateRoute>
+            <RelatorioPalestrasCursos />
+          </PrivateRoute>
+        }
       />
       <Route
         path="/financeiro/prestadores"
-        element={<RelatorioPrestadores />}
+        element={
+          <PrivateRoute>
+            <RelatorioPrestadores />
+          </PrivateRoute>
+        }
       />
-      <Route path="/financeiro/fluxo-caixa" element={<FluxoCaixa />} />
+      <Route
+        path="/financeiro/fluxo-caixa"
+        element={
+          <PrivateRoute>
+            <FluxoCaixa />
+          </PrivateRoute>
+        }
+      />
     </Routes>
   );
 };

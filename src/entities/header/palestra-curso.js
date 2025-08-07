@@ -3,7 +3,6 @@ export const palestraCursosLista = [
   { key: "data", label: "Data" },
   { key: "cliente", label: "Cliente" },
   { key: "valor", label: "Valor" },
-  { key: "local", label: "Local" },
-  { key: "statusPagamento", label: "Status Pagamento" },
+  { key: "endereco", label: "Local" },
   { key: "horário", label: "Horário" },
 ];

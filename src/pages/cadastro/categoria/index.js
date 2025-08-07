@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Navbar from "../../../components/navbars/header";
 import HeaderPerfil from "../../../components/navbars/perfil";
 import ButtonComponent from "../../../components/button";
@@ -10,39 +10,39 @@ import { Category, Edit, Work } from "@mui/icons-material";
 import { InputAdornment, TextField } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import NotesIcon from "@mui/icons-material/Notes";
 import { motion } from "framer-motion";
 import TableLoading from "../../../components/loading/loading-table/loading";
 import TableComponent from "../../../components/table";
-import { servicoCadastrados } from "../../../entities/header/cadastro/servico";
 import { categoriaCadastrados } from "../../../entities/header/cadastro/categoria";
+import CustomToast from "../../../components/toast";
+import { criarCategoria } from "../../../service/post/categoria";
+import { buscarCategoria } from "../../../service/get/categoria";
+import { atualizarCategoria } from "../../../service/put/categoria";
+import { deletarCategoria } from "../../../service/delete/categoria";
+import { reativarCategoria } from "../../../service/put/reativa-categoria";
 
 const Categoria = () => {
   const [editando, setEditando] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [categoriaEditando, setCategoriaEditando] = useState(null);
   const [cadastroUsuario, setCadastroUsuario] = useState(false);
   const [nome, setNome] = useState("");
-  const [descricao, setDescricao] = useState("");
-  const [listaServicos, setListaServicos] = useState([
-    {
-      id: 1,
-      nome: "Cliente 01",
-    },
-    {
-      id: 2,
-      nome: "Cliente 02",
-    },
-    {
-      id: 3,
-      nome: "Cliente 02",
-    },
-  ]);
+  const [categoriasCadastradas, setCategoriasCadastradas] = useState([]);
+  const [listaServicos, setListaServicos] = useState([]);
+  const [pesquisar, setPesquisar] = useState("");
+
+  const filteredCategories = categoriasCadastradas.filter((categoria) =>
+    categoria.nome.toLowerCase().includes(pesquisar.toLowerCase())
+  );
   const FecharCadastroUsuario = () => {
     setCadastroUsuario(false);
+    setNome("");
   };
 
   const handleCloseEdicao = () => {
     setEditando(false);
+    setCategoriaEditando(null);
+    setNome("");
   };
 
   const fadeIn = {
@@ -50,9 +50,126 @@ const Categoria = () => {
     visible: { opacity: 1 },
   };
 
-  const EditarOpcao = () => {
+  const EditarOpcao = (categoria) => {
+    setCategoriaEditando(categoria);
+    setNome(categoria.nome);
     setEditando(true);
   };
+
+  const CadastrarCategoria = async () => {
+    if (!nome) {
+      CustomToast({ type: "error", message: "Preencha o nome da categoria" });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await criarCategoria(nome);
+
+      setListaServicos((prev) => [
+        ...prev,
+        {
+          id: response.id,
+          nome: response.nome,
+        },
+      ]);
+
+      CustomToast({
+        type: "success",
+        message: "Categoria cadastrada com sucesso!",
+      });
+      FecharCadastroUsuario();
+      buscarCategoriaCadastradas();
+    } catch (error) {
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const SalvarEdicao = async () => {
+    if (!nome) {
+      CustomToast({ type: "error", message: "Preencha o nome da categoria" });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await atualizarCategoria(categoriaEditando.id, nome);
+
+      CustomToast({
+        type: "success",
+        message: "Categoria atualizada com sucesso!",
+      });
+
+      await buscarCategoriaCadastradas();
+      handleCloseEdicao();
+      buscarCategoria();
+    } catch (error) {
+      CustomToast({
+        type: "error",
+        message: error.response?.data?.message || "Erro ao atualizar categoria",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const buscarCategoriaCadastradas = async () => {
+    try {
+      setLoading(true);
+      const response = await buscarCategoria();
+      setCategoriasCadastradas(response.data || []);
+    } catch (error) {
+      const errorMessage = error.response?.data?.errors?.nome;
+      CustomToast({
+        type: "error",
+        message: errorMessage || "Erro ao buscar categorias",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const ReativarCategoria = async (categoria) => {
+    try {
+      await reativarCategoria(categoria.id);
+      CustomToast({
+        type: "success",
+        message: "Categoria reativada com sucesso!",
+      });
+      buscarCategoriaCadastradas();
+    } catch (error) {
+      CustomToast({
+        type: "error",
+        message: error.response?.data?.message || "Erro ao reativar categoria",
+      });
+    }
+  };
+
+  const InativarCategoria = async (categoria) => {
+    try {
+      await deletarCategoria(categoria.id);
+
+      buscarCategoriaCadastradas();
+    } catch (error) {
+      CustomToast({
+        type: "error",
+        message: error.response?.data?.message || "Erro ao inativar categoria",
+      });
+    }
+  };
+
+  const validarCamposCadastro = () => {
+    return nome.trim() !== "";
+  };
+
+  const validarCamposEdicao = () => {
+    return nome.trim() !== "";
+  };
+
+  useEffect(() => {
+    buscarCategoriaCadastradas();
+  }, []);
   return (
     <div className="flex w-full flex-">
       <Navbar />
@@ -79,6 +196,8 @@ const Categoria = () => {
                   size="small"
                   label="Pesquisar"
                   autoComplete="off"
+                  value={pesquisar}
+                  onChange={(e) => setPesquisar(e.target.value)}
                   sx={{ width: { xs: "72%", sm: "50%", md: "40%", lg: "40%" } }}
                   InputProps={{
                     startAdornment: (
@@ -97,23 +216,38 @@ const Categoria = () => {
                 />
               </div>
 
-              <div className="w-full">
+              <div className="w-full items-center justify-center">
                 {loading ? (
-                  <TableLoading />
-                ) : listaServicos.length > 0 ? (
+                  <div className="w-full flex items-center h-[300px] flex-col gap-3 justify-center">
+                    <TableLoading />
+                    <label className="text-xs text-primary">
+                      Carregando Informações !
+                    </label>
+                  </div>
+                ) : filteredCategories.length > 0 ? (
                   <TableComponent
                     headers={categoriaCadastrados}
-                    rows={listaServicos}
+                    rows={filteredCategories}
                     actionsLabel={"Ações"}
                     actionCalls={{
                       edit: EditarOpcao,
-                      inactivate: "",
+                      inactivate: (categoria) => {
+                        if (categoria.ativo) {
+                          InativarCategoria(categoria);
+                        } else {
+                          ReativarCategoria(categoria);
+                        }
+                      },
                     }}
                   />
                 ) : (
                   <div className="text-center flex items-center mt-28 justify-center gap-5 flex-col text-primary">
                     <TableLoading />
-                    <label className="text-sm">Serviço não encontrado!</label>
+                    <label className="text-sm">
+                      {pesquisar
+                        ? "Nenhuma categoria encontrada para sua pesquisa!"
+                        : "Nenhuma categoria encontrada!"}
+                    </label>
                   </div>
                 )}
               </div>
@@ -158,8 +292,9 @@ const Categoria = () => {
                       startIcon={<AddCircleOutlineIcon fontSize="small" />}
                       title={"Cadastrar"}
                       subtitle={"Cadastrar"}
-                      // onClick={CadastrarUsuario}
+                      onClick={CadastrarCategoria}
                       buttonSize="large"
+                      disabled={!validarCamposCadastro() || loading}
                     />
                   </div>
                 </div>
@@ -207,7 +342,8 @@ const Categoria = () => {
                         title={"Salvar"}
                         subtitle={"Salvar"}
                         buttonSize="large"
-                        //onClick={EditarUsuario}
+                        onClick={SalvarEdicao}
+                        disabled={!validarCamposEdicao() || loading}
                       />
                     </div>
                   </div>

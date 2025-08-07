@@ -1,7 +1,9 @@
 import React from "react";
 import ButtonComponent from "../../button";
 import { useNavigate } from "react-router-dom";
-import { MonetizationOn, People, Person, Work } from "@mui/icons-material";
+import { MonetizationOn, People, Person } from "@mui/icons-material";
+import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
+import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
 
 const HeaderFinanceiro = () => {
   const navigate = useNavigate();
@@ -10,6 +12,12 @@ const HeaderFinanceiro = () => {
 
   const handleNavigation = (section) => {
     switch (section) {
+      case "contas-receber":
+        navigate("/financeiro/contas-receber");
+        break;
+      case "contas-pagar":
+        navigate("/financeiro/contas-pagar");
+        break;
       case "palestras-cursos":
         navigate("/financeiro/palestras-cursos");
         break;
@@ -28,6 +36,20 @@ const HeaderFinanceiro = () => {
 
   return (
     <div className=" w-[100%] items-center justify-center flex flex-wrap lg:justify-start gap-2 md:gap-1">
+      <ButtonComponent
+        startIcon={<PointOfSaleIcon fontSize="small" />}
+        title="Contas à Pagar"
+        buttonSize="large"
+        onClick={() => handleNavigation("contas-pagar")}
+        className="w-[35%] sm:w-[50%] md:w-[40%] lg:w-[100%]"
+      />
+      <ButtonComponent
+        startIcon={<CurrencyExchangeIcon fontSize="small" />}
+        title="Contas à Receber"
+        buttonSize="large"
+        onClick={() => handleNavigation("contas-receber")}
+        className="w-[35%] sm:w-[50%] md:w-[40%] lg:w-[100%]"
+      />
       <ButtonComponent
         startIcon={<MonetizationOn fontSize="small" />}
         title="Fluxo de Caixa"

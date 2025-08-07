@@ -36,7 +36,7 @@ const Financeiro = () => {
           <HeaderPerfil pageTitle="Financeiro" />
 
           <div className=" items-center justify-center lg:justify-start w-full flex mt-[95px] gap-2 flex-wrap md:items-start pl-2">
-            <div className="w-[100%] md:w-[60%] lg:w-[14%]">
+            <div className="w-[100%] md:w-[60%] lg:w-[15%]">
               <HeaderFinanceiro />
             </div>
             <div
