@@ -48,21 +48,42 @@ const Clientes = () => {
   const [clienteEditando, setClienteEditando] = useState(null);
   const [pesquisar, setPesquisar] = useState("");
 
-  const formatCPF = (value) => {
+  const formatDocument = (value) => {
     const cleaned = value.replace(/\D/g, "");
 
-    if (cleaned.length <= 3) return cleaned;
-    if (cleaned.length <= 6)
-      return `${cleaned.slice(0, 3)}.${cleaned.slice(3)}`;
-    if (cleaned.length <= 9)
+    if (cleaned.length > 11) {
+      if (cleaned.length <= 2) return cleaned;
+      if (cleaned.length <= 5)
+        return `${cleaned.slice(0, 2)}.${cleaned.slice(2)}`;
+      if (cleaned.length <= 8)
+        return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(
+          5
+        )}`;
+      if (cleaned.length <= 12)
+        return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(
+          5,
+          8
+        )}/${cleaned.slice(8)}`;
+      return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(
+        5,
+        8
+      )}/${cleaned.slice(8, 12)}-${cleaned.slice(12, 14)}`;
+    } else {
+      if (cleaned.length <= 3) return cleaned;
+      if (cleaned.length <= 6)
+        return `${cleaned.slice(0, 3)}.${cleaned.slice(3)}`;
+      if (cleaned.length <= 9)
+        return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(
+          6
+        )}`;
       return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(
-        6
-      )}`;
-    return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(
-      6,
-      9
-    )}-${cleaned.slice(9, 11)}`;
+        6,
+        9
+      )}-${cleaned.slice(9, 11)}`;
+    }
   };
+
+  const DOCUMENT_MAX_LENGTH = 18;
 
   const formatPhone = (value) => {
     const cleaned = value.replace(/\D/g, "");
@@ -394,10 +415,10 @@ const Clientes = () => {
                       fullWidth
                       variant="outlined"
                       size="small"
-                      label="CPF"
+                      label="CPF/CNPJ"
                       value={cpf}
                       onChange={(e) => {
-                        const formatted = formatCPF(e.target.value);
+                        const formatted = formatDocument(e.target.value);
                         setCpf(formatted);
                       }}
                       sx={{ width: "44%" }}
@@ -409,7 +430,7 @@ const Clientes = () => {
                         ),
                       }}
                       inputProps={{
-                        maxLength: 14,
+                        maxLength: DOCUMENT_MAX_LENGTH,
                       }}
                     />
 
@@ -653,10 +674,10 @@ const Clientes = () => {
                         fullWidth
                         variant="outlined"
                         size="small"
-                        label="CPF"
+                        label="CPF/CNPJ"
                         value={clienteEditando?.cpf_cnpj || ""}
                         onChange={(e) => {
-                          const formatted = formatCPF(e.target.value);
+                          const formatted = formatDocument(e.target.value);
                           setClienteEditando({
                             ...clienteEditando,
                             cpf_cnpj: formatted,
@@ -671,7 +692,7 @@ const Clientes = () => {
                           ),
                         }}
                         inputProps={{
-                          maxLength: 14,
+                          maxLength: DOCUMENT_MAX_LENGTH,
                         }}
                         autoComplete="off"
                       />

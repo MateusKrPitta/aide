@@ -9,7 +9,10 @@ export const atualizarPrestadores = async (
   estado,
   cidade,
   endereco,
-  servicos
+  numero,
+  complemento,
+  servicos,
+  cpf
 ) => {
   const https = httpsInstance();
   const token = sessionStorage.getItem("token");
@@ -17,7 +20,18 @@ export const atualizarPrestadores = async (
   try {
     const response = await https.put(
       `/prestadores/${id}`,
-      { nome, telefone, email, estado, cidade, endereco, servicos },
+      {
+        nome,
+        telefone,
+        email,
+        estado,
+        cidade,
+        endereco,
+        numero,
+        complemento,
+        servicos,
+        cpf,
+      },
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -28,8 +42,12 @@ export const atualizarPrestadores = async (
 
     return response.data;
   } catch (error) {
-    const errorMessage = error.response?.data?.errors?.nome;
-    CustomToast({ type: "error", message: errorMessage });
+    const errorMessage =
+      error.response?.data?.message || error.response?.data?.errors?.nome;
+    CustomToast({
+      type: "error",
+      message: errorMessage || "Erro ao atualizar prestador",
+    });
     throw error;
   }
 };

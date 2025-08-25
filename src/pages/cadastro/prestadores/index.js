@@ -55,21 +55,42 @@ const Prestadores = () => {
     prestador.nome.toLowerCase().includes(pesquisar.toLowerCase())
   );
 
-  const formatCPF = (value) => {
+  const formatDocument = (value) => {
     const cleaned = value.replace(/\D/g, "");
 
-    if (cleaned.length <= 3) return cleaned;
-    if (cleaned.length <= 6)
-      return `${cleaned.slice(0, 3)}.${cleaned.slice(3)}`;
-    if (cleaned.length <= 9)
+    if (cleaned.length > 11) {
+      if (cleaned.length <= 2) return cleaned;
+      if (cleaned.length <= 5)
+        return `${cleaned.slice(0, 2)}.${cleaned.slice(2)}`;
+      if (cleaned.length <= 8)
+        return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(
+          5
+        )}`;
+      if (cleaned.length <= 12)
+        return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(
+          5,
+          8
+        )}/${cleaned.slice(8)}`;
+      return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(
+        5,
+        8
+      )}/${cleaned.slice(8, 12)}-${cleaned.slice(12, 14)}`;
+    } else {
+      if (cleaned.length <= 3) return cleaned;
+      if (cleaned.length <= 6)
+        return `${cleaned.slice(0, 3)}.${cleaned.slice(3)}`;
+      if (cleaned.length <= 9)
+        return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(
+          6
+        )}`;
       return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(
-        6
-      )}`;
-    return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(
-      6,
-      9
-    )}-${cleaned.slice(9, 11)}`;
+        6,
+        9
+      )}-${cleaned.slice(9, 11)}`;
+    }
   };
+
+  const DOCUMENT_MAX_LENGTH = 18;
 
   const formatPhone = (value) => {
     const cleaned = value.replace(/\D/g, "");
@@ -88,10 +109,14 @@ const Prestadores = () => {
   };
 
   const validarCamposCadastro = () => {
+    const cleanedCpf = cpf.replace(/\D/g, "");
+    const isCpfValid = cleanedCpf.length === 11;
+    const isCnpjValid = cleanedCpf.length === 14;
+
     return (
       nome.trim() !== "" &&
       telefone.replace(/\D/g, "").length >= 10 &&
-      cpf.replace(/\D/g, "").length === 11 &&
+      (isCpfValid || isCnpjValid) &&
       email.trim() !== "" &&
       validarEmail(email) &&
       estado.trim().length === 2 &&
@@ -181,9 +206,14 @@ const Prestadores = () => {
   };
 
   const validarCamposEdicao = () => {
+    const cleanedCpf = cpf.replace(/\D/g, "");
+    const isCpfValid = cleanedCpf.length === 11;
+    const isCnpjValid = cleanedCpf.length === 14;
+
     return (
       nome.trim() !== "" &&
       telefone.replace(/\D/g, "").length >= 10 &&
+      (isCpfValid || isCnpjValid) &&
       email.trim() !== "" &&
       validarEmail(email) &&
       estado.trim().length === 2 &&
@@ -274,7 +304,10 @@ const Prestadores = () => {
         estado,
         cidade,
         endereco,
-        servicosSelecionados
+        numero,
+        complemento,
+        servicosSelecionados,
+        cpf
       );
 
       CustomToast({
@@ -493,15 +526,14 @@ const Prestadores = () => {
                       }}
                     />
 
-                    {/* Campo de CPF */}
                     <TextField
                       fullWidth
                       variant="outlined"
                       size="small"
-                      label="CPF"
+                      label="CPF/CNPJ"
                       value={cpf}
                       onChange={(e) => {
-                        const formatted = formatCPF(e.target.value);
+                        const formatted = formatDocument(e.target.value);
                         setCpf(formatted);
                       }}
                       sx={{ width: "44%" }}
@@ -513,7 +545,7 @@ const Prestadores = () => {
                         ),
                       }}
                       inputProps={{
-                        maxLength: 14,
+                        maxLength: DOCUMENT_MAX_LENGTH,
                       }}
                     />
                     <TextField
@@ -780,10 +812,10 @@ const Prestadores = () => {
                         fullWidth
                         variant="outlined"
                         size="small"
-                        label="CPF"
+                        label="CPF/CNPJ"
                         value={cpf}
                         onChange={(e) => {
-                          const formatted = formatCPF(e.target.value);
+                          const formatted = formatDocument(e.target.value);
                           setCpf(formatted);
                         }}
                         sx={{ width: "44%" }}
@@ -795,7 +827,7 @@ const Prestadores = () => {
                           ),
                         }}
                         inputProps={{
-                          maxLength: 14,
+                          maxLength: DOCUMENT_MAX_LENGTH,
                         }}
                         autoComplete="off"
                       />
