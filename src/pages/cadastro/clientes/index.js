@@ -47,6 +47,7 @@ const Clientes = () => {
   const [clientes, setClientes] = useState([]);
   const [clienteEditando, setClienteEditando] = useState(null);
   const [pesquisar, setPesquisar] = useState("");
+  const [responsavel, setResponsavel] = useState("");
 
   const formatDocument = (value) => {
     const cleaned = value.replace(/\D/g, "");
@@ -130,7 +131,8 @@ const Clientes = () => {
         cidade,
         endereco,
         numero,
-        complemento
+        complemento,
+        responsavel
       );
 
       setNome("");
@@ -142,6 +144,7 @@ const Clientes = () => {
       setEndereco("");
       setNumero("");
       setComplemento("");
+      setResponsavel("");
 
       setCadastroUsuario(false);
       await carregarClientes();
@@ -183,7 +186,8 @@ const Clientes = () => {
         clienteEditando.cidade,
         clienteEditando.endereco,
         clienteEditando.cpf_cnpj,
-        clienteEditando.complemento
+        clienteEditando.complemento,
+        clienteEditando.responsavel
       );
 
       await carregarClientes();
@@ -367,7 +371,7 @@ const Clientes = () => {
                       fullWidth
                       variant="outlined"
                       size="small"
-                      label="Nome Cliente"
+                      label="Razão Social"
                       name="nome"
                       value={nome}
                       onChange={(e) => setNome(e.target.value)}
@@ -384,6 +388,31 @@ const Clientes = () => {
                         startAdornment: (
                           <InputAdornment position="start">
                             <Person />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      label="Responsável"
+                      name="responsavel"
+                      value={responsavel}
+                      onChange={(e) => setResponsavel(e.target.value)}
+                      autoComplete="off"
+                      sx={{
+                        width: {
+                          xs: "100%",
+                          sm: "50%",
+                          md: "40%",
+                          lg: "44%",
+                        },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Work /> {/* Ou use outro ícone apropriado */}
                           </InputAdornment>
                         ),
                       }}
@@ -469,7 +498,7 @@ const Clientes = () => {
                       onChange={(e) => {
                         const value = e.target.value
                           .toUpperCase()
-                          .substring(0, 3);
+                          .substring(0, 2);
                         setEstado(value);
                       }}
                       autoComplete="off"
@@ -487,6 +516,9 @@ const Clientes = () => {
                             <LocationOnIcon />
                           </InputAdornment>
                         ),
+                      }}
+                      inputProps={{
+                        maxLength: 2,
                       }}
                     />
                     <TextField
@@ -586,7 +618,7 @@ const Clientes = () => {
                           xs: "100%",
                           sm: "50%",
                           md: "40%",
-                          lg: "30%",
+                          lg: "50%",
                         },
                       }}
                     />
@@ -618,7 +650,7 @@ const Clientes = () => {
                         fullWidth
                         variant="outlined"
                         size="small"
-                        label="Nome Cliente"
+                        label="Empresa"
                         name="nome"
                         value={clienteEditando?.nome || ""}
                         onChange={(e) =>
@@ -640,6 +672,37 @@ const Clientes = () => {
                           startAdornment: (
                             <InputAdornment position="start">
                               <Person />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+
+                      <TextField
+                        fullWidth
+                        variant="outlined"
+                        size="small"
+                        label="Responsável"
+                        name="responsavel"
+                        value={clienteEditando?.responsavel || ""}
+                        onChange={(e) =>
+                          setClienteEditando({
+                            ...clienteEditando,
+                            responsavel: e.target.value,
+                          })
+                        }
+                        autoComplete="off"
+                        sx={{
+                          width: {
+                            xs: "100%",
+                            sm: "50%",
+                            md: "40%",
+                            lg: "100%",
+                          },
+                        }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Work />
                             </InputAdornment>
                           ),
                         }}
@@ -735,7 +798,7 @@ const Clientes = () => {
                         onChange={(e) => {
                           const value = e.target.value
                             .toUpperCase()
-                            .substring(0, 3);
+                            .substring(0, 2);
                           setClienteEditando({
                             ...clienteEditando,
                             estado: value,
@@ -756,6 +819,9 @@ const Clientes = () => {
                               <LocationOnIcon />
                             </InputAdornment>
                           ),
+                        }}
+                        inputProps={{
+                          maxLength: 2,
                         }}
                       />
                       <TextField
@@ -875,7 +941,7 @@ const Clientes = () => {
                             xs: "100%",
                             sm: "50%",
                             md: "40%",
-                            lg: "30%",
+                            lg: "100%",
                           },
                         }}
                       />

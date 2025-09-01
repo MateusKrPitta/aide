@@ -10,7 +10,8 @@ export const criarCliente = async (
   cidade,
   endereco,
   numero,
-  complemento
+  complemento,
+  responsavel // ← Adicione este parâmetro
 ) => {
   const https = httpsInstance();
   const token = sessionStorage.getItem("token");
@@ -33,6 +34,7 @@ export const criarCliente = async (
         endereco,
         numero,
         complemento,
+        responsavel,
       },
       {
         headers: {
@@ -48,7 +50,7 @@ export const criarCliente = async (
     const errorMessage =
       error.response?.data?.message ||
       error.response?.data?.errors ||
-      "Erro ao criar prestador";
+      "Erro ao criar cliente"; // Corrigi a mensagem de erro
     CustomToast({ type: "error", message: errorMessage });
     throw error;
   }
