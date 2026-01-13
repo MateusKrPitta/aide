@@ -11,7 +11,8 @@ export const atualizarClientes = async (
   endereco,
   cpf_cnpj,
   complemento,
-  responsavel
+  responsavel,
+  cep
 ) => {
   const https = httpsInstance();
   const token = sessionStorage.getItem("token");
@@ -29,6 +30,7 @@ export const atualizarClientes = async (
         cpf_cnpj,
         complemento,
         responsavel,
+        cep,
       },
       {
         headers: {

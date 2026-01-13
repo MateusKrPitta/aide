@@ -42,6 +42,7 @@ const Clientes = () => {
   const [estado, setEstado] = useState("");
   const [cidade, setCidade] = useState("");
   const [endereco, setEndereco] = useState("");
+  const [cep, setCep] = useState("");
   const [numero, setNumero] = useState("");
   const [complemento, setComplemento] = useState("");
   const [clientes, setClientes] = useState([]);
@@ -102,6 +103,18 @@ const Clientes = () => {
     )}`;
   };
 
+  const formatCEP = (value) => {
+    const cleaned = value.replace(/\D/g, "");
+
+    if (cleaned.length <= 5) {
+      return cleaned;
+    } else if (cleaned.length <= 8) {
+      return `${cleaned.slice(0, 5)}-${cleaned.slice(5)}`;
+    } else {
+      return `${cleaned.slice(0, 5)}-${cleaned.slice(5, 8)}`;
+    }
+  };
+
   const filteredClients = clientes.filter((cliente) => {
     const searchTerm = pesquisar.toLowerCase();
 
@@ -136,9 +149,10 @@ const Clientes = () => {
         endereco,
         numero,
         complemento,
-        responsavel
+        responsavel,
+        cep
       );
-
+      setCep("");
       setNome("");
       setTelefone("");
       setCpf("");
@@ -191,7 +205,8 @@ const Clientes = () => {
         clienteEditando.endereco,
         clienteEditando.cpf_cnpj,
         clienteEditando.complemento,
-        clienteEditando.responsavel
+        clienteEditando.responsavel,
+        clienteEditando.cep
       );
 
       await carregarClientes();
@@ -221,6 +236,7 @@ const Clientes = () => {
     setTelefone("");
     setEndereco("");
     setEstado("");
+    setCep("");
     setNumero("");
     setComplemento("");
     setCadastroUsuario(false);
@@ -233,6 +249,7 @@ const Clientes = () => {
     setCidade("");
     setCpf("");
     setTelefone("");
+    setCep("");
     setEndereco("");
     setEstado("");
     setNumero("");
@@ -481,7 +498,7 @@ const Clientes = () => {
                           xs: "100%",
                           sm: "50%",
                           md: "40%",
-                          lg: "50%",
+                          lg: "48%",
                         },
                       }}
                       InputProps={{
@@ -490,6 +507,36 @@ const Clientes = () => {
                             <Mail />
                           </InputAdornment>
                         ),
+                      }}
+                    />
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      label="CEP"
+                      value={cep}
+                      onChange={(e) => {
+                        const formatted = formatCEP(e.target.value);
+                        setCep(formatted);
+                      }}
+                      autoComplete="off"
+                      sx={{
+                        width: {
+                          xs: "100%",
+                          sm: "50%",
+                          md: "40%",
+                          lg: "20%",
+                        },
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <LocationOnIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                      inputProps={{
+                        maxLength: 9, // Para "12345-678"
                       }}
                     />
 
@@ -601,6 +648,8 @@ const Clientes = () => {
                         ),
                       }}
                     />
+                    {/* Adicione este campo após o campo Email no modal de edição */}
+
                     <TextField
                       fullWidth
                       variant="outlined"
@@ -917,6 +966,39 @@ const Clientes = () => {
                               <Numbers />
                             </InputAdornment>
                           ),
+                        }}
+                      />
+                      <TextField
+                        fullWidth
+                        variant="outlined"
+                        size="small"
+                        label="CEP"
+                        value={clienteEditando?.cep || ""}
+                        onChange={(e) => {
+                          const formatted = formatCEP(e.target.value);
+                          setClienteEditando({
+                            ...clienteEditando,
+                            cep: formatted,
+                          });
+                        }}
+                        autoComplete="off"
+                        sx={{
+                          width: {
+                            xs: "100%",
+                            sm: "50%",
+                            md: "40%",
+                            lg: "100%", // Ajuste conforme necessário
+                          },
+                        }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <LocationOnIcon />
+                            </InputAdornment>
+                          ),
+                        }}
+                        inputProps={{
+                          maxLength: 9,
                         }}
                       />
                       <TextField

@@ -11,7 +11,8 @@ export const criarCliente = async (
   endereco,
   numero,
   complemento,
-  responsavel // ← Adicione este parâmetro
+  responsavel,
+  cep
 ) => {
   const https = httpsInstance();
   const token = sessionStorage.getItem("token");
@@ -35,6 +36,7 @@ export const criarCliente = async (
         numero,
         complemento,
         responsavel,
+        cep,
       },
       {
         headers: {
