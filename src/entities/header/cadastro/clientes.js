@@ -1,5 +1,6 @@
 export const clientesCadastrados = [
-  { key: "nome", label: "Nome" },
+  { key: "responsavel", label: "Nome Fantasia" },
+  { key: "nome", label: "Razão Social" },
   { key: "telefone", label: "Telefone" },
   { key: "cpf", label: "CPF/CNPJ" },
   { key: "email", label: "E-mail" },

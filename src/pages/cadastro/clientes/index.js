@@ -102,15 +102,19 @@ const Clientes = () => {
     )}`;
   };
 
-  const filteredClients = clientes.filter((cliente) =>
-    cliente.nome.toLowerCase().includes(pesquisar.toLowerCase())
-  );
+  const filteredClients = clientes.filter((cliente) => {
+    const searchTerm = pesquisar.toLowerCase();
+
+    return (
+      cliente.nome.toLowerCase().includes(searchTerm) ||
+      (cliente.responsavel &&
+        cliente.responsavel.toLowerCase().includes(searchTerm))
+    );
+  });
 
   const validarCamposCadastro = () => {
     return (
       nome.trim() !== "" &&
-      email.trim() !== "" &&
-      telefone.trim() !== "" &&
       cpf.trim() !== "" &&
       cidade.trim() !== "" &&
       endereco.trim() !== "" &&
@@ -396,7 +400,7 @@ const Clientes = () => {
                       fullWidth
                       variant="outlined"
                       size="small"
-                      label="Responsável"
+                      label="Nome Fantasia"
                       name="responsavel"
                       value={responsavel}
                       onChange={(e) => setResponsavel(e.target.value)}
@@ -650,7 +654,7 @@ const Clientes = () => {
                         fullWidth
                         variant="outlined"
                         size="small"
-                        label="Empresa"
+                        label="Razão Social"
                         name="nome"
                         value={clienteEditando?.nome || ""}
                         onChange={(e) =>
@@ -681,7 +685,7 @@ const Clientes = () => {
                         fullWidth
                         variant="outlined"
                         size="small"
-                        label="Responsável"
+                        label="Nome Fantasia"
                         name="responsavel"
                         value={clienteEditando?.responsavel || ""}
                         onChange={(e) =>
