@@ -7,7 +7,7 @@ export const reativarUsuario = async (id) => {
 
   try {
     const response = await https.put(
-      `/users/${id}/reativar`,
+      `/users/${id}/ativar`,
       {},
       {
         headers: {
