@@ -45,7 +45,8 @@ const Usuario = () => {
 
   const [nomeCompleto, setNomeCompleto] = useState("");
   const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
+  const [senha, setSenha] = useState(""); // Campo de nova senha
+  const [confirmaSenha, setConfirmaSenha] = useState("");
 
   const FecharCadastroUsuario = () => {
     setCadastroUsuario(false);
@@ -145,8 +146,20 @@ const Usuario = () => {
       setLoading(false);
     }
   };
+  // Na função EditarUsuario
   const EditarUsuario = async () => {
     setLoading(true);
+
+    // Valida se as senhas coincidem (se preenchidas)
+    if (senha && senha !== confirmaSenha) {
+      CustomToast({
+        type: "error",
+        message: "As senhas não coincidem",
+      });
+      setLoading(false);
+      return;
+    }
+
     try {
       await atualizarUsuario(
         usuarioEditando.id,
@@ -154,8 +167,14 @@ const Usuario = () => {
         username,
         email,
         telefone.replace(/\D/g, ""),
-        permissao
+        permissao,
+        senha // Só envia se preenchida
       );
+
+      CustomToast({
+        type: "success",
+        message: "Usuário atualizado com sucesso!",
+      });
 
       await buscarUsuariosCadastradas();
       handleCloseEdicao();
@@ -165,7 +184,6 @@ const Usuario = () => {
       setLoading(false);
     }
   };
-
   const buscarUsuariosCadastradas = async () => {
     try {
       setLoading(true);
@@ -492,11 +510,31 @@ const Usuario = () => {
                         variant="outlined"
                         size="small"
                         type="password"
-                        label="Senha"
-                        name="senha"
+                        label="Nova Senha (opcional)"
                         value={senha}
                         onChange={(e) => setSenha(e.target.value)}
-                        autoComplete="off"
+                        autoComplete="new-password"
+                        sx={{
+                          width: { xs: "48%", sm: "40%", md: "40%", lg: "47%" },
+                        }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Password />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+
+                      <TextField
+                        fullWidth
+                        variant="outlined"
+                        size="small"
+                        type="password"
+                        label="Confirmar Nova Senha"
+                        value={confirmaSenha}
+                        onChange={(e) => setConfirmaSenha(e.target.value)}
+                        autoComplete="new-password"
                         sx={{
                           width: { xs: "48%", sm: "40%", md: "40%", lg: "47%" },
                         }}
