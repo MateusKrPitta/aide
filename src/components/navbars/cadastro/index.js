@@ -12,7 +12,6 @@ import {
 
 const HeaderCadastro = () => {
   const navigate = useNavigate();
-  const userData = JSON.parse(localStorage.getItem("user"));
   const handleNavigation = (section) => {
     switch (section) {
       case "usuario":

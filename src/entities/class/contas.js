@@ -95,14 +95,12 @@ export const contasPagarTabela = (contas, relatorios = []) => {
 
         let temPendenteAtrasado = false;
         let temPendenteNaoAtrasado = false;
-        let todasPagas = true;
 
         servico.parcelas?.forEach((parcela) => {
           const dataVencimento = new Date(parcela.data_pagamento);
           dataVencimento.setHours(0, 0, 0, 0);
 
           if (parcela.status_pagamento_prestador === 2) {
-            todasPagas = false;
             if (dataVencimento <= hoje) {
               temPendenteAtrasado = true;
             } else {

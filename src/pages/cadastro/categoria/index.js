@@ -28,11 +28,10 @@ const Categoria = () => {
   const [cadastroUsuario, setCadastroUsuario] = useState(false);
   const [nome, setNome] = useState("");
   const [categoriasCadastradas, setCategoriasCadastradas] = useState([]);
-  const [listaServicos, setListaServicos] = useState([]);
   const [pesquisar, setPesquisar] = useState("");
 
   const filteredCategories = categoriasCadastradas.filter((categoria) =>
-    categoria.nome.toLowerCase().includes(pesquisar.toLowerCase())
+    categoria.nome.toLowerCase().includes(pesquisar.toLowerCase()),
   );
   const FecharCadastroUsuario = () => {
     setCadastroUsuario(false);
@@ -65,14 +64,6 @@ const Categoria = () => {
     setLoading(true);
     try {
       const response = await criarCategoria(nome);
-
-      setListaServicos((prev) => [
-        ...prev,
-        {
-          id: response.id,
-          nome: response.nome,
-        },
-      ]);
 
       CustomToast({
         type: "success",

@@ -33,14 +33,13 @@ import { reativarServico } from "../../../service/delete/reativar-servico";
 const Servicos = () => {
   const [editando, setEditando] = useState(false);
   const [categoriasCadastradas, setCategoriasCadastradas] = useState([]);
-  const [servicoEditando, setServicoEditando] = useState(null);
   const [idEditando, setIdEditando] = useState(null);
   const [servicosCadastrados, setServicosCadastrados] = useState([]);
   const [loading, setLoading] = useState(false);
   const [cadastroUsuario, setCadastroUsuario] = useState(false);
   const [categoriaSelecionada, setCategoriaSelecionada] = useState("");
   const categoriasAtivas = categoriasCadastradas.filter(
-    (categoria) => categoria.ativo
+    (categoria) => categoria.ativo,
   );
   const [nome, setNome] = useState("");
   const [descricao, setDescricao] = useState("");
@@ -50,7 +49,7 @@ const Servicos = () => {
   const filteredServicos = listaServicos.filter(
     (servico) =>
       servico.nome.toLowerCase().includes(pesquisar.toLowerCase()) ||
-      servico.categoria.toLowerCase().includes(pesquisar.toLowerCase())
+      servico.categoria.toLowerCase().includes(pesquisar.toLowerCase()),
   );
 
   const validarCamposCadastro = () => {
@@ -96,7 +95,7 @@ const Servicos = () => {
       const response = await criarTipoServico(
         nome,
         descricao,
-        categoriaSelecionada
+        categoriaSelecionada,
       );
 
       CustomToast({
@@ -195,12 +194,11 @@ const Servicos = () => {
 
   const EditarOpcao = (servico) => {
     setEditando(true);
-    setServicoEditando(servico);
     setIdEditando(servico.id);
     setNome(servico.nome);
     setDescricao(servico.descricao);
     setCategoriaSelecionada(
-      categoriasCadastradas.find((c) => c.nome === servico.categoria)?.id || ""
+      categoriasCadastradas.find((c) => c.nome === servico.categoria)?.id || "",
     );
   };
 

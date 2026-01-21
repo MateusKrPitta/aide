@@ -28,34 +28,23 @@ ChartJS.register(
   Legend,
   CategoryScale,
   LinearScale,
-  BarElement
+  BarElement,
 );
 
-// Registra os componentes do Chart.js para gráfico de pizza
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const Dashboard = () => {
-  const [loading, setLoading] = useState(false);
   const [prestadores, setPrestadores] = useState([]);
   const [atendimentosCount, setAtendimentosCount] = useState(0);
   const [palestras, setPalestras] = useState([]);
   const [palestrasCount, setPalestrasCount] = useState(0);
-  const [contasReceber, setContasReceber] = useState([]); // Novo estado para contas a receber
   const [valorReceber, setValorReceber] = useState(0);
   const [valorPalestrasPagas, setValorPalestrasPagas] = useState(0);
 
   const buscarContasAReceber = async () => {
     try {
-      console.log("Iniciando busca de contas...");
-      setLoading(true);
       const response = await buscarContasReceber();
-      console.log("Resposta completa da API:", response); // Verifique toda a estrutura
-
-      // Verifique diferentes caminhos possíveis para os dados
       const dados = response.data || response.data?.data || response;
-      console.log("Dados extraídos:", dados);
-
-      setContasReceber(dados || []);
     } catch (error) {
       console.error("Erro detalhado:", {
         message: error.message,
@@ -66,14 +55,11 @@ const Dashboard = () => {
         type: "error",
         message: error.response?.data?.message || "Erro ao buscar contas",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   const buscarServicosPrestador = async () => {
     try {
-      setLoading(true);
       const response = await buscarRelatorioPretadores();
       setPrestadores(response.data || []);
     } catch (error) {
@@ -82,14 +68,11 @@ const Dashboard = () => {
         type: "error",
         message: errorMessage || "Erro ao buscar tipos de palestra",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   const buscarPalestrasCursos = async () => {
     try {
-      setLoading(true);
       const response = await buscarPalestraCurso();
       setPalestras(response.data || []); // Armazena os dados das palestras
     } catch (error) {
@@ -98,8 +81,6 @@ const Dashboard = () => {
         type: "error",
         message: errorMessage || "Erro ao buscar tipos de palestra",
       });
-    } finally {
-      setLoading(false);
     }
   };
 

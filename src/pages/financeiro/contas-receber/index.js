@@ -10,7 +10,6 @@ import {
   Category,
   DateRange,
   FilterAlt,
-  Numbers,
   Print,
   StarOutlineSharp,
 } from "@mui/icons-material";
@@ -134,13 +133,13 @@ const ContasReceber = () => {
       setValorMensal(
         conta.valor_mensal ||
           conta.valor?.replace("R$ ", "").replace(",", ".") ||
-          ""
+          "",
       );
     } else {
       setValorTotal(
         conta.valor_total ||
           conta.valor?.replace("R$ ", "").replace(",", ".") ||
-          ""
+          "",
       );
     }
     setFormaPagamento(conta.forma_pagamento || "");
@@ -164,12 +163,12 @@ const ContasReceber = () => {
   const mapearDadosParaTabela = (
     dadosContas,
     dadosPrestadores,
-    dadosPalestras
+    dadosPalestras,
   ) => {
     const contasMapeadas = dadosContas.map((conta) => {
       const tipo = conta.custo_fixo ? "Custo Fixo" : "Custo Variável";
       const dataFormatada = new Date(conta.data_inicio).toLocaleDateString(
-        "pt-BR"
+        "pt-BR",
       );
       const valor = conta.custo_fixo
         ? `R$ ${parseFloat(conta.valor_mensal).toFixed(2).replace(".", ",")}`
@@ -214,10 +213,10 @@ const ContasReceber = () => {
       // Se tem parcelas, verifica o status de cada uma
       else {
         const todasPagas = palestra.parcelas.every(
-          (p) => p.status_pagamento === "2"
+          (p) => p.status_pagamento === "2",
         );
         const nenhumaPaga = palestra.parcelas.every(
-          (p) => p.status_pagamento === "1"
+          (p) => p.status_pagamento === "1",
         );
         const algumasPagas = !todasPagas && !nenhumaPaga;
 
@@ -284,7 +283,7 @@ const ContasReceber = () => {
 
           // Verifica se todas as parcelas estão pagas
           const todasPagas = servico.parcelas.every(
-            (parcela) => parcela.status_pagamento_comissao === 1
+            (parcela) => parcela.status_pagamento_comissao === 1,
           );
 
           if (parcelasVencidasNaoPagas) {
@@ -296,10 +295,10 @@ const ContasReceber = () => {
           } else {
             // Caso contrário, verifica se há parcelas pagas e pendentes
             const temParcelasPagas = servico.parcelas.some(
-              (parcela) => parcela.status_pagamento_comissao === 1
+              (parcela) => parcela.status_pagamento_comissao === 1,
             );
             const temParcelasPendentes = servico.parcelas.some(
-              (parcela) => parcela.status_pagamento_comissao !== 1
+              (parcela) => parcela.status_pagamento_comissao !== 1,
             );
 
             if (temParcelasPagas && temParcelasPendentes) {
@@ -323,7 +322,7 @@ const ContasReceber = () => {
           data_inicio: servico.data_pagamento || servico.data_inicio,
           valor_total: valorComissaoTotal,
         };
-      })
+      }),
     );
 
     return [...contasMapeadas, ...palestrasMapeadas, ...prestadoresMapeados];
@@ -365,12 +364,12 @@ const ContasReceber = () => {
 
       // 4. Verifica se há parcelas pendentes não vencidas
       const parcelasPendentesNaoVencidas = conta.parcelas.some(
-        (p) => p.status_pagamento === 2
+        (p) => p.status_pagamento === 2,
       );
 
       // 5. Verifica se há parcelas pagas
       const temParcelasPagas = conta.parcelas.some(
-        (p) => p.status_pagamento === 1
+        (p) => p.status_pagamento === 1,
       );
 
       if (temParcelasPagas && parcelasPendentesNaoVencidas) {
@@ -407,12 +406,12 @@ const ContasReceber = () => {
           buscarContasReceber(),
           buscarRelatorioPretadores(),
           buscarPalestraCurso(),
-        ]
+        ],
       );
       const dadosMapeados = mapearDadosParaTabela(
         dadosContas || [],
         dadosPrestadores?.data || [],
-        dadosPalestras?.data || []
+        dadosPalestras?.data || [],
       );
       setContasReceberVi(dadosMapeados);
     } catch (error) {
@@ -473,7 +472,7 @@ const ContasReceber = () => {
 
     if (termoBusca) {
       dadosFiltrados = dadosFiltrados.filter((item) =>
-        item.nome.toLowerCase().includes(termoBusca.toLowerCase())
+        item.nome.toLowerCase().includes(termoBusca.toLowerCase()),
       );
     }
 
@@ -516,7 +515,7 @@ const ContasReceber = () => {
 
     if (filtroStatus) {
       dadosFiltrados = dadosFiltrados.filter(
-        (item) => item.status === filtroStatus
+        (item) => item.status === filtroStatus,
       );
     }
 
@@ -543,7 +542,7 @@ const ContasReceber = () => {
       if (item.tipoOrigem === "Conta à Receber") {
         // Para contas à receber normais
         const valorNumerico = parseFloat(
-          item.valor.replace("R$ ", "").replace(".", "").replace(",", ".")
+          item.valor.replace("R$ ", "").replace(".", "").replace(",", "."),
         );
 
         if (item.status === "Pago") {
@@ -569,7 +568,7 @@ const ContasReceber = () => {
           // Se não tem parcelas, verifica o status direto do item
           const valorNumerico = parseFloat(
             item.valor_total ||
-              item.valor.replace("R$ ", "").replace(".", "").replace(",", ".")
+              item.valor.replace("R$ ", "").replace(".", "").replace(",", "."),
           );
           if (item.status_pagamento === "2") {
             // 2 = Pago
@@ -593,7 +592,7 @@ const ContasReceber = () => {
         } else {
           const valorNumerico = parseFloat(
             item.valor_total ||
-              item.valor.replace("R$ ", "").replace(".", "").replace(",", ".")
+              item.valor.replace("R$ ", "").replace(".", "").replace(",", "."),
           );
           if (item.status_pagamento_comissao === 1) {
             // 1 = Pago
@@ -615,7 +614,7 @@ const ContasReceber = () => {
 
   const totais = useMemo(
     () => calcularTotais(dadosFiltrados),
-    [dadosFiltrados]
+    [dadosFiltrados],
   );
 
   // Format the values to Brazilian currency format

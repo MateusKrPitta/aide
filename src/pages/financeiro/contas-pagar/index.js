@@ -53,7 +53,7 @@ const ContasPagar = () => {
   const [loading, setLoading] = useState(false);
   const [filtro, setFiltro] = useState(false);
   const [informacoes, setInformacoes] = useState(false);
-  const [listaPrestadores, setListaPrestadores] = useState([]);
+  //const [listaPrestadores, setListaPrestadores] = useState([]);
   const [prestadorSelecionado, setPrestadorSelecionado] = useState("");
   const [nomeConta, setNomeConta] = useState("");
   const [dataInicio, setDataInicio] = useState("");
@@ -63,13 +63,11 @@ const ContasPagar = () => {
   const [formaPagamento, setFormaPagamento] = useState("");
   const [valor, setValor] = useState("");
   const [contasPagar, setContasPagar] = useState([]);
-  const [listaUsuarios, setListaUsuarios] = useState([]);
+  //const [listaUsuarios, setListaUsuarios] = useState([]);
   const [contaEditando, setContaEditando] = useState(null);
   const [categoriaSelecionada, setCategoriaSelecionada] = useState("");
   const [categoriasCadastradas, setCategoriasCadastradas] = useState([]);
   const [relatorios, setRelatorios] = useState([]);
-  const [loadingContas, setLoadingContas] = useState(false);
-  const [loadingPrestadores, setLoadingPrestadores] = useState(false);
   const [modalParcelas, setModalParcelas] = useState(false);
   const [parcelasConta, setParcelasConta] = useState([]);
   const [parcelasEditando, setParcelasEditando] = useState({});
@@ -79,7 +77,7 @@ const ContasPagar = () => {
   const [dataFimFiltro, setDataFimFiltro] = useState("");
   const [statusPagamentoFiltro, setStatusPagamentoFiltro] = useState("");
   const categoriasAtivas = categoriasCadastradas.filter(
-    (categoria) => categoria.ativo
+    (categoria) => categoria.ativo,
   );
 
   const handleParcelaChange = (parcelaId, field, value) => {
@@ -119,11 +117,11 @@ const ContasPagar = () => {
 
       const response = await atualizarParcelaContasPagar(
         parcelaId,
-        dadosParaEnviar
+        dadosParaEnviar,
       );
 
       setParcelasConta((prev) =>
-        prev.map((p) => (p && p.id === parcelaId ? response.data : p))
+        prev.map((p) => (p && p.id === parcelaId ? response.data : p)),
       );
 
       setParcelasEditando((prev) => {
@@ -134,7 +132,7 @@ const ContasPagar = () => {
       const updatedContas = await buscarContasPagar();
       setContasPagar(updatedContas);
       const contaAtual = updatedContas.find(
-        (c) => c.id === (contaEditando?.id || parcelasConta[0]?.conta_id)
+        (c) => c.id === (contaEditando?.id || parcelasConta[0]?.conta_id),
       );
       if (contaAtual) {
         setParcelasConta((contaAtual.parcelas || []).filter((p) => p && p.id));
@@ -205,11 +203,11 @@ const ContasPagar = () => {
     }
 
     setDataInicio(
-      conta.data_inicio ? formatDateForInput(conta.data_inicio) : ""
+      conta.data_inicio ? formatDateForInput(conta.data_inicio) : "",
     );
     setDataFim(conta.data_fim ? formatDateForInput(conta.data_fim) : "");
     setDataVariavel(
-      conta.data_inicio ? formatDateForInput(conta.data_inicio) : ""
+      conta.data_inicio ? formatDateForInput(conta.data_inicio) : "",
     );
 
     // Ajuste para contas variáveis
@@ -220,8 +218,8 @@ const ContasPagar = () => {
         statusParcela === 1
           ? "pendente"
           : statusParcela === 2
-          ? "pago"
-          : "andamento"
+            ? "pago"
+            : "andamento",
       );
     } else {
       // Para contas fixas, usamos o status_geral
@@ -229,8 +227,8 @@ const ContasPagar = () => {
         conta.status_geral === 1
           ? "pendente"
           : conta.status_geral === 2
-          ? "andamento"
-          : "pago"
+            ? "andamento"
+            : "pago",
       );
     }
 
@@ -264,7 +262,7 @@ const ContasPagar = () => {
           new Date(conta.data_inicio) <= new Date(dataFimFiltro + "T23:59:59"));
 
       const categoriaMatch =
-        !categoriaFiltro || conta.categoria_id == categoriaFiltro;
+        !categoriaFiltro || conta.categoria_id === categoriaFiltro;
 
       const statusMatch =
         !statusPagamentoFiltro ||
@@ -330,8 +328,8 @@ const ContasPagar = () => {
       const categoriaMatch =
         !categoriaFiltro ||
         (item.tipo === "Conta"
-          ? item.originalData.categoria_id == categoriaFiltro
-          : item.originalData.servico?.servico_id == categoriaFiltro);
+          ? item.originalData.categoria_id === categoriaFiltro
+          : item.originalData.servico?.servico_id === categoriaFiltro);
 
       let statusItem = "";
       if (item.tipo === "Conta") {
@@ -448,12 +446,12 @@ const ContasPagar = () => {
       // Adicione valores monetários conforme o tipo
       if (tipoCusto === "fixo") {
         dadosParaEnviar.valor_mensal = parseFloat(
-          valor.replace("R$", "").replace(",", ".").trim()
+          valor.replace("R$", "").replace(",", ".").trim(),
         );
         dadosParaEnviar.valor_total = null;
       } else {
         dadosParaEnviar.valor_total = parseFloat(
-          valor.replace("R$", "").replace(",", ".").trim()
+          valor.replace("R$", "").replace(",", ".").trim(),
         );
         dadosParaEnviar.valor_mensal = null;
 
@@ -462,14 +460,11 @@ const ContasPagar = () => {
           statusPagamento === "pendente"
             ? 1
             : statusPagamento === "pago"
-            ? 2
-            : 3;
+              ? 2
+              : 3;
       }
 
-      const response = await atualizarContasPagar(
-        dadosParaEnviar,
-        contaEditando.id
-      );
+      await atualizarContasPagar(dadosParaEnviar, contaEditando.id);
 
       // Se for conta variável, atualize também a primeira parcela
       if (tipoCusto === "variavel" && contaEditando.parcelas?.[0]?.id) {
@@ -477,8 +472,8 @@ const ContasPagar = () => {
           statusPagamento === "pendente"
             ? 1
             : statusPagamento === "pago"
-            ? 2
-            : 3;
+              ? 2
+              : 3;
 
         await atualizarParcelaContasPagar(contaEditando.parcelas[0].id, {
           status: statusNumerico,
@@ -519,7 +514,7 @@ const ContasPagar = () => {
       setLoading(true);
 
       const valorNumerico = parseFloat(
-        valor.replace("R$", "").replace(",", ".").trim()
+        valor.replace("R$", "").replace(",", ".").trim(),
       );
 
       const dataInicioFormatada =
@@ -545,7 +540,7 @@ const ContasPagar = () => {
         categoria_id: categoriaSelecionada || null,
       };
 
-      const response = await criarContasPagar(dadosParaEnviar);
+      await criarContasPagar(dadosParaEnviar);
 
       CustomToast({
         type: "success",
@@ -590,7 +585,7 @@ const ContasPagar = () => {
       setLoading(true);
       await deletarContas(id);
       setContasPagar((prevContas) =>
-        prevContas.filter((conta) => conta.id !== id)
+        prevContas.filter((conta) => conta.id !== id),
       );
       const updatedContas = await buscarContasPagar();
       setContasPagar(updatedContas);
@@ -612,12 +607,12 @@ const ContasPagar = () => {
       const dadosFormatados = response.data.map((item) => {
         const totalServico = item.servicos.reduce(
           (acc, servico) => acc + parseFloat(servico.valor_total),
-          0
+          0,
         );
 
         const totalComissao = item.servicos.reduce(
           (acc, servico) => acc + parseFloat(servico.comissao),
-          0
+          0,
         );
 
         const data = new Date(item.created_at);
@@ -625,8 +620,8 @@ const ContasPagar = () => {
 
         const hasPendingPayment = item.servicos.some((servico) =>
           servico.parcelas.some(
-            (parcela) => parcela.status_pagamento_prestador === 2
-          )
+            (parcela) => parcela.status_pagamento_prestador === 2,
+          ),
         );
 
         const status = hasPendingPayment ? "Pendente" : "Pago";
@@ -644,7 +639,6 @@ const ContasPagar = () => {
       });
 
       setRelatorios(response.data || []);
-      setListaUsuarios(dadosFormatados);
     } catch (error) {
       console.error("Erro ao buscar relatórios:", error);
     } finally {
@@ -655,35 +649,19 @@ const ContasPagar = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoadingContas(true);
-        setLoadingPrestadores(true);
-
-        const [contasResponse, prestadoresResponse, categoriasResponse] =
-          await Promise.all([
-            buscarContasPagar(),
-            buscarPretadores(),
-            buscarCategoria(),
-          ]);
+        const [contasResponse, categoriasResponse] = await Promise.all([
+          buscarContasPagar(),
+          buscarPretadores(),
+          buscarCategoria(),
+        ]);
 
         setContasPagar(contasResponse);
         setCategoriasCadastradas(categoriasResponse.data || []);
-
-        const prestadoresFormatados = prestadoresResponse.data.map(
-          (prestador) => ({
-            id: prestador.id,
-            nome: prestador.nome,
-          })
-        );
-
-        setListaPrestadores(prestadoresFormatados);
       } catch (error) {
         CustomToast({
           type: "error",
           message: "Erro ao carregar dados",
         });
-      } finally {
-        setLoadingContas(false);
-        setLoadingPrestadores(false);
       }
     };
 
@@ -693,13 +671,13 @@ const ContasPagar = () => {
   useEffect(() => {
     if (modalParcelas && contasPagar.length > 0) {
       const contaAtual = contasPagar.find(
-        (c) => c.id === (contaEditando?.id || parcelasConta[0]?.conta_id)
+        (c) => c.id === (contaEditando?.id || parcelasConta[0]?.conta_id),
       );
       if (contaAtual) {
         setParcelasConta((contaAtual.parcelas || []).filter((p) => p && p.id));
       }
     }
-  }, [contasPagar, modalParcelas]);
+  }, [contasPagar, modalParcelas, contaEditando?.id, parcelasConta]);
 
   useEffect(() => {
     buscarRelatorioPrestadores();
@@ -826,7 +804,7 @@ const ContasPagar = () => {
                         dataInicio: dataInicioFiltro,
                         dataFim: dataFimFiltro,
                         status: statusPagamentoFiltro,
-                      }
+                      },
                     )
                   }
                   sx={{
@@ -1554,8 +1532,8 @@ const ContasPagar = () => {
                               ? "Pago"
                               : "Pendente"
                             : statusValue === 2
-                            ? "Pago"
-                            : "Pendente";
+                              ? "Pago"
+                              : "Pendente";
 
                           const statusColor =
                             statusText === "Pago"
@@ -1584,7 +1562,7 @@ const ContasPagar = () => {
                                       handleParcelaChange(
                                         parcela.id,
                                         "descricao",
-                                        e.target.value
+                                        e.target.value,
                                       )
                                     }
                                     sx={{ width: 200 }}
@@ -1613,13 +1591,13 @@ const ContasPagar = () => {
                                   type="date"
                                   value={formatDateForInput(
                                     parcela.data_vencimento ||
-                                      parcela.data_pagamento
+                                      parcela.data_pagamento,
                                   )}
                                   onChange={(e) =>
                                     handleParcelaChange(
                                       parcela.id,
                                       "data_vencimento",
-                                      e.target.value
+                                      e.target.value,
                                     )
                                   }
                                   InputProps={{ startAdornment: <DateRange /> }}
@@ -1634,7 +1612,7 @@ const ContasPagar = () => {
                                   value={
                                     parcelaEditando.data_pagamento
                                       ? formatDateForInput(
-                                          parcelaEditando.data_pagamento
+                                          parcelaEditando.data_pagamento,
                                         )
                                       : ""
                                   }
@@ -1642,7 +1620,7 @@ const ContasPagar = () => {
                                     handleParcelaChange(
                                       parcela.id,
                                       "data_pagamento",
-                                      e.target.value
+                                      e.target.value,
                                     )
                                   }
                                   InputProps={{ startAdornment: <DateRange /> }}
@@ -1664,7 +1642,7 @@ const ContasPagar = () => {
                                           parcela.originalData
                                             ?.valor_prestador ||
                                           parcela.valor_parcela
-                                      : parcela.valor
+                                      : parcela.valor,
                                   )}
                                   InputProps={{ startAdornment: <Money /> }}
                                 />
@@ -1693,7 +1671,7 @@ const ContasPagar = () => {
                                       handleParcelaChange(
                                         parcela.id,
                                         "status",
-                                        parseInt(e.target.value)
+                                        parseInt(e.target.value),
                                       )
                                     }
                                     InputProps={{

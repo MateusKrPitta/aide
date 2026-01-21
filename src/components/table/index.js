@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -38,11 +37,6 @@ const TableComponent = ({
   const [pageList, setPageList] = useState([]);
   const hasActions = Object.keys(actionCalls).length > 0;
   const actionTypes = Object.keys(actionCalls);
-  const [totals, setTotals] = useState({
-    entrada: 0,
-    estoqueInicial: 0,
-    estoqueFinal: 0,
-  });
 
   let headersList = hasActions
     ? headers.concat([
@@ -60,23 +54,9 @@ const TableComponent = ({
     onRowChange(updatedRows);
   };
 
-  const calculateTotals = (rows) => {
-    const newTotals = rows.reduce(
-      (acc, row) => {
-        acc.entrada += Number(row.entrada || 0);
-        acc.estoqueInicial += Number(row.estoqueInicial || 0);
-        acc.estoqueFinal += Number(row.estoqueFinal || 0);
-        return acc;
-      },
-      { entrada: 0, estoqueInicial: 0, estoqueFinal: 0 },
-    );
-    setTotals(newTotals);
-  };
-
   useEffect(() => {
     if (Array.isArray(rows)) {
       setPageList(rows);
-      calculateTotals(rows);
     } else {
       console.error("As rows não são um array", rows);
       setPageList([]);

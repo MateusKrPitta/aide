@@ -38,7 +38,7 @@ const Navbar = ({ user }) => {
     if (savedPage && savedPage !== activeRoute) {
       setActiveRoute(savedPage);
     }
-  }, []);
+  }, [activeRoute]);
 
   return (
     <div className="hidden sm:hidden md:hidden lg:block">

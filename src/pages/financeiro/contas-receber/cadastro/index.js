@@ -38,7 +38,7 @@ const CadastrarContaReceber = ({
   const [prestadorId, setPrestadorId] = useState("");
 
   const categoriasAtivas = categoriasCadastradas.filter(
-    (categoria) => categoria.ativo
+    (categoria) => categoria.ativo,
   );
 
   const limparCampos = () => {
@@ -112,7 +112,7 @@ const CadastrarContaReceber = ({
         dadosParaEnvio.valor_total = parseFloat(valorTotal);
       }
 
-      const response = await criarContasReceber(dadosParaEnvio);
+      await criarContasReceber(dadosParaEnvio);
 
       CustomToast({
         type: "success",

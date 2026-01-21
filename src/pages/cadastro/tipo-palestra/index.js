@@ -76,7 +76,7 @@ const TipoPalestra = () => {
 
     setLoading(true);
     try {
-      const response = await criarTipoPalestra(nome);
+      await criarTipoPalestra(nome);
 
       CustomToast({
         type: "success",

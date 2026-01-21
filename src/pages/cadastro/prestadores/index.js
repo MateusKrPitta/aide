@@ -44,7 +44,6 @@ const Prestadores = () => {
   const [endereco, setEndereco] = useState("");
   const [numero, setNumero] = useState("");
   const [complemento, setComplemento] = useState("");
-  const [servicosCadastrados, setServicosCadastrados] = useState([]);
   const [servicosSelecionados, setServicosSelecionados] = useState([]);
   const [todosServicos, setTodosServicos] = useState([]);
   const [listaPrestadores, setListaPrestadores] = useState([]);
@@ -270,7 +269,6 @@ const Prestadores = () => {
         .sort((a, b) => a.nome.localeCompare(b.nome));
 
       setTodosServicos(servicosParaSelect);
-      setServicosCadastrados(servicosAtivos || []);
     } catch (error) {
       const errorMessage = error.response?.data?.errors?.nome;
       CustomToast({
@@ -387,7 +385,7 @@ const Prestadores = () => {
     if (cadastroUsuario && todosServicos.length === 0) {
       buscarServicoCadastradas();
     }
-  }, [cadastroUsuario]);
+  }, [cadastroUsuario, todosServicos.length]);
   return (
     <div className="flex w-full ">
       <Navbar />

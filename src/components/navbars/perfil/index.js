@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -54,7 +54,6 @@ const notificationStyle = {
 const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [notifAnchorEl, setNotifAnchorEl] = useState(null);
   const [contasPagar, setContasPagar] = useState([]);
   const [contasReceber, setContasReceber] = useState([]);
@@ -64,7 +63,7 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
   const userName = sessionStorage.getItem("nome");
   const [notifications, setNotifications] = useState([]);
 
-  const checkParcelasVencidas = () => {
+  const checkParcelasVencidas = useCallback(() => {
     const now = new Date();
     const novasNotificacoes = [];
     const today = now.toISOString().split("T")[0];
@@ -165,11 +164,11 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
     setNotifications((prev) => {
       const existingIds = prev.map((n) => n.id);
       const toAdd = novasNotificacoes.filter(
-        (n) => !existingIds.includes(n.id)
+        (n) => !existingIds.includes(n.id),
       );
       return [...toAdd, ...prev];
     });
-  };
+  }, [contasPagar, contasReceber, relatorioPalestra, relatorioPrestador]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -211,7 +210,6 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
 
   const buscarContasPagarRelatorio = async () => {
     try {
-      setLoading(true);
       const response = await buscarContasPagar();
       setContasPagar(response.data || []);
     } catch (error) {
@@ -220,14 +218,11 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
         type: "error",
         message: errorMessage || "Erro ao buscar contas a pagar",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   const buscarContasReceberRelatorio = async () => {
     try {
-      setLoading(true);
       const response = await buscarContasReceber();
       setContasReceber(response.data || []);
     } catch (error) {
@@ -236,14 +231,11 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
         type: "error",
         message: errorMessage || "Erro ao buscar contas a receber",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   const buscarContasRelatorioPalestra = async () => {
     try {
-      setLoading(true);
       const response = await buscarRelatorioPalestras();
       setRelatorioPalestra(response.data || []);
     } catch (error) {
@@ -252,14 +244,11 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
         type: "error",
         message: errorMessage || "Erro ao buscar palestras/cursos",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   const buscarContasRelatorioPrestador = async () => {
     try {
-      setLoading(true);
       const response = await buscarRelatorioPretadores();
       setRelatorioPrestador(response.data || []);
     } catch (error) {
@@ -268,8 +257,6 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
         type: "error",
         message: errorMessage || "Erro ao buscar prestadores",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -319,9 +306,12 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
                 padding: 3,
               }}
             >
-              <a className="cursor-pointer p-1" style={{ color: "#9D4B5B" }}>
+              <label
+                className="cursor-pointer p-1"
+                style={{ color: "#9D4B5B" }}
+              >
                 <AccountCircleIcon />
-              </a>
+              </label>
               <span className="text-xs text-primary font-bold ">
                 {userName || "Usuário"}
               </span>
@@ -342,9 +332,13 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
             className="w-[3%] flex justify-center items-center"
             style={{ backgroundColor: "white", borderRadius: "50px" }}
           >
-            <a onClick={handleMenuOpen} className="cursor-pointer p-1">
-              <LogoutIcon fontSize="small" />
-            </a>
+            <button
+              className="cursor-pointer p-1"
+              style={{ color: "#9D4B5B", background: "none", border: "none" }}
+              onClick={handleMenuOpen}
+            >
+              <AccountCircleIcon />
+            </button>
           </div>
         </div>
       </div>
