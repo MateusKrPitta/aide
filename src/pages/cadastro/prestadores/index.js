@@ -52,7 +52,7 @@ const Prestadores = () => {
   const [pesquisar, setPesquisar] = useState("");
 
   const filteredPrestadores = listaPrestadores.filter((prestador) =>
-    prestador.nome.toLowerCase().includes(pesquisar.toLowerCase())
+    prestador.nome.toLowerCase().includes(pesquisar.toLowerCase()),
   );
 
   const formatDocument = (value) => {
@@ -64,16 +64,16 @@ const Prestadores = () => {
         return `${cleaned.slice(0, 2)}.${cleaned.slice(2)}`;
       if (cleaned.length <= 8)
         return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(
-          5
+          5,
         )}`;
       if (cleaned.length <= 12)
         return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(
           5,
-          8
+          8,
         )}/${cleaned.slice(8)}`;
       return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(
         5,
-        8
+        8,
       )}/${cleaned.slice(8, 12)}-${cleaned.slice(12, 14)}`;
     } else {
       if (cleaned.length <= 3) return cleaned;
@@ -81,11 +81,11 @@ const Prestadores = () => {
         return `${cleaned.slice(0, 3)}.${cleaned.slice(3)}`;
       if (cleaned.length <= 9)
         return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(
-          6
+          6,
         )}`;
       return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(
         6,
-        9
+        9,
       )}-${cleaned.slice(9, 11)}`;
     }
   };
@@ -100,11 +100,11 @@ const Prestadores = () => {
       return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
     if (cleaned.length <= 10)
       return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(
-        6
+        6,
       )}`;
     return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(
       7,
-      11
+      11,
     )}`;
   };
 
@@ -117,8 +117,6 @@ const Prestadores = () => {
       nome.trim() !== "" &&
       telefone.replace(/\D/g, "").length >= 10 &&
       (isCpfValid || isCnpjValid) &&
-      email.trim() !== "" &&
-      validarEmail(email) &&
       estado.trim().length === 2 &&
       cidade.trim() !== "" &&
       endereco.trim() !== "" &&
@@ -176,7 +174,7 @@ const Prestadores = () => {
         endereco,
         numero,
         complemento,
-        servicosSelecionados
+        servicosSelecionados,
       );
 
       CustomToast({
@@ -307,7 +305,7 @@ const Prestadores = () => {
         numero,
         complemento,
         servicosSelecionados,
-        cpf
+        cpf,
       );
 
       CustomToast({
@@ -704,11 +702,11 @@ const Prestadores = () => {
                       options={todosServicos}
                       getOptionLabel={(option) => option.nome}
                       value={todosServicos.filter((servico) =>
-                        servicosSelecionados.includes(servico.id)
+                        servicosSelecionados.includes(servico.id),
                       )}
                       onChange={(event, newValue) => {
                         setServicosSelecionados(
-                          newValue.map((item) => item.id)
+                          newValue.map((item) => item.id),
                         );
                       }}
                       filterSelectedOptions
@@ -963,11 +961,11 @@ const Prestadores = () => {
                         options={todosServicos}
                         getOptionLabel={(option) => option.nome}
                         value={todosServicos.filter((servico) =>
-                          servicosSelecionados.includes(servico.id)
+                          servicosSelecionados.includes(servico.id),
                         )}
                         onChange={(event, newValue) => {
                           setServicosSelecionados(
-                            newValue.map((item) => item.id)
+                            newValue.map((item) => item.id),
                           );
                         }}
                         filterSelectedOptions
