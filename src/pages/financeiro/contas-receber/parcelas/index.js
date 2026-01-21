@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import ModalLateral from "../../../../components/modal-lateral";
 import { Article } from "@mui/icons-material";
 import TransformIcon from "@mui/icons-material/Transform";
@@ -104,7 +104,7 @@ const ParcelasContasReceber = ({
 
       const dadosEditados = parcelasEditando[parcelaId];
       const parcelaOriginal = contaSelecionada.parcelas.find(
-        (p) => p.id === parcelaId
+        (p) => p.id === parcelaId,
       );
 
       const dadosParaEnvio = {
@@ -130,18 +130,18 @@ const ParcelasContasReceber = ({
       if (isPalestra) {
         response = await atualizarStatusPagParcela(
           parcelaId,
-          dadosParaEnvio.status_pagamento
+          dadosParaEnvio.status_pagamento,
         );
       } else if (isPrestador) {
         response = await atualizarStatusPagamento(
           parcelaId,
           "comissao",
-          dadosParaEnvio.status_pagamento
+          dadosParaEnvio.status_pagamento,
         );
       } else {
         response = await atualizarParcelaContasReceber(
           parcelaId,
-          dadosParaEnvio
+          dadosParaEnvio,
         );
       }
       setContaSelecionada((prev) => ({
@@ -159,7 +159,7 @@ const ParcelasContasReceber = ({
                   : p.data_pagamento,
                 updated_at: new Date().toISOString(),
               }
-            : p
+            : p,
         ),
       }));
 
@@ -267,7 +267,7 @@ const ParcelasContasReceber = ({
 
                 if (isPrestador) {
                   statusValue = parseInt(
-                    parcela.status_pagamento_comissao || "0"
+                    parcela.status_pagamento_comissao || "0",
                   );
                   statusText = statusValue === 1 ? "Pago" : "Pendente";
                   statusColor =
@@ -327,7 +327,7 @@ const ParcelasContasReceber = ({
                             handleParcelaChange(
                               parcela.id,
                               "descricao",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           sx={{ width: 200 }}
@@ -370,13 +370,13 @@ const ParcelasContasReceber = ({
                             handleParcelaChange(
                               parcela.id,
                               "data_pagamento",
-                              newValue
+                              newValue,
                             );
                           } else {
                             handleParcelaChange(
                               parcela.id,
                               "data_vencimento",
-                              newValue
+                              newValue,
                             );
                           }
                         }}
@@ -407,7 +407,7 @@ const ParcelasContasReceber = ({
                             handleParcelaChange(
                               parcela.id,
                               "data_pagamento",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           InputProps={{
@@ -448,7 +448,7 @@ const ParcelasContasReceber = ({
                         onChange={(e) =>
                           handleStatusChange(
                             parcela.id,
-                            parseInt(e.target.value)
+                            parseInt(e.target.value),
                           )
                         }
                         InputProps={{
@@ -499,7 +499,7 @@ const ParcelasContasReceber = ({
                             handleParcelaChange(
                               parcela.id,
                               "forma_pagamento",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           InputProps={{

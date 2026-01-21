@@ -55,7 +55,7 @@ export const contasPagarTabela = (contas, relatorios = []) => {
         _id: conta.id,
         nome: conta.nome || "Sem nome",
         data: formatarData(
-          primeiraParcela.data_vencimento || conta.data_inicio
+          primeiraParcela.data_vencimento || conta.data_inicio,
         ),
         valor: formatarValor(valorParaMostrar),
         categoria: conta.categoria_id
@@ -93,7 +93,6 @@ export const contasPagarTabela = (contas, relatorios = []) => {
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0);
 
-        // Verificar status geral do serviço
         let temPendenteAtrasado = false;
         let temPendenteNaoAtrasado = false;
         let todasPagas = true;
@@ -123,7 +122,7 @@ export const contasPagarTabela = (contas, relatorios = []) => {
 
         const valorTotalPrestador = servico.parcelas?.reduce(
           (sum, parcela) => sum + parseFloat(parcela.valor_prestador || 0),
-          0
+          0,
         );
 
         const primeiraData = servico.parcelas?.[0]?.data_pagamento;

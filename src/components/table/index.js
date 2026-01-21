@@ -68,7 +68,7 @@ const TableComponent = ({
         acc.estoqueFinal += Number(row.estoqueFinal || 0);
         return acc;
       },
-      { entrada: 0, estoqueInicial: 0, estoqueFinal: 0 }
+      { entrada: 0, estoqueInicial: 0, estoqueFinal: 0 },
     );
     setTotals(newTotals);
   };
@@ -91,9 +91,6 @@ const TableComponent = ({
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
-
-  const userTipo = localStorage.getItem("tipo");
-  const location = useLocation();
 
   const renderActions = (row, rowIndex) => {
     let actions = {
@@ -278,7 +275,7 @@ const TableComponent = ({
 
   const paginatedRows = pageList.slice(
     page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
+    page * rowsPerPage + rowsPerPage,
   );
 
   useEffect(() => {
@@ -306,7 +303,7 @@ const TableComponent = ({
                   >
                     {label}
                   </TableCell>
-                )
+                ),
             )}
           </TableRow>
         </TableHead>
@@ -354,10 +351,10 @@ const TableComponent = ({
                           row.tipo === "entrada"
                             ? "#006b33"
                             : row.tipo === "saida"
-                            ? "#ff0000"
-                            : row.tipo === "desperdicio"
-                            ? "#000000"
-                            : "transparent",
+                              ? "#ff0000"
+                              : row.tipo === "desperdicio"
+                                ? "#000000"
+                                : "transparent",
                         color: "black",
                       }}
                     >
@@ -374,7 +371,7 @@ const TableComponent = ({
                           handleInputChange(
                             page * rowsPerPage + rowIndex,
                             key,
-                            e.target.value
+                            e.target.value,
                           )
                         }
                         variant="outlined"
@@ -389,7 +386,7 @@ const TableComponent = ({
                     <TableCell style={{ fontSize: "12px" }} key={key}>
                       {row[key] || "-"}
                     </TableCell>
-                  ))
+                  )),
               )}
             </TableRow>
           ))}

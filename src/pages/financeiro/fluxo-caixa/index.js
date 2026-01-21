@@ -13,11 +13,7 @@ import {
   Category,
   DateRange,
   FilterAlt,
-  InfoRounded,
-  MonetizationOn,
   Money,
-  Person,
-  Person2,
   Print,
   Save,
 } from "@mui/icons-material";
@@ -190,7 +186,7 @@ const FluxoCaixa = () => {
       setLoading(true);
       const response = await buscarCategoria();
       const categoriasAtivas = response.data.filter(
-        (categoria) => categoria.ativo
+        (categoria) => categoria.ativo,
       );
       setCategoriasCadastradas(categoriasAtivas || []);
     } catch (error) {
@@ -227,7 +223,7 @@ const FluxoCaixa = () => {
       setLoading(true);
 
       const valorFormatado = parseFloat(
-        valor.replace("R$ ", "").replace(",", ".")
+        valor.replace("R$ ", "").replace(",", "."),
       );
 
       await criarFluxoCaixa(
@@ -235,7 +231,7 @@ const FluxoCaixa = () => {
         assunto,
         observacao,
         parseInt(categoriaId),
-        valorFormatado
+        valorFormatado,
       );
 
       CustomToast({
@@ -273,8 +269,8 @@ const FluxoCaixa = () => {
         item.tipo === 1
           ? "Entrada"
           : item.tipo === 2
-          ? "Saída"
-          : "Desconhecido",
+            ? "Saída"
+            : "Desconhecido",
       data: item.created_at
         ? new Date(item.created_at).toLocaleDateString("pt-BR")
         : "-",
@@ -352,11 +348,11 @@ const FluxoCaixa = () => {
           let periodo = "Período: ";
           if (filtros.dataInicio)
             periodo += `${new Date(filtros.dataInicio).toLocaleDateString(
-              "pt-BR"
+              "pt-BR",
             )} `;
           if (filtros.dataFim)
             periodo += `até ${new Date(filtros.dataFim).toLocaleDateString(
-              "pt-BR"
+              "pt-BR",
             )}`;
           doc.text(periodo, 14, 22);
         }
@@ -392,7 +388,7 @@ const FluxoCaixa = () => {
             doc.text(
               `Página ${data.pageNumber}`,
               doc.internal.pageSize.width - 14,
-              doc.internal.pageSize.height - 5
+              doc.internal.pageSize.height - 5,
             );
           },
         });

@@ -40,7 +40,6 @@ const EditarContaREceber = ({
   const [valorMensal, setValorMensal] = useState("");
   const [valorTotal, setValorTotal] = useState("");
   const [formaPagamento, setFormaPagamento] = useState("");
-  const [prestadorId, setPrestadorId] = useState("");
 
   const handleUpdate = async () => {
     try {

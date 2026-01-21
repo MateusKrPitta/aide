@@ -29,14 +29,6 @@ const TipoPalestra = () => {
   const [nome, setNome] = useState("");
   const [tiposPalestra, setTiposPalestra] = useState([]);
   const [pesquisar, setPesquisar] = useState("");
-  const dadosParaTabela = tiposPalestra
-    .filter((tipo) => tipo.nome.toLowerCase().includes(pesquisar.toLowerCase()))
-    .map((tipo) => ({
-      id: tipo.id,
-      nome: tipo.nome,
-      ativo: tipo.ativo,
-      status: tipo.ativo ? "Ativo" : "Inativo",
-    }));
 
   const filteredTiposPalestra = tiposPalestra
     .filter((tipo) => tipo.nome.toLowerCase().includes(pesquisar.toLowerCase()))
@@ -115,8 +107,8 @@ const TipoPalestra = () => {
 
       setTiposPalestra((prev) =>
         prev.map((item) =>
-          item.id === tipoEditando.id ? { ...item, nome } : item
-        )
+          item.id === tipoEditando.id ? { ...item, nome } : item,
+        ),
       );
 
       handleCloseEdicao();
@@ -167,8 +159,8 @@ const TipoPalestra = () => {
 
       setTiposPalestra((prev) =>
         prev.map((item) =>
-          item.id === tipoCompleto.id ? { ...item, ativo: !item.ativo } : item
-        )
+          item.id === tipoCompleto.id ? { ...item, ativo: !item.ativo } : item,
+        ),
       );
     } catch (error) {
     } finally {

@@ -7,16 +7,12 @@ import {
   InfoRounded,
   People,
   Person,
-  Person2,
   Work,
 } from "@mui/icons-material";
-import Categoria from "../../../pages/cadastro/categoria";
 
 const HeaderCadastro = () => {
   const navigate = useNavigate();
   const userData = JSON.parse(localStorage.getItem("user"));
-  const userType = userData?.tipo;
-
   const handleNavigation = (section) => {
     switch (section) {
       case "usuario":

@@ -47,7 +47,6 @@ const RelatorioPrestadores = () => {
   const [dataFim, setDataFim] = useState("");
   const [statusPagamento, setStatusPagamento] = useState("");
   const [impressao, setImpressao] = useState(false);
-  const componentRef = React.useRef();
 
   const handlePrint = () => {
     setImpressao(true);
@@ -98,12 +97,12 @@ const RelatorioPrestadores = () => {
       const dadosFormatados = response.data.map((item) => {
         const totalServico = item.servicos.reduce(
           (acc, servico) => acc + parseFloat(servico.valor_total),
-          0
+          0,
         );
 
         const totalComissao = item.servicos.reduce(
           (acc, servico) => acc + parseFloat(servico.comissao),
-          0
+          0,
         );
 
         const data = new Date(item.created_at);
@@ -111,8 +110,8 @@ const RelatorioPrestadores = () => {
 
         const hasPendingPayment = item.servicos.some((servico) =>
           servico.parcelas.some(
-            (parcela) => parcela.status_pagamento_prestador === 2
-          )
+            (parcela) => parcela.status_pagamento_prestador === 2,
+          ),
         );
 
         const status = hasPendingPayment ? "Pendente" : "Pago";
@@ -250,7 +249,7 @@ const RelatorioPrestadores = () => {
       (acc, item) =>
         acc +
         parseFloat(item.valor_servico.replace("R$ ", "").replace(",", ".")),
-      0
+      0,
     );
 
   const totalPendente = relatoriosFiltrados
@@ -259,7 +258,7 @@ const RelatorioPrestadores = () => {
       (acc, item) =>
         acc +
         parseFloat(item.valor_servico.replace("R$ ", "").replace(",", ".")),
-      0
+      0,
     );
 
   const totalGeral = totalPago + totalPendente;
@@ -619,7 +618,7 @@ const RelatorioPrestadores = () => {
                           </label>
                           <p className="text-xs mt-1">
                             {new Date(
-                              itemSelecionado.created_at
+                              itemSelecionado.created_at,
                             ).toLocaleDateString("pt-BR")}
                           </p>
                         </div>
@@ -631,8 +630,8 @@ const RelatorioPrestadores = () => {
                           <p className="text-xs mt-1">
                             {itemSelecionado.servicos.some((servico) =>
                               servico.parcelas.some(
-                                (p) => p.status_pagamento_prestador === 2
-                              )
+                                (p) => p.status_pagamento_prestador === 2,
+                              ),
                             )
                               ? "Pendente"
                               : "Pago"}
@@ -646,8 +645,8 @@ const RelatorioPrestadores = () => {
                           <p className="text-xs mt-1">
                             {itemSelecionado.servicos.some((servico) =>
                               servico.parcelas.some(
-                                (p) => p.status_pagamento_comissao === 2
-                              )
+                                (p) => p.status_pagamento_comissao === 2,
+                              ),
                             )
                               ? "Pendente"
                               : "Pago"}
@@ -726,7 +725,7 @@ const RelatorioPrestadores = () => {
                                       <span className="text-xs">
                                         Vencimento:{" "}
                                         {new Date(
-                                          parcela.data_pagamento
+                                          parcela.data_pagamento,
                                         ).toLocaleDateString("pt-BR")}
                                       </span>
                                       <span className="text-xs font-medium">
@@ -773,7 +772,7 @@ const RelatorioPrestadores = () => {
                                           handleStatusChange(
                                             parcela.id,
                                             "prestador",
-                                            parseInt(e.target.value)
+                                            parseInt(e.target.value),
                                           )
                                         }
                                       >
@@ -794,7 +793,7 @@ const RelatorioPrestadores = () => {
                                           handleStatusChange(
                                             parcela.id,
                                             "comissao",
-                                            parseInt(e.target.value)
+                                            parseInt(e.target.value),
                                           )
                                         }
                                       >
@@ -822,7 +821,7 @@ const RelatorioPrestadores = () => {
                               .reduce(
                                 (acc, serv) =>
                                   acc + parseFloat(serv.valor_total),
-                                0
+                                0,
                               )
                               .toFixed(2)
                               .replace(".", ",")}
@@ -838,7 +837,7 @@ const RelatorioPrestadores = () => {
                             {itemSelecionado.servicos
                               .reduce(
                                 (acc, serv) => acc + parseFloat(serv.comissao),
-                                0
+                                0,
                               )
                               .toFixed(2)
                               .replace(".", ",")}
@@ -855,7 +854,7 @@ const RelatorioPrestadores = () => {
                               .reduce(
                                 (acc, serv) =>
                                   acc + parseFloat(serv.valor_prestador),
-                                0
+                                0,
                               )
                               .toFixed(2)
                               .replace(".", ",")}
@@ -873,12 +872,12 @@ const RelatorioPrestadores = () => {
                               .flatMap((serv) => serv.parcelas)
                               .filter(
                                 (parcela) =>
-                                  parcela.status_pagamento_comissao === 1
+                                  parcela.status_pagamento_comissao === 1,
                               )
                               .reduce(
                                 (acc, parcela) =>
                                   acc + parseFloat(parcela.valor_comissao || 0),
-                                0
+                                0,
                               )
                               .toFixed(2)
                               .replace(".", ",")}
@@ -895,13 +894,13 @@ const RelatorioPrestadores = () => {
                               .flatMap((serv) => serv.parcelas)
                               .filter(
                                 (parcela) =>
-                                  parcela.status_pagamento_prestador === 1
+                                  parcela.status_pagamento_prestador === 1,
                               )
                               .reduce(
                                 (acc, parcela) =>
                                   acc +
                                   parseFloat(parcela.valor_prestador || 0),
-                                0
+                                0,
                               )
                               .toFixed(2)
                               .replace(".", ",")}
@@ -919,25 +918,25 @@ const RelatorioPrestadores = () => {
                                 .flatMap((serv) => serv.parcelas)
                                 .filter(
                                   (parcela) =>
-                                    parcela.status_pagamento_comissao === 1
+                                    parcela.status_pagamento_comissao === 1,
                                 )
                                 .reduce(
                                   (acc, parcela) =>
                                     acc +
                                     parseFloat(parcela.valor_comissao || 0),
-                                  0
+                                  0,
                                 ) +
                               itemSelecionado.servicos
                                 .flatMap((serv) => serv.parcelas)
                                 .filter(
                                   (parcela) =>
-                                    parcela.status_pagamento_prestador === 1
+                                    parcela.status_pagamento_prestador === 1,
                                 )
                                 .reduce(
                                   (acc, parcela) =>
                                     acc +
                                     parseFloat(parcela.valor_prestador || 0),
-                                  0
+                                  0,
                                 )
                             )
                               .toFixed(2)

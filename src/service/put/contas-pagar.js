@@ -1,5 +1,3 @@
-// src/service/put/contas-pagar.js
-import CustomToast from "../../components/toast";
 import httpsInstance from "../url";
 
 export const atualizarContasPagar = async (dados, id) => {

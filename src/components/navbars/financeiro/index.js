@@ -8,7 +8,6 @@ import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
 const HeaderFinanceiro = () => {
   const navigate = useNavigate();
   const userData = JSON.parse(localStorage.getItem("user"));
-  const userType = userData?.tipo;
 
   const handleNavigation = (section) => {
     switch (section) {

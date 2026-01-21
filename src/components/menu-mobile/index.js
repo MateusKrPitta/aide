@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { useNavigate } from "react-router-dom";
@@ -7,19 +7,13 @@ import { ExitToApp } from "@mui/icons-material";
 import AddToQueueIcon from "@mui/icons-material/AddToQueue";
 import DataThresholdingIcon from "@mui/icons-material/DataThresholding";
 import AddchartIcon from "@mui/icons-material/Addchart";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
 import Logo from "../../assets/png/logo.png";
-import SelectTextFields from "../select";
 import MiscellaneousServicesIcon from "@mui/icons-material/MiscellaneousServices";
 import MenuIcon from "@mui/icons-material/Menu";
 const MenuMobile = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
-
-  const tipoUsuario = localStorage.getItem("tipo");
-  const userData = JSON.parse(localStorage.getItem("user"));
-
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };

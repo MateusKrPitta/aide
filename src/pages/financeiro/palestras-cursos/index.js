@@ -11,7 +11,6 @@ import {
   FilterAlt,
   InfoRounded,
   Person,
-  Person2,
   Print,
   Work,
 } from "@mui/icons-material";
@@ -72,7 +71,7 @@ const RelatorioPalestrasCursos = () => {
       const response = await buscarRelatorioPalestras();
 
       const { clientesUnicos, tiposPalestraUnicos } = extrairOpcoesFiltro(
-        response.data
+        response.data,
       );
       setClientesOptions(clientesUnicos);
       setTiposPalestraOptions(tiposPalestraUnicos);
@@ -160,27 +159,6 @@ const RelatorioPalestrasCursos = () => {
   };
 
   const FecharFiltro = () => setFiltro(false);
-
-  const calcularTotais = () => {
-    let totalPago = 0;
-    let totalPendente = 0;
-
-    relatorioPalestras.forEach((palestra) => {
-      const valorPalestra = parseFloat(palestra.original.valor);
-
-      if (palestra.status === "Pago") {
-        totalPago += valorPalestra;
-      } else {
-        totalPendente += valorPalestra;
-      }
-    });
-
-    return {
-      totalPago,
-      totalPendente,
-      totalGeral: totalPago + totalPendente,
-    };
-  };
 
   const { totalPago, totalPendente, totalGeral } = useMemo(() => {
     let pago = 0;
@@ -370,14 +348,14 @@ const RelatorioPalestrasCursos = () => {
                         tipoPalestra: tipoPalestraFiltro,
                         dataInicio: dataInicioFiltro
                           ? new Date(dataInicioFiltro).toLocaleDateString(
-                              "pt-BR"
+                              "pt-BR",
                             )
                           : "",
                         dataFim: dataFimFiltro
                           ? new Date(dataFimFiltro).toLocaleDateString("pt-BR")
                           : "",
                         statusPagamento: statusPagamentoFiltro,
-                      }
+                      },
                     )
                   }
                   sx={{
@@ -581,7 +559,7 @@ const RelatorioPalestrasCursos = () => {
                           <p className="text-xs">
                             <label className="text-xs font-bold">Data:</label>{" "}
                             {new Date(
-                              palestraSelecionada.data
+                              palestraSelecionada.data,
                             ).toLocaleDateString("pt-BR")}
                           </p>
                           <p className="text-xs">
@@ -658,7 +636,7 @@ const RelatorioPalestrasCursos = () => {
                                 <p className="text-xs">
                                   Vencimento:{" "}
                                   {new Date(
-                                    parcela.data_vencimento
+                                    parcela.data_vencimento,
                                   ).toLocaleDateString("pt-BR")}
                                 </p>
                                 <p className="text-xs mt-4">
@@ -674,7 +652,7 @@ const RelatorioPalestrasCursos = () => {
                                     onChange={(e) =>
                                       handleStatusChange(
                                         parcela.id,
-                                        e.target.value
+                                        e.target.value,
                                       )
                                     }
                                     variant="outlined"
@@ -684,7 +662,7 @@ const RelatorioPalestrasCursos = () => {
                                   </TextField>
                                 </p>
                               </div>
-                            )
+                            ),
                           )}
                         </div>
                       </div>
