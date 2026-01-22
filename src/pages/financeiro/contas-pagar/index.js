@@ -16,6 +16,7 @@ import {
   InfoRounded,
   MonetizationOn,
   Money,
+  Person,
   Print,
   Save,
 } from "@mui/icons-material";
@@ -47,37 +48,43 @@ import { exportContasPagarToPDF } from "./imprimir";
 import { buscarRelatorioPretadores } from "../../../service/get/relatorio-prestador";
 
 const ContasPagar = () => {
-  const [categoriaFiltro, setCategoriaFiltro] = useState("");
   const [tipoCusto, setTipoCusto] = useState("fixo");
   const [cadastroUsuario, setCadastroUsuario] = useState(false);
   const [loading, setLoading] = useState(false);
   const [filtro, setFiltro] = useState(false);
   const [informacoes, setInformacoes] = useState(false);
-  //const [listaPrestadores, setListaPrestadores] = useState([]);
+  const [modalParcelas, setModalParcelas] = useState(false);
+  const [loadingPrestadores, setLoadingPrestadores] = useState(false);
+  const [loadingCategorias, setLoadingCategorias] = useState(false);
+  const [contaEditando, setContaEditando] = useState(null);
+  const [listaPrestadores, setListaPrestadores] = useState([]);
   const [prestadorSelecionado, setPrestadorSelecionado] = useState("");
   const [nomeConta, setNomeConta] = useState("");
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
   const [dataVariavel, setDataVariavel] = useState("");
+  const [categoriaFiltro, setCategoriaFiltro] = useState("");
   const [statusPagamento, setStatusPagamento] = useState("");
   const [formaPagamento, setFormaPagamento] = useState("");
-  const [valor, setValor] = useState("");
-  const [contasPagar, setContasPagar] = useState([]);
-  //const [listaUsuarios, setListaUsuarios] = useState([]);
-  const [contaEditando, setContaEditando] = useState(null);
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState("");
-  const [categoriasCadastradas, setCategoriasCadastradas] = useState([]);
-  const [relatorios, setRelatorios] = useState([]);
-  const [modalParcelas, setModalParcelas] = useState(false);
-  const [parcelasConta, setParcelasConta] = useState([]);
-  const [parcelasEditando, setParcelasEditando] = useState({});
-  const [loadingParcelas, setLoadingParcelas] = useState({});
   const [termoBusca, setTermoBusca] = useState("");
   const [dataInicioFiltro, setDataInicioFiltro] = useState("");
   const [dataFimFiltro, setDataFimFiltro] = useState("");
   const [statusPagamentoFiltro, setStatusPagamentoFiltro] = useState("");
+  const [valor, setValor] = useState("");
+  const [contasPagar, setContasPagar] = useState([]);
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState("");
+  const [categoriasCadastradas, setCategoriasCadastradas] = useState([]);
+  const [relatorios, setRelatorios] = useState([]);
+  const [parcelasConta, setParcelasConta] = useState([]);
+  const [parcelasEditando, setParcelasEditando] = useState({});
+  const [loadingParcelas, setLoadingParcelas] = useState({});
+
   const categoriasAtivas = categoriasCadastradas.filter(
     (categoria) => categoria.ativo,
+  );
+
+  const prestadoresAtivos = listaPrestadores.filter(
+    (prestador) => prestador.ativo,
   );
 
   const handleParcelaChange = (parcelaId, field, value) => {
@@ -129,9 +136,12 @@ const ContasPagar = () => {
         delete newState[parcelaId];
         return newState;
       });
+
+      // CORRIGIDO: Acessar .data da resposta
       const updatedContas = await buscarContasPagar();
-      setContasPagar(updatedContas);
-      const contaAtual = updatedContas.find(
+      setContasPagar(updatedContas.data || []);
+
+      const contaAtual = (updatedContas.data || []).find(
         (c) => c.id === (contaEditando?.id || parcelasConta[0]?.conta_id),
       );
       if (contaAtual) {
@@ -188,6 +198,7 @@ const ContasPagar = () => {
   };
 
   const FecharFiltro = () => setFiltro(false);
+
   const Informacoes = (row) => {
     const conta = row.originalData || row;
 
@@ -210,9 +221,7 @@ const ContasPagar = () => {
       conta.data_inicio ? formatDateForInput(conta.data_inicio) : "",
     );
 
-    // Ajuste para contas variáveis
     if (conta.custo_variavel) {
-      // Para contas variáveis, pegamos o status da primeira parcela (se existir)
       const statusParcela = conta.parcelas?.[0]?.status || 1;
       setStatusPagamento(
         statusParcela === 1
@@ -222,7 +231,6 @@ const ContasPagar = () => {
             : "andamento",
       );
     } else {
-      // Para contas fixas, usamos o status_geral
       setStatusPagamento(
         conta.status_geral === 1
           ? "pendente"
@@ -241,7 +249,10 @@ const ContasPagar = () => {
   };
 
   const contasFiltradas = useMemo(() => {
-    return contasPagar.filter((conta) => {
+    // Garante que contasPagar seja um array
+    const contasArray = Array.isArray(contasPagar) ? contasPagar : [];
+
+    return contasArray.filter((conta) => {
       const buscaMatch =
         !termoBusca ||
         conta.nome.toLowerCase().includes(termoBusca.toLowerCase()) ||
@@ -302,7 +313,8 @@ const ContasPagar = () => {
   };
 
   const dadosCombinados = useMemo(() => {
-    return contasPagarTabela(contasPagar, relatorios);
+    const contasArray = Array.isArray(contasPagar) ? contasPagar : [];
+    return contasPagarTabela(contasArray, relatorios);
   }, [contasPagar, relatorios]);
 
   const dadosFiltrados = useMemo(() => {
@@ -372,7 +384,6 @@ const ContasPagar = () => {
       const valor = parseFloat(valorString) || 0;
 
       if (item.tipo === "Conta") {
-        // Lógica para contas
         if (item.status === "Pendente") {
           pendente += valor;
         } else if (item.status === "Pago") {
@@ -381,7 +392,6 @@ const ContasPagar = () => {
           andamento += valor;
         }
       } else if (item.tipo === "Serviço") {
-        // Lógica para serviços de prestadores
         if (item.status === "Pendente") {
           pendente += valor;
         } else if (item.status === "Pago") {
@@ -411,7 +421,7 @@ const ContasPagar = () => {
   };
 
   const validarCampos = () => {
-    const camposObrigatorios = nomeConta && valor && categoriaSelecionada;
+    const camposObrigatorios = nomeConta && valor;
 
     if (tipoCusto === "fixo") {
       return camposObrigatorios && dataInicio;
@@ -440,10 +450,9 @@ const ContasPagar = () => {
         categoria_id: categoriaSelecionada || null,
         data_inicio: tipoCusto === "fixo" ? dataInicio : dataVariavel,
         data_fim: tipoCusto === "fixo" ? dataFim : null,
-        forma_pagamento: formaPagamento || null, // Adicione esta linha
+        forma_pagamento: formaPagamento || null,
       };
 
-      // Adicione valores monetários conforme o tipo
       if (tipoCusto === "fixo") {
         dadosParaEnviar.valor_mensal = parseFloat(
           valor.replace("R$", "").replace(",", ".").trim(),
@@ -454,8 +463,6 @@ const ContasPagar = () => {
           valor.replace("R$", "").replace(",", ".").trim(),
         );
         dadosParaEnviar.valor_mensal = null;
-
-        // Para contas variáveis, adicione o status convertido para número
         dadosParaEnviar.status_pagamento =
           statusPagamento === "pendente"
             ? 1
@@ -466,7 +473,6 @@ const ContasPagar = () => {
 
       await atualizarContasPagar(dadosParaEnviar, contaEditando.id);
 
-      // Se for conta variável, atualize também a primeira parcela
       if (tipoCusto === "variavel" && contaEditando.parcelas?.[0]?.id) {
         const statusNumerico =
           statusPagamento === "pendente"
@@ -485,8 +491,9 @@ const ContasPagar = () => {
         });
       }
 
+      // CORRIGIDO: Acessar .data da resposta
       const updatedContas = await buscarContasPagar();
-      setContasPagar(updatedContas);
+      setContasPagar(updatedContas.data || []);
 
       CustomToast({
         type: "success",
@@ -504,6 +511,7 @@ const ContasPagar = () => {
       setLoading(false);
     }
   };
+
   const fadeIn = {
     hidden: { opacity: 0 },
     visible: { opacity: 1 },
@@ -539,7 +547,6 @@ const ContasPagar = () => {
         forma_pagamento: formaPagamento || null,
         categoria_id: categoriaSelecionada || null,
       };
-
       await criarContasPagar(dadosParaEnviar);
 
       CustomToast({
@@ -547,8 +554,10 @@ const ContasPagar = () => {
         message: "Conta cadastrada com sucesso!",
       });
 
+      // CORRIGIDO: Acessar .data da resposta
       const updatedContas = await buscarContasPagar();
-      setContasPagar(updatedContas);
+      setContasPagar(updatedContas.data || []);
+
       setCadastroUsuario(false);
       limparFormulario();
     } catch (error) {
@@ -584,11 +593,11 @@ const ContasPagar = () => {
     try {
       setLoading(true);
       await deletarContas(id);
-      setContasPagar((prevContas) =>
-        prevContas.filter((conta) => conta.id !== id),
-      );
+
+      // CORRIGIDO: Acessar .data da resposta
       const updatedContas = await buscarContasPagar();
-      setContasPagar(updatedContas);
+      setContasPagar(updatedContas.data || []);
+
       CustomToast({ type: "success", message: "Conta excluída com sucesso!" });
     } catch (error) {
       CustomToast({
@@ -599,7 +608,6 @@ const ContasPagar = () => {
       setLoading(false);
     }
   };
-
   const buscarRelatorioPrestadores = async () => {
     try {
       setLoading(true);
@@ -646,22 +654,69 @@ const ContasPagar = () => {
     }
   };
 
+  const handleAbrirModalCadastro = async () => {
+    setCadastroUsuario(true);
+
+    try {
+      setLoadingPrestadores(true);
+      setLoadingCategorias(true);
+
+      const [prestadoresResponse, categoriasResponse] = await Promise.all([
+        buscarPretadores(),
+        buscarCategoria(),
+      ]);
+
+      setListaPrestadores(prestadoresResponse.data || []);
+      setCategoriasCadastradas(categoriasResponse.data || []);
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+      CustomToast({
+        type: "error",
+        message: "Erro ao carregar prestadores e categorias",
+      });
+    } finally {
+      setLoadingPrestadores(false);
+      setLoadingCategorias(false);
+    }
+  };
+
+  const handleAbrirModalEdicao = async (row) => {
+    Informacoes(row);
+    try {
+      setLoadingPrestadores(true);
+      setLoadingCategorias(true);
+
+      const [prestadoresResponse, categoriasResponse] = await Promise.all([
+        buscarPretadores(),
+        buscarCategoria(),
+      ]);
+
+      setListaPrestadores(prestadoresResponse.data || []);
+      setCategoriasCadastradas(categoriasResponse.data || []);
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+      CustomToast({
+        type: "error",
+        message: "Erro ao carregar prestadores e categorias",
+      });
+    } finally {
+      setLoadingPrestadores(false);
+      setLoadingCategorias(false);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [contasResponse, categoriasResponse] = await Promise.all([
-          buscarContasPagar(),
-          buscarPretadores(),
-          buscarCategoria(),
-        ]);
-
-        setContasPagar(contasResponse);
-        setCategoriasCadastradas(categoriasResponse.data || []);
+        const contasResponse = await buscarContasPagar();
+        // A resposta é um objeto, precisamos acessar .data
+        setContasPagar(contasResponse.data || []);
       } catch (error) {
         CustomToast({
           type: "error",
-          message: "Erro ao carregar dados",
+          message: "Erro ao carregar contas",
         });
+        setContasPagar([]); // Garante array vazio em caso de erro
       }
     };
 
@@ -669,7 +724,7 @@ const ContasPagar = () => {
   }, []);
 
   useEffect(() => {
-    if (modalParcelas && contasPagar.length > 0) {
+    if (modalParcelas && Array.isArray(contasPagar) && contasPagar.length > 0) {
       const contaAtual = contasPagar.find(
         (c) => c.id === (contaEditando?.id || parcelasConta[0]?.conta_id),
       );
@@ -682,6 +737,7 @@ const ContasPagar = () => {
   useEffect(() => {
     buscarRelatorioPrestadores();
   }, []);
+
   return (
     <div className="flex w-full ">
       <Navbar />
@@ -770,7 +826,7 @@ const ContasPagar = () => {
                   title={"Cadastrar"}
                   subtitle={"Cadastrar"}
                   buttonSize="large"
-                  onClick={() => setCadastroUsuario(true)}
+                  onClick={handleAbrirModalCadastro}
                 />
                 <IconButton
                   title="Filtro"
@@ -835,7 +891,8 @@ const ContasPagar = () => {
                     actionsLabel={"Ações"}
                     actionCalls={{
                       edit: (row) =>
-                        row.podeEditar && Informacoes(row.originalData),
+                        row.podeEditar &&
+                        handleAbrirModalEdicao(row.originalData),
                       delete: (row) =>
                         row.podeExcluir && handleDeleteConta(row._id),
                       view: (row) => handleVisualizarParcelas(row),
@@ -865,61 +922,158 @@ const ContasPagar = () => {
                 title="Cadastrar Conta"
               >
                 <div className="overflow-y-auto overflow-x-hidden max-h-[300px]">
-                  <div className="flex gap-4 mb-4">
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={tipoCusto === "fixo"}
-                          onChange={() => setTipoCusto("fixo")}
-                          color="primary"
+                  {loadingPrestadores || loadingCategorias ? (
+                    <div className="flex justify-center items-center h-40">
+                      <CircularProgress />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex gap-4 mb-4">
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={tipoCusto === "fixo"}
+                              onChange={() => setTipoCusto("fixo")}
+                              color="primary"
+                            />
+                          }
+                          label="Custo Fixo"
                         />
-                      }
-                      label="Custo Fixo"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={tipoCusto === "variavel"}
-                          onChange={() => setTipoCusto("variavel")}
-                          color="primary"
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={tipoCusto === "variavel"}
+                              onChange={() => setTipoCusto("variavel")}
+                              color="primary"
+                            />
+                          }
+                          label="Custo Variável"
                         />
-                      }
-                      label="Custo Variável"
-                    />
-                  </div>
+                      </div>
 
-                  <div className="mt-4 flex gap-3 flex-wrap">
-                    {/* Campo Nome */}
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      label="Nome"
-                      name="nome"
-                      value={nomeConta}
-                      onChange={(e) => setNomeConta(e.target.value)}
-                      sx={{
-                        width: { xs: "100%", sm: "50%", md: "40%", lg: "95%" },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Article />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-
-                    {tipoCusto === "fixo" && (
-                      <>
+                      <div className="mt-4 flex gap-3 flex-wrap">
+                        {/* Campo Nome */}
                         <TextField
                           fullWidth
                           variant="outlined"
                           size="small"
-                          label="Data Início"
-                          type="date"
-                          value={dataInicio}
-                          onChange={(e) => setDataInicio(e.target.value)}
+                          label="Nome"
+                          name="nome"
+                          value={nomeConta}
+                          onChange={(e) => setNomeConta(e.target.value)}
+                          sx={{
+                            width: {
+                              xs: "100%",
+                              sm: "50%",
+                              md: "40%",
+                              lg: "95%",
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Article />
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+
+                        {tipoCusto === "fixo" && (
+                          <>
+                            <TextField
+                              fullWidth
+                              variant="outlined"
+                              size="small"
+                              label="Data Início"
+                              type="date"
+                              value={dataInicio}
+                              onChange={(e) => setDataInicio(e.target.value)}
+                              sx={{
+                                width: {
+                                  xs: "100%",
+                                  sm: "50%",
+                                  md: "40%",
+                                  lg: "47%",
+                                },
+                              }}
+                              InputProps={{
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <DateRange />
+                                  </InputAdornment>
+                                ),
+                              }}
+                              InputLabelProps={{
+                                shrink: true,
+                              }}
+                            />
+                            <TextField
+                              fullWidth
+                              variant="outlined"
+                              size="small"
+                              label="Data Fim"
+                              type="date"
+                              value={dataFim}
+                              onChange={(e) => setDataFim(e.target.value)}
+                              sx={{
+                                width: {
+                                  xs: "100%",
+                                  sm: "50%",
+                                  md: "40%",
+                                  lg: "45%",
+                                },
+                              }}
+                              InputProps={{
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <DateRange />
+                                  </InputAdornment>
+                                ),
+                              }}
+                              InputLabelProps={{
+                                shrink: true,
+                              }}
+                            />
+                          </>
+                        )}
+
+                        {/* Campo de Data (para custo variável) */}
+                        {tipoCusto === "variavel" && (
+                          <TextField
+                            fullWidth
+                            variant="outlined"
+                            size="small"
+                            label="Data"
+                            type="date"
+                            value={dataVariavel}
+                            onChange={(e) => setDataVariavel(e.target.value)}
+                            sx={{
+                              width: {
+                                xs: "100%",
+                                sm: "50%",
+                                md: "40%",
+                                lg: "45%",
+                              },
+                            }}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <DateRange />
+                                </InputAdornment>
+                              ),
+                            }}
+                            InputLabelProps={{
+                              shrink: true,
+                            }}
+                          />
+                        )}
+
+                        <TextField
+                          select
+                          fullWidth
+                          variant="outlined"
+                          size="small"
+                          label="Categoria"
                           sx={{
                             width: {
                               xs: "100%",
@@ -931,22 +1085,31 @@ const ContasPagar = () => {
                           InputProps={{
                             startAdornment: (
                               <InputAdornment position="start">
-                                <DateRange />
+                                <Category />
                               </InputAdornment>
                             ),
                           }}
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                        />
+                          value={categoriaSelecionada}
+                          onChange={(e) =>
+                            setCategoriaSelecionada(e.target.value)
+                          }
+                          disabled={loadingCategorias}
+                        >
+                          <MenuItem value="">Selecione uma categoria</MenuItem>
+                          {categoriasAtivas.map((categoria) => (
+                            <MenuItem key={categoria.id} value={categoria.id}>
+                              {categoria.nome}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+
                         <TextField
                           fullWidth
                           variant="outlined"
                           size="small"
-                          label="Data Fim"
-                          type="date"
-                          value={dataFim}
-                          onChange={(e) => setDataFim(e.target.value)}
+                          label="Valor Mensal"
+                          value={valor}
+                          onChange={(e) => setValor(e.target.value)}
                           sx={{
                             width: {
                               xs: "100%",
@@ -958,105 +1121,65 @@ const ContasPagar = () => {
                           InputProps={{
                             startAdornment: (
                               <InputAdornment position="start">
-                                <DateRange />
+                                <MonetizationOn />
                               </InputAdornment>
                             ),
                           }}
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
                         />
-                      </>
-                    )}
 
-                    {/* Campo de Data (para custo variável) */}
-                    {tipoCusto === "variavel" && (
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        label="Data"
-                        type="date"
-                        value={dataVariavel}
-                        onChange={(e) => setDataVariavel(e.target.value)}
-                        sx={{
-                          width: {
-                            xs: "100%",
-                            sm: "50%",
-                            md: "40%",
-                            lg: "45%",
-                          },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <DateRange />
-                            </InputAdornment>
-                          ),
-                        }}
-                        InputLabelProps={{
-                          shrink: true,
-                        }}
-                      />
-                    )}
+                        <TextField
+                          select
+                          fullWidth
+                          variant="outlined"
+                          size="small"
+                          label="Prestador"
+                          sx={{
+                            width: {
+                              xs: "100%",
+                              sm: "50%",
+                              md: "40%",
+                              lg: "95%",
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Person />
+                              </InputAdornment>
+                            ),
+                          }}
+                          value={prestadorSelecionado}
+                          onChange={(e) =>
+                            setPrestadorSelecionado(e.target.value)
+                          }
+                          disabled={loadingPrestadores}
+                        >
+                          <MenuItem value="">Nenhum prestador</MenuItem>
+                          {prestadoresAtivos.map((prestador) => (
+                            <MenuItem key={prestador.id} value={prestador.id}>
+                              {prestador.nome}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </div>
 
-                    <TextField
-                      select
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      label="Categoria"
-                      sx={{
-                        width: { xs: "100%", sm: "50%", md: "40%", lg: "47%" },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Category />
-                          </InputAdornment>
-                        ),
-                      }}
-                      value={categoriaSelecionada}
-                      onChange={(e) => setCategoriaSelecionada(e.target.value)}
-                    >
-                      <MenuItem value="">Selecione uma categoria</MenuItem>
-                      {categoriasAtivas.map((categoria) => (
-                        <MenuItem key={categoria.id} value={categoria.id}>
-                          {categoria.nome}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      label="Valor Mensal"
-                      value={valor}
-                      onChange={(e) => setValor(e.target.value)}
-                      sx={{
-                        width: { xs: "100%", sm: "50%", md: "40%", lg: "47%" },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <MonetizationOn />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  </div>
-
-                  <div className="flex w-[96%] items-end justify-end mt-2 ">
-                    <ButtonComponent
-                      startIcon={<AddCircleOutline fontSize="small" />}
-                      title={"Cadastrar"}
-                      subtitle={"Cadastrar"}
-                      buttonSize="large"
-                      disabled={!validarCampos() || loading}
-                      onClick={handleCadastrar}
-                    />
-                  </div>
+                      <div className="flex w-[96%] items-end justify-end mt-2 ">
+                        <ButtonComponent
+                          startIcon={<AddCircleOutline fontSize="small" />}
+                          title={"Cadastrar"}
+                          subtitle={"Cadastrar"}
+                          buttonSize="large"
+                          disabled={
+                            !validarCampos() ||
+                            loading ||
+                            loadingPrestadores ||
+                            loadingCategorias
+                          }
+                          onClick={handleCadastrar}
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               </CentralModal>
 
@@ -1161,7 +1284,6 @@ const ContasPagar = () => {
                           {categoria.nome}
                         </MenuItem>
                       ))}
-                      {/* Adicione categorias específicas de serviços se necessário */}
                     </TextField>
                     <TextField
                       select
@@ -1226,66 +1348,69 @@ const ContasPagar = () => {
                 tamanhoTitulo="75%"
                 conteudo={
                   <div className="flex flex-wrap w-full items-center gap-4">
-                    <div className="flex gap-4 ">
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={tipoCusto === "fixo"}
-                            onChange={() => setTipoCusto("fixo")}
-                            color="primary"
+                    {loadingPrestadores || loadingCategorias ? (
+                      <div className="flex justify-center items-center h-40 w-full">
+                        <CircularProgress />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex gap-4 ">
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                checked={tipoCusto === "fixo"}
+                                onChange={() => setTipoCusto("fixo")}
+                                color="primary"
+                              />
+                            }
+                            label="Custo Fixo"
                           />
-                        }
-                        label="Custo Fixo"
-                      />
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={tipoCusto === "variavel"}
-                            onChange={() => setTipoCusto("variavel")}
-                            color="primary"
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                checked={tipoCusto === "variavel"}
+                                onChange={() => setTipoCusto("variavel")}
+                                color="primary"
+                              />
+                            }
+                            label="Custo Variável"
                           />
-                        }
-                        label="Custo Variável"
-                      />
-                    </div>
+                        </div>
 
-                    <div className="mt-1 flex gap-3 flex-wrap">
-                      {/* Campo Nome */}
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        label="Nome"
-                        name="nome"
-                        value={nomeConta}
-                        onChange={(e) => setNomeConta(e.target.value)}
-                        sx={{
-                          width: {
-                            xs: "100%",
-                            sm: "50%",
-                            md: "40%",
-                            lg: "95%",
-                          },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Article />
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-
-                      {tipoCusto === "fixo" && (
-                        <>
+                        <div className="mt-1 flex gap-3 flex-wrap">
+                          {/* Campo Nome */}
                           <TextField
                             fullWidth
                             variant="outlined"
                             size="small"
-                            label="Data Início"
-                            type="date"
-                            value={dataInicio}
-                            onChange={(e) => setDataInicio(e.target.value)}
+                            label="Nome"
+                            name="nome"
+                            value={nomeConta}
+                            onChange={(e) => setNomeConta(e.target.value)}
+                            sx={{
+                              width: {
+                                xs: "100%",
+                                sm: "50%",
+                                md: "40%",
+                                lg: "95%",
+                              },
+                            }}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <Article />
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
+
+                          {/* Campo Prestador */}
+                          <TextField
+                            select
+                            fullWidth
+                            variant="outlined"
+                            size="small"
+                            label="Prestador"
                             sx={{
                               width: {
                                 xs: "100%",
@@ -1297,22 +1422,158 @@ const ContasPagar = () => {
                             InputProps={{
                               startAdornment: (
                                 <InputAdornment position="start">
-                                  <DateRange />
+                                  <Person />
                                 </InputAdornment>
                               ),
                             }}
-                            InputLabelProps={{
-                              shrink: true,
-                            }}
-                          />
+                            value={prestadorSelecionado}
+                            onChange={(e) =>
+                              setPrestadorSelecionado(e.target.value)
+                            }
+                            disabled={loadingPrestadores}
+                          >
+                            <MenuItem value="">Nenhum prestador</MenuItem>
+                            {prestadoresAtivos.map((prestador) => (
+                              <MenuItem key={prestador.id} value={prestador.id}>
+                                {prestador.nome}
+                              </MenuItem>
+                            ))}
+                          </TextField>
+
+                          {tipoCusto === "fixo" && (
+                            <>
+                              <TextField
+                                fullWidth
+                                variant="outlined"
+                                size="small"
+                                label="Data Início"
+                                type="date"
+                                value={dataInicio}
+                                onChange={(e) => setDataInicio(e.target.value)}
+                                sx={{
+                                  width: {
+                                    xs: "100%",
+                                    sm: "50%",
+                                    md: "40%",
+                                    lg: "47%",
+                                  },
+                                }}
+                                InputProps={{
+                                  startAdornment: (
+                                    <InputAdornment position="start">
+                                      <DateRange />
+                                    </InputAdornment>
+                                  ),
+                                }}
+                                InputLabelProps={{
+                                  shrink: true,
+                                }}
+                              />
+                              <TextField
+                                fullWidth
+                                variant="outlined"
+                                size="small"
+                                label="Data Fim"
+                                type="date"
+                                value={dataFim}
+                                onChange={(e) => setDataFim(e.target.value)}
+                                sx={{
+                                  width: {
+                                    xs: "100%",
+                                    sm: "50%",
+                                    md: "40%",
+                                    lg: "45%",
+                                  },
+                                }}
+                                InputProps={{
+                                  startAdornment: (
+                                    <InputAdornment position="start">
+                                      <DateRange />
+                                    </InputAdornment>
+                                  ),
+                                }}
+                                InputLabelProps={{
+                                  shrink: true,
+                                }}
+                              />
+                            </>
+                          )}
+
+                          {/* Campo de Data (para custo variável) */}
+                          {tipoCusto === "variavel" && (
+                            <TextField
+                              fullWidth
+                              variant="outlined"
+                              size="small"
+                              label="Data"
+                              type="date"
+                              value={dataVariavel}
+                              onChange={(e) => setDataVariavel(e.target.value)}
+                              sx={{
+                                width: {
+                                  xs: "100%",
+                                  sm: "50%",
+                                  md: "40%",
+                                  lg: "45%",
+                                },
+                              }}
+                              InputProps={{
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <DateRange />
+                                  </InputAdornment>
+                                ),
+                              }}
+                              InputLabelProps={{
+                                shrink: true,
+                              }}
+                            />
+                          )}
+
                           <TextField
+                            select
                             fullWidth
                             variant="outlined"
                             size="small"
-                            label="Data Fim"
-                            type="date"
-                            value={dataFim}
-                            onChange={(e) => setDataFim(e.target.value)}
+                            label="Categoria"
+                            sx={{
+                              width: {
+                                xs: "100%",
+                                sm: "50%",
+                                md: "40%",
+                                lg: "47%",
+                              },
+                            }}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <Category />
+                                </InputAdornment>
+                              ),
+                            }}
+                            value={categoriaSelecionada}
+                            onChange={(e) =>
+                              setCategoriaSelecionada(e.target.value)
+                            }
+                            disabled={loadingCategorias}
+                          >
+                            <MenuItem value="">
+                              Selecione uma categoria
+                            </MenuItem>
+                            {categoriasCadastradas.map((categoria) => (
+                              <MenuItem key={categoria.id} value={categoria.id}>
+                                {categoria.nome}
+                              </MenuItem>
+                            ))}
+                          </TextField>
+                          <TextField
+                            select
+                            fullWidth
+                            variant="outlined"
+                            size="small"
+                            label="Status Pagamento"
+                            value={statusPagamento}
+                            onChange={(e) => setStatusPagamento(e.target.value)}
                             sx={{
                               width: {
                                 xs: "100%",
@@ -1324,176 +1585,88 @@ const ContasPagar = () => {
                             InputProps={{
                               startAdornment: (
                                 <InputAdornment position="start">
-                                  <DateRange />
+                                  <TransformIcon />
                                 </InputAdornment>
                               ),
                             }}
-                            InputLabelProps={{
-                              shrink: true,
-                            }}
+                          >
+                            <MenuItem value="pendente">Pendente</MenuItem>
+                            <MenuItem value="pago">Pago</MenuItem>
+                            {/* Mostrar "Em Andamento" apenas para contas fixas */}
+                            {tipoCusto === "fixo" && (
+                              <MenuItem value="andamento">
+                                Em Andamento
+                              </MenuItem>
+                            )}
+                          </TextField>
+
+                          {tipoCusto === "fixo" && (
+                            <TextField
+                              fullWidth
+                              variant="outlined"
+                              size="small"
+                              label="Valor Mensal"
+                              value={valor}
+                              onChange={(e) => setValor(e.target.value)}
+                              sx={{
+                                width: {
+                                  xs: "100%",
+                                  sm: "50%",
+                                  md: "40%",
+                                  lg: "47%",
+                                },
+                              }}
+                              InputProps={{
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <MonetizationOn />
+                                  </InputAdornment>
+                                ),
+                              }}
+                            />
+                          )}
+
+                          {tipoCusto === "variavel" && (
+                            <TextField
+                              fullWidth
+                              variant="outlined"
+                              size="small"
+                              label="Valor Total"
+                              value={valor}
+                              onChange={(e) => setValor(e.target.value)}
+                              sx={{
+                                width: {
+                                  xs: "100%",
+                                  sm: "50%",
+                                  md: "40%",
+                                  lg: "47%",
+                                },
+                              }}
+                              InputProps={{
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <Money />
+                                  </InputAdornment>
+                                ),
+                              }}
+                            />
+                          )}
+                        </div>
+
+                        <div className="flex w-[96%] items-end justify-end mt-2 ">
+                          <ButtonComponent
+                            startIcon={<Save fontSize="small" />}
+                            title={"Salvar"}
+                            subtitle={"Salvar"}
+                            buttonSize="large"
+                            onClick={handleSalvarEdicao}
+                            disabled={
+                              loading || loadingPrestadores || loadingCategorias
+                            }
                           />
-                        </>
-                      )}
-
-                      {/* Campo de Data (para custo variável) */}
-                      {tipoCusto === "variavel" && (
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Data"
-                          type="date"
-                          value={dataVariavel}
-                          onChange={(e) => setDataVariavel(e.target.value)}
-                          sx={{
-                            width: {
-                              xs: "100%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "45%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <DateRange />
-                              </InputAdornment>
-                            ),
-                          }}
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                        />
-                      )}
-
-                      <TextField
-                        select
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        label="Categoria"
-                        sx={{
-                          width: {
-                            xs: "100%",
-                            sm: "50%",
-                            md: "40%",
-                            lg: "47%",
-                          },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Category />
-                            </InputAdornment>
-                          ),
-                        }}
-                        value={categoriaSelecionada}
-                        onChange={(e) =>
-                          setCategoriaSelecionada(e.target.value)
-                        }
-                      >
-                        <MenuItem value="">Selecione uma categoria</MenuItem>
-                        {categoriasCadastradas.map((categoria) => (
-                          <MenuItem key={categoria.id} value={categoria.id}>
-                            {categoria.nome}
-                          </MenuItem>
-                        ))}
-                      </TextField>
-                      <TextField
-                        select
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        label="Status Pagamento"
-                        value={statusPagamento}
-                        onChange={(e) => setStatusPagamento(e.target.value)}
-                        sx={{
-                          width: {
-                            xs: "100%",
-                            sm: "50%",
-                            md: "40%",
-                            lg: "45%",
-                          },
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <TransformIcon />
-                            </InputAdornment>
-                          ),
-                        }}
-                      >
-                        <MenuItem value="pendente">Pendente</MenuItem>
-                        <MenuItem value="pago">Pago</MenuItem>
-                        {/* Mostrar "Em Andamento" apenas para contas fixas */}
-                        {tipoCusto === "fixo" && (
-                          <MenuItem value="andamento">Em Andamento</MenuItem>
-                        )}
-                      </TextField>
-
-                      {tipoCusto === "fixo" && (
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Valor Mensal"
-                          value={valor}
-                          onChange={(e) => setValor(e.target.value)}
-                          sx={{
-                            width: {
-                              xs: "100%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "47%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <MonetizationOn />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                      )}
-
-                      {tipoCusto === "variavel" && (
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          label="Valor Total"
-                          value={valor}
-                          onChange={(e) => setValor(e.target.value)}
-                          sx={{
-                            width: {
-                              xs: "100%",
-                              sm: "50%",
-                              md: "40%",
-                              lg: "47%",
-                            },
-                          }}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Money />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                      )}
-                    </div>
-
-                    <div className="flex w-[96%] items-end justify-end mt-2 ">
-                      <ButtonComponent
-                        startIcon={<Save fontSize="small" />}
-                        title={"Salvar"}
-                        subtitle={"Salvar"}
-                        buttonSize="large"
-                        onClick={handleSalvarEdicao}
-                        disabled={loading}
-                      />
-                    </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 }
               />
