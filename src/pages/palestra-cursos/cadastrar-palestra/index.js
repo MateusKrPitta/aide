@@ -40,6 +40,7 @@ const CadastrarPalestra = ({ onSuccess }) => {
   const [selectedLecture, setSelectedLecture] = useState("");
   const [botaoAdicionarDesabilitado, setBotaoAdicionarDesabilitado] =
     useState(false);
+  const [valorNumerico, setValorNumerico] = useState(0);
   const [horario, setHorario] = useState("");
   const [data, setData] = useState("");
   const [valor, setValor] = useState("");
@@ -55,6 +56,8 @@ const CadastrarPalestra = ({ onSuccess }) => {
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [currentPaymentMethod, setCurrentPaymentMethod] = useState("Dinheiro");
   const [paymentType, setPaymentType] = useState("À vista");
+  const [currentPaymentValueNumeric, setCurrentPaymentValueNumeric] =
+    useState(0);
   const [paymentStatus, setPaymentStatus] = useState("Pendente");
   const [currentPaymentValue, setCurrentPaymentValue] = useState("");
   const [totalPaid, setTotalPaid] = useState(0);
@@ -64,6 +67,92 @@ const CadastrarPalestra = ({ onSuccess }) => {
   const [lista, setLista] = useState([]);
 
   const tiposPalestraAtivas = tiposPalestra.filter((tipo) => tipo.ativo);
+  const mascaraValorMoeda = (e) => {
+    let value = e.target.value;
+
+    let numeros = value.replace(/\D/g, "");
+
+    if (numeros) {
+      let inteiro = numeros.slice(0, -2);
+      let centavos = numeros.slice(-2);
+
+      if (centavos.length === 0) {
+        centavos = "00";
+      } else if (centavos.length === 1) {
+        centavos = centavos + "0";
+      }
+
+      if (inteiro === "") inteiro = "0";
+      inteiro = parseInt(inteiro).toLocaleString("pt-BR");
+
+      value = inteiro + "," + centavos;
+    } else {
+      value = "";
+    }
+
+    return value;
+  };
+
+  const desformatarValorMoeda = (valorFormatado) => {
+    if (!valorFormatado) return 0;
+    const numeros = valorFormatado.replace(/\D/g, "");
+    const valorNumerico = parseFloat(numeros) / 100;
+    return isNaN(valorNumerico) ? 0 : valorNumerico;
+  };
+
+  const handlePaymentValueChange = (e) => {
+    const valorDigitado = e.target.value;
+    const valorMascarado = mascaraValorMoeda({
+      target: { value: valorDigitado },
+    });
+
+    setCurrentPaymentValue(valorMascarado);
+
+    const numero = desformatarValorMoeda(valorMascarado);
+    setCurrentPaymentValueNumeric(numero);
+  };
+
+  const mascaraValor = (e) => {
+    let value = e.target.value;
+
+    let numeros = value.replace(/\D/g, "");
+
+    if (numeros) {
+      let inteiro = numeros.slice(0, -2);
+      let centavos = numeros.slice(-2);
+
+      if (centavos.length === 0) {
+        centavos = "00";
+      } else if (centavos.length === 1) {
+        centavos = centavos + "0";
+      }
+
+      if (inteiro === "") inteiro = "0";
+      inteiro = parseInt(inteiro).toLocaleString("pt-BR");
+
+      value = inteiro + "," + centavos;
+    } else {
+      value = "";
+    }
+
+    return value;
+  };
+
+  const desformatarValor = (valorFormatado) => {
+    if (!valorFormatado) return 0;
+    const numeros = valorFormatado.replace(/\D/g, "");
+    const valorNumerico = parseFloat(numeros) / 100;
+    return isNaN(valorNumerico) ? 0 : valorNumerico;
+  };
+
+  const handleValorChange = (e) => {
+    const valorDigitado = e.target.value;
+    const valorMascarado = mascaraValor({ target: { value: valorDigitado } });
+    setValor(valorMascarado);
+
+    const numero = desformatarValor(valorMascarado);
+    setValorNumerico(numero);
+  };
 
   const validarCamposCadastro = () => {
     return (
@@ -119,10 +208,10 @@ const CadastrarPalestra = ({ onSuccess }) => {
       return;
     }
 
-    if (!selectedLecture || !valor) {
+    if (!selectedLecture || !valorNumerico || valorNumerico <= 0) {
       CustomToast({
         type: "warning",
-        message: "Selecione uma palestra e informe o valor",
+        message: "Selecione uma palestra e informe um valor válido",
       });
       return;
     }
@@ -133,7 +222,7 @@ const CadastrarPalestra = ({ onSuccess }) => {
       data: data,
       secoes: secoes,
       palestra: selectedLecture,
-      valor: valor,
+      valor: valorNumerico,
     };
 
     setSessoesAdicionadas([...sessoesAdicionadas, novaSessao]);
@@ -144,6 +233,7 @@ const CadastrarPalestra = ({ onSuccess }) => {
     setSecoes("");
     setSelectedLecture("");
     setValor("");
+    setValorNumerico(0);
   };
   const carregarClientes = async (filtro = "") => {
     try {
@@ -207,7 +297,7 @@ const CadastrarPalestra = ({ onSuccess }) => {
 
   const validarPagamento = () => {
     const valorTotal = sessoesAdicionadas.reduce(
-      (total, sessao) => total + parseFloat(sessao.valor || 0),
+      (total, sessao) => total + (sessao.valor || 0),
       0,
     );
 
@@ -240,7 +330,7 @@ const CadastrarPalestra = ({ onSuccess }) => {
   };
 
   const adicionarPagamento = () => {
-    if (!currentPaymentValue || parseFloat(currentPaymentValue) <= 0) {
+    if (!currentPaymentValueNumeric || currentPaymentValueNumeric <= 0) {
       CustomToast({
         type: "warning",
         message: "Informe um valor válido para o pagamento",
@@ -258,13 +348,15 @@ const CadastrarPalestra = ({ onSuccess }) => {
 
     const newPayment = {
       method: currentPaymentMethod,
-      value: parseFloat(currentPaymentValue),
+      value: currentPaymentValueNumeric,
       date: currentPaymentDate,
     };
 
     setPaymentMethods([newPayment]);
-    setTotalPaid(parseFloat(currentPaymentValue));
+    setTotalPaid(currentPaymentValueNumeric);
+
     setCurrentPaymentValue("");
+    setCurrentPaymentValueNumeric(0);
     setCurrentPaymentDate("");
   };
 
@@ -716,13 +808,14 @@ const CadastrarPalestra = ({ onSuccess }) => {
                             size="small"
                             label="Valor"
                             value={valor}
-                            onChange={valorMascara}
+                            onChange={handleValorChange}
+                            placeholder="R$ 0,00"
                             sx={{
                               width: {
                                 xs: "50%",
                                 sm: "50%",
                                 md: "40%",
-                                lg: "30%",
+                                lg: "50%",
                               },
                             }}
                             InputProps={{
@@ -904,11 +997,8 @@ const CadastrarPalestra = ({ onSuccess }) => {
                               fullWidth
                               label="Valor"
                               value={currentPaymentValue}
-                              onChange={(e) =>
-                                setCurrentPaymentValue(
-                                  e.target.value.replace(/[^0-9.]/g, ""),
-                                )
-                              }
+                              onChange={handlePaymentValueChange}
+                              placeholder="R$ 0,00"
                               sx={{ width: { xs: "40%", lg: "47%" } }}
                               variant="outlined"
                               size="small"

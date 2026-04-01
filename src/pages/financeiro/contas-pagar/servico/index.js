@@ -368,12 +368,19 @@ const ContasPagarServico = ({ onClick, isActive }) => {
   }, []);
 
   const formatCurrency = (value) => {
-    if (!value && value !== 0) return "R$ 0,00";
-    return `R$ ${parseFloat(value || 0)
-      .toFixed(2)
-      .replace(".", ",")}`;
-  };
+    if (value === undefined || value === null) return "R$ 0,00";
 
+    const numero = Number(value);
+    if (isNaN(numero)) return "R$ 0,00";
+
+    const valorFormatado = numero.toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      useGrouping: true,
+    });
+
+    return `R$ ${valorFormatado}`;
+  };
   const formatDateForInput = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);

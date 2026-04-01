@@ -146,12 +146,25 @@ const ContasReceber = () => {
       return [];
     }
 
+    const formatarValor = (valor) => {
+      if (valor === undefined || valor === null) return "R$ 0,00";
+
+      const numero = Number(valor);
+      if (isNaN(numero)) return "R$ 0,00";
+
+      const valorFormatado = numero.toLocaleString("pt-BR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+        useGrouping: true,
+      });
+
+      return `R$ ${valorFormatado}`;
+    };
+
     return dadosApi.map((conta) => {
       const dataFormatada = new Date(conta.data).toLocaleDateString("pt-BR");
 
-      const valorFormatado = `R$ ${parseFloat(conta.valor)
-        .toFixed(2)
-        .replace(".", ",")}`;
+      const valorFormatado = formatarValor(conta.valor);
 
       let status = "";
       if (conta.status_pagamento === 1) {

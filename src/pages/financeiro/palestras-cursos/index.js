@@ -120,7 +120,7 @@ const RelatorioPalestrasCursos = () => {
           nome: item.nome,
           data: new Date(item.data).toLocaleDateString("pt-BR"),
           cliente: item.cliente?.nome || "-",
-          valor: item.valor_formatado,
+          valor: formatarValor(item.valor),
           status: item.status,
           valor_pago: item.valor_pago,
           valor_pendente: item.valor_pendente,
@@ -174,7 +174,13 @@ const RelatorioPalestrasCursos = () => {
   const FecharFiltro = () => setFiltro(false);
 
   const formatarValor = (valor) => {
-    return `R$ ${valor.toFixed(2).replace(".", ",")}`;
+    const numero = Number(valor);
+    if (isNaN(numero)) return "R$ 0,00";
+
+    return `R$ ${numero.toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   };
 
   const Informacoes = (palestra) => {

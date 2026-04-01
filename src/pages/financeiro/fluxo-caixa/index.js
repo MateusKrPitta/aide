@@ -707,7 +707,15 @@ const FluxoCaixa = () => {
   };
 
   const formatarValor = (valor) => {
-    return valor.toFixed(2).replace(".", ",");
+    if (valor === undefined || valor === null) return "0,00";
+
+    const numero = Number(valor);
+    if (isNaN(numero)) return "0,00";
+
+    return numero.toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
   };
 
   const getSaldoColor = () => {

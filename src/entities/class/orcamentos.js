@@ -1,10 +1,25 @@
 export const transformarOrcamentosParaTabela = (orcamentos) => {
+  const formatarValor = (valor) => {
+    if (valor === undefined || valor === null) return "R$ 0,00";
+
+    const numero = Number(valor);
+    if (isNaN(numero)) return "R$ 0,00";
+
+    const valorFormatado = numero.toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      useGrouping: true,
+    });
+
+    return `R$ ${valorFormatado}`;
+  };
+
   return orcamentos.map((orcamento) => {
     const dataInicio = new Date(
-      orcamento.prestadores[0]?.servicos[0]?.data_inicio
+      orcamento.prestadores[0]?.servicos[0]?.data_inicio,
     );
     const dataEntrega = new Date(
-      orcamento.prestadores[0]?.servicos[0]?.data_entrega
+      orcamento.prestadores[0]?.servicos[0]?.data_entrega,
     );
 
     let valorTotal = 0;
@@ -26,8 +41,8 @@ export const transformarOrcamentosParaTabela = (orcamentos) => {
         .join(", "),
       data_inicio: dataInicio.toLocaleDateString("pt-BR"),
       data_entrega: dataEntrega.toLocaleDateString("pt-BR"),
-      valor_total: `R$ ${valorTotal.toFixed(2).replace(".", ",")}`,
-      comissao: `R$ ${comissaoTotal.toFixed(2).replace(".", ",")}`,
+      valor_total: formatarValor(valorTotal),
+      comissao: formatarValor(comissaoTotal),
     };
   });
 };

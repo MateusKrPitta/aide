@@ -1,10 +1,22 @@
 export const cadastrosPalestraCurso = (palestras) => {
+  const formatarValor = (valor) => {
+    if (valor === undefined || valor === null) return "0,00";
+
+    const numero = Number(valor);
+    if (isNaN(numero)) return "0,00";
+
+    return numero.toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
   return palestras.map((palestra) => ({
     id: palestra.id,
     nome: palestra.nome,
     data: new Date(palestra.data).toLocaleDateString("pt-BR"),
     cliente: palestra.cliente.nome,
-    valor: `R$ ${parseFloat(palestra.valor).toFixed(2)}`,
+    valor: formatarValor(palestra.valor),
     endereco: palestra.endereco,
     tipo_pagamento: palestra.tipo_pagamento,
     forma_pagamento: palestra.forma_pagamento,
@@ -16,8 +28,8 @@ export const cadastrosPalestraCurso = (palestras) => {
       palestra.status_pagamento === "1"
         ? "Pago"
         : palestra.status_pagamento === "3"
-        ? "Pendente"
-        : "Outro",
+          ? "Pendente"
+          : "Outro",
     ativo: palestra.ativo,
   }));
 };
