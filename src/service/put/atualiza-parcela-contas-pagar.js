@@ -24,7 +24,7 @@ export const atualizarParcelaContasPagar = async (id, dadosParcela) => {
       valor: parseFloat(dadosParcela.valor),
       status: parseInt(dadosParcela.status),
       forma_pagamento: formaPagamentoMap[dadosParcela.forma_pagamento] || null,
-      status_pagamento: parseInt(dadosParcela.status), // Adicione esta linha
+      status_pagamento: parseInt(dadosParcela.status), 
     };
 
     const response = await https.put(

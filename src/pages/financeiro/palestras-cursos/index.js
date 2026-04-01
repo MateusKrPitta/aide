@@ -21,9 +21,9 @@ import TableLoading from "../../../components/loading/loading-table/loading";
 import TableComponent from "../../../components/table";
 import HeaderFinanceiro from "../../../components/navbars/financeiro";
 import { headerPalestras } from "../../../entities/header/financeiro/palestras";
-import { buscarRelatorioPalestras } from "../../../service/get/relatorio-palestra-cursos";
 import { atualizarStatusPagParcela } from "../../../service/put/relatorio-palestra-cursos";
 import { exportRelatorioPalestrasToPDF } from "./imprimir";
+import { buscarRelatorioTotalPalestras } from "../../../service/get/total-palestras-valor";
 
 const RelatorioPalestrasCursos = () => {
   const [loading, setLoading] = useState(false);
@@ -41,58 +41,101 @@ const RelatorioPalestrasCursos = () => {
 
   const [clientesOptions, setClientesOptions] = useState([]);
   const [tiposPalestraOptions, setTiposPalestraOptions] = useState([]);
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalRows, setTotalRows] = useState(0);
+  const [totais, setTotais] = useState({
+    totalPago: 0,
+    totalPendente: 0,
+    totalGeral: 0,
+  });
 
-  const extrairOpcoesFiltro = (data) => {
-    const clientesUnicos = [];
-    const tiposPalestraUnicos = [];
+  const [debouncedTermoBusca, setDebouncedTermoBusca] = useState("");
 
-    data.forEach((item) => {
-      if (
-        item.cliente &&
-        !clientesUnicos.some((c) => c.id === item.cliente.id)
-      ) {
-        clientesUnicos.push(item.cliente);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedTermoBusca(termoBusca);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [termoBusca]);
+
+  const extrairOpcoesFiltro = async () => {
+    try {
+      const response = await buscarRelatorioTotalPalestras({
+        page: 1,
+        perPage: 1000,
+      });
+
+      if (response && response.data && response.data.dados) {
+        const clientesUnicos = [];
+        const tiposPalestraUnicos = [];
+
+        response.data.dados.forEach((item) => {
+          if (
+            item.cliente &&
+            !clientesUnicos.some((c) => c.id === item.cliente.id)
+          ) {
+            clientesUnicos.push(item.cliente);
+          }
+
+          if (
+            item.tipoPalestra &&
+            !tiposPalestraUnicos.some((t) => t.id === item.tipoPalestra.id)
+          ) {
+            tiposPalestraUnicos.push(item.tipoPalestra);
+          }
+        });
+
+        setClientesOptions(clientesUnicos);
+        setTiposPalestraOptions(tiposPalestraUnicos);
       }
-
-      if (
-        item.tipoPalestra &&
-        !tiposPalestraUnicos.some((t) => t.id === item.tipoPalestra.id)
-      ) {
-        tiposPalestraUnicos.push(item.tipoPalestra);
-      }
-    });
-
-    return { clientesUnicos, tiposPalestraUnicos };
+    } catch (error) {
+      console.error("Erro ao extrair opções de filtro:", error);
+    }
   };
 
   const carregarRelatorioPalestras = async () => {
     try {
       setLoading(true);
-      const response = await buscarRelatorioPalestras();
 
-      const { clientesUnicos, tiposPalestraUnicos } = extrairOpcoesFiltro(
-        response.data,
-      );
-      setClientesOptions(clientesUnicos);
-      setTiposPalestraOptions(tiposPalestraUnicos);
+      const filtros = {
+        page: page,
+        perPage: rowsPerPage,
+        search: debouncedTermoBusca || undefined,
+        cliente_id: clienteFiltro ? parseInt(clienteFiltro) : undefined,
+        tipo_palestra_id: tipoPalestraFiltro
+          ? parseInt(tipoPalestraFiltro)
+          : undefined,
+        data_inicio: dataInicioFiltro,
+        data_fim: dataFimFiltro,
+        status_pagamento: statusPagamentoFiltro,
+      };
 
-      const listaTratada = (response.data || []).map((item) => {
-        const totalPago = item.parcelas
-          .filter((p) => p.status_pagamento === "2")
-          .reduce((acc, curr) => acc + parseFloat(curr.valor), 0);
+      const response = await buscarRelatorioTotalPalestras(filtros);
 
-        return {
+      if (response && response.data) {
+        const listaTratada = response.data.dados.map((item) => ({
           id: item.id,
           nome: item.nome,
           data: new Date(item.data).toLocaleDateString("pt-BR"),
           cliente: item.cliente?.nome || "-",
-          valor: `R$ ${Number(item.valor).toFixed(2).replace(".", ",")}`,
-          status: totalPago === parseFloat(item.valor) ? "Pago" : "Pendente",
+          valor: item.valor_formatado,
+          status: item.status,
+          valor_pago: item.valor_pago,
+          valor_pendente: item.valor_pendente,
           original: item,
-        };
-      });
+        }));
 
-      setRelatorioPalestras(listaTratada);
+        setRelatorioPalestras(listaTratada);
+        setTotalRows(response.data.paginacao.total_itens);
+
+        setTotais({
+          totalPago: response.data.totais_filtrados.total_pago,
+          totalPendente: response.data.totais_filtrados.total_pendente,
+          totalGeral: response.data.totais_filtrados.total_geral,
+        });
+      }
     } catch (error) {
       console.error("Erro ao carregar relatório:", error);
     } finally {
@@ -100,55 +143,16 @@ const RelatorioPalestrasCursos = () => {
     }
   };
 
-  const relatoriosFiltrados = useMemo(() => {
-    return relatorioPalestras.filter((palestra) => {
-      const dataPalestra = new Date(palestra.original.data);
+  const relatoriosExibidos = relatorioPalestras;
 
-      const termoBuscaMatch =
-        !termoBusca ||
-        palestra.nome.toLowerCase().includes(termoBusca.toLowerCase()) ||
-        palestra.cliente.toLowerCase().includes(termoBusca.toLowerCase()) ||
-        palestra.data.toLowerCase().includes(termoBusca.toLowerCase()) ||
-        palestra.valor.toLowerCase().includes(termoBusca.toLowerCase());
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+  };
 
-      const clienteMatch =
-        !clienteFiltro ||
-        palestra.cliente.toLowerCase().includes(clienteFiltro.toLowerCase());
-
-      const tipoPalestraMatch =
-        !tipoPalestraFiltro ||
-        palestra.original.tipoPalestra?.nome
-          .toLowerCase()
-          .includes(tipoPalestraFiltro.toLowerCase());
-
-      const dataInicioMatch =
-        !dataInicioFiltro || dataPalestra >= new Date(dataInicioFiltro);
-
-      const dataFimMatch =
-        !dataFimFiltro || dataPalestra <= new Date(dataFimFiltro);
-
-      const statusMatch =
-        !statusPagamentoFiltro ||
-        palestra.status.toLowerCase() === statusPagamentoFiltro.toLowerCase();
-
-      return (
-        termoBuscaMatch &&
-        clienteMatch &&
-        tipoPalestraMatch &&
-        dataInicioMatch &&
-        dataFimMatch &&
-        statusMatch
-      );
-    });
-  }, [
-    relatorioPalestras,
-    termoBusca,
-    clienteFiltro,
-    tipoPalestraFiltro,
-    dataInicioFiltro,
-    dataFimFiltro,
-    statusPagamentoFiltro,
-  ]);
+  const handleRowsPerPageChange = (newRowsPerPage) => {
+    setRowsPerPage(newRowsPerPage);
+    setPage(1);
+  };
 
   const limparFiltros = () => {
     setClienteFiltro("");
@@ -156,29 +160,18 @@ const RelatorioPalestrasCursos = () => {
     setDataInicioFiltro("");
     setDataFimFiltro("");
     setStatusPagamentoFiltro("");
+    setTermoBusca("");
+    setDebouncedTermoBusca("");
+    setPage(1);
+  };
+
+  const aplicarFiltros = () => {
+    setPage(1);
+    setFiltro(false);
+    carregarRelatorioPalestras();
   };
 
   const FecharFiltro = () => setFiltro(false);
-
-  const { totalPago, totalPendente, totalGeral } = useMemo(() => {
-    let pago = 0;
-    let pendente = 0;
-
-    relatoriosFiltrados.forEach((palestra) => {
-      const valor = parseFloat(palestra.original.valor);
-      if (palestra.status === "Pago") {
-        pago += valor;
-      } else {
-        pendente += valor;
-      }
-    });
-
-    return {
-      totalPago: pago,
-      totalPendente: pendente,
-      totalGeral: pago + pendente,
-    };
-  }, [relatoriosFiltrados]);
 
   const formatarValor = (valor) => {
     return `R$ ${valor.toFixed(2).replace(".", ",")}`;
@@ -226,8 +219,22 @@ const RelatorioPalestrasCursos = () => {
   };
 
   useEffect(() => {
-    carregarRelatorioPalestras();
+    extrairOpcoesFiltro();
   }, []);
+
+  useEffect(() => {
+    carregarRelatorioPalestras();
+  }, [
+    page,
+    rowsPerPage,
+    debouncedTermoBusca,
+    clienteFiltro,
+    tipoPalestraFiltro,
+    dataInicioFiltro,
+    dataFimFiltro,
+    statusPagamentoFiltro,
+  ]);
+
   return (
     <div className="flex w-full ">
       <Navbar />
@@ -260,7 +267,7 @@ const RelatorioPalestrasCursos = () => {
                     }}
                   >
                     <MonetizationOnIcon /> Total Pago:{" "}
-                    {formatarValor(totalPago)}
+                    {formatarValor(totais.totalPago)}
                   </label>
                 </div>
                 <div className="flex items-center justify-center mr-9 w-[35%]">
@@ -275,7 +282,7 @@ const RelatorioPalestrasCursos = () => {
                     }}
                   >
                     <MonetizationOnIcon /> Total Pendente:{" "}
-                    {formatarValor(totalPendente)}
+                    {formatarValor(totais.totalPendente)}
                   </label>
                 </div>
                 <div className="flex items-center justify-center mr-9 w-[35%]">
@@ -288,7 +295,8 @@ const RelatorioPalestrasCursos = () => {
                       padding: "10px",
                     }}
                   >
-                    <MonetizationOnIcon /> Total: {formatarValor(totalGeral)}
+                    <MonetizationOnIcon /> Total:{" "}
+                    {formatarValor(totais.totalGeral)}
                   </label>
                 </div>
               </div>
@@ -297,7 +305,7 @@ const RelatorioPalestrasCursos = () => {
                   fullWidth
                   variant="outlined"
                   size="small"
-                  label="Pesquisar"
+                  label="Pesquisar por nome, cliente, data ou valor"
                   autoComplete="off"
                   value={termoBusca}
                   onChange={(e) => setTermoBusca(e.target.value)}
@@ -331,7 +339,7 @@ const RelatorioPalestrasCursos = () => {
                   className="view-button w-10 h-10 "
                   onClick={() =>
                     exportRelatorioPalestrasToPDF(
-                      relatoriosFiltrados.map((item) => ({
+                      relatoriosExibidos.map((item) => ({
                         nome: item.nome,
                         data: item.data,
                         cliente: item.cliente,
@@ -339,9 +347,9 @@ const RelatorioPalestrasCursos = () => {
                         status: item.status,
                       })),
                       {
-                        totalPago: formatarValor(totalPago),
-                        totalPendente: formatarValor(totalPendente),
-                        totalGeral: formatarValor(totalGeral),
+                        totalPago: formatarValor(totais.totalPago),
+                        totalPendente: formatarValor(totais.totalPendente),
+                        totalGeral: formatarValor(totais.totalGeral),
                       },
                       {
                         cliente: clienteFiltro,
@@ -379,18 +387,23 @@ const RelatorioPalestrasCursos = () => {
                       Carregando Informações !
                     </label>
                   </div>
-                ) : relatoriosFiltrados.length > 0 ? (
+                ) : relatoriosExibidos.length > 0 ? (
                   <TableComponent
                     headers={headerPalestras}
-                    rows={relatoriosFiltrados}
+                    rows={relatoriosExibidos}
                     actionsLabel={"Ações"}
                     actionCalls={{
                       view: Informacoes,
                     }}
+                    pagination={true}
+                    totalRows={totalRows}
+                    page={page}
+                    rowsPerPage={rowsPerPage}
+                    onPageChange={handlePageChange}
+                    onRowsPerPageChange={handleRowsPerPageChange}
                   />
                 ) : (
                   <div className="text-center flex items-center mt-28 justify-center gap-5 flex-col text-primary">
-                    <TableLoading />
                     <label className="text-sm">
                       {termoBusca
                         ? `Nenhum resultado encontrado para "${termoBusca}"`
@@ -433,7 +446,7 @@ const RelatorioPalestrasCursos = () => {
                     >
                       <MenuItem value="">Todos</MenuItem>
                       {clientesOptions.map((cliente) => (
-                        <MenuItem key={cliente.id} value={cliente.nome}>
+                        <MenuItem key={cliente.id} value={cliente.id}>
                           {cliente.nome}
                         </MenuItem>
                       ))}
@@ -459,7 +472,7 @@ const RelatorioPalestrasCursos = () => {
                     >
                       <MenuItem value="">Todos</MenuItem>
                       {tiposPalestraOptions.map((tipo) => (
-                        <MenuItem key={tipo.id} value={tipo.nome}>
+                        <MenuItem key={tipo.id} value={tipo.id}>
                           {tipo.nome}
                         </MenuItem>
                       ))}
@@ -482,6 +495,9 @@ const RelatorioPalestrasCursos = () => {
                           </InputAdornment>
                         ),
                       }}
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
                     />
 
                     <TextField
@@ -499,6 +515,9 @@ const RelatorioPalestrasCursos = () => {
                             <DateRange />
                           </InputAdornment>
                         ),
+                      }}
+                      InputLabelProps={{
+                        shrink: true,
                       }}
                     />
 
@@ -525,6 +544,12 @@ const RelatorioPalestrasCursos = () => {
                         buttonSize="large"
                         onClick={limparFiltros}
                         variant="outlined"
+                      />
+                      <ButtonComponent
+                        title={"Aplicar Filtros"}
+                        buttonSize="large"
+                        onClick={aplicarFiltros}
+                        variant="contained"
                       />
                     </div>
                   </div>
@@ -657,8 +682,10 @@ const RelatorioPalestrasCursos = () => {
                                     }
                                     variant="outlined"
                                   >
-                                    <MenuItem value="1">Pendente</MenuItem>
-                                    <MenuItem value="2">Pago</MenuItem>
+                                    <MenuItem value="2">Pendente</MenuItem>{" "}
+                                    {/* ← CORRIGIDO: 2 = Pendente */}
+                                    <MenuItem value="1">Pago</MenuItem>{" "}
+                                    {/* ← CORRIGIDO: 1 = Pago */}
                                   </TextField>
                                 </p>
                               </div>

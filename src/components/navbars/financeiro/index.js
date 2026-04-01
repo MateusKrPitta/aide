@@ -64,13 +64,13 @@ const HeaderFinanceiro = () => {
         className="w-[35%] sm:w-[50%] md:w-[40%] lg:w-[100%]"
       />
 
-      <ButtonComponent
+      {/* <ButtonComponent
         startIcon={<People fontSize="small" />}
         title="Prestadores"
         buttonSize="large"
         onClick={() => handleNavigation("prestadores")}
         className="w-[35%] sm:w-[50%] md:w-[40%] lg:w-[100%]"
-      />
+      /> */}
     </div>
   );
 };

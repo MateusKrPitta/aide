@@ -45,7 +45,7 @@ const Usuario = () => {
 
   const [nomeCompleto, setNomeCompleto] = useState("");
   const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState(""); // Campo de nova senha
+  const [senha, setSenha] = useState("");
   const [confirmaSenha, setConfirmaSenha] = useState("");
 
   const FecharCadastroUsuario = () => {
@@ -123,7 +123,7 @@ const Usuario = () => {
         email,
         senha,
         telefone.replace(/\D/g, ""),
-        permissao
+        permissao,
       );
 
       CustomToast({
@@ -146,11 +146,9 @@ const Usuario = () => {
       setLoading(false);
     }
   };
-  // Na função EditarUsuario
   const EditarUsuario = async () => {
     setLoading(true);
 
-    // Valida se as senhas coincidem (se preenchidas)
     if (senha && senha !== confirmaSenha) {
       CustomToast({
         type: "error",
@@ -168,7 +166,7 @@ const Usuario = () => {
         email,
         telefone.replace(/\D/g, ""),
         permissao,
-        senha // Só envia se preenchida
+        senha, 
       );
 
       CustomToast({

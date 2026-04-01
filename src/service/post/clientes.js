@@ -12,7 +12,7 @@ export const criarCliente = async (
   numero,
   complemento,
   responsavel,
-  cep
+  cep,
 ) => {
   const https = httpsInstance();
   const token = sessionStorage.getItem("token");
@@ -44,7 +44,7 @@ export const criarCliente = async (
           "Content-Type": "application/json",
           setor: sessionStorage.getItem("setor_id"),
         },
-      }
+      },
     );
 
     return response.data;
@@ -52,7 +52,7 @@ export const criarCliente = async (
     const errorMessage =
       error.response?.data?.message ||
       error.response?.data?.errors ||
-      "Erro ao criar cliente"; // Corrigi a mensagem de erro
+      "Erro ao criar cliente";
     CustomToast({ type: "error", message: errorMessage });
     throw error;
   }

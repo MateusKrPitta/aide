@@ -1,15 +1,31 @@
 import CustomToast from "../../components/toast";
 import httpsInstance from "../url";
 
-export const buscarContasReceber = async () => {
+export const buscarContasReceber = async (
+  pagina = 1,
+  limite = 10,
+  filtros = {},
+) => {
   const https = httpsInstance();
   const token = sessionStorage.getItem("token");
 
   try {
+    const params = {
+      page: pagina,
+      perPage: limite,
+    };
+
+    if (filtros.nome) params.search = filtros.nome;
+    if (filtros.dataInicio) params.data_inicio = filtros.dataInicio;
+    if (filtros.dataFim) params.data_fim = filtros.dataFim;
+    if (filtros.categoria) params.categoria = filtros.categoria;
+    if (filtros.status) params.status = filtros.status;
+
     const response = await https.get("/contas-receber", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      params,
     });
 
     if (!response.data) {
@@ -18,7 +34,13 @@ export const buscarContasReceber = async () => {
         type: "warning",
         message: "Nenhum dado recebido da API",
       });
-      return [];
+      return {
+        data: [],
+        total: 0,
+        page: 1,
+        perPage: limite,
+        lastPage: 1,
+      };
     }
 
     return response.data;
@@ -37,13 +59,6 @@ export const buscarContasReceber = async () => {
         setTimeout(() => {
           window.location.href = "/";
         }, 3000);
-      } else if (
-        errorDetails === "Usuário não possui permissão para listar categorias."
-      ) {
-        CustomToast({
-          type: "warning",
-          message: errorDetails,
-        });
       } else {
         CustomToast({
           type: "error",
@@ -57,6 +72,12 @@ export const buscarContasReceber = async () => {
       });
     }
 
-    return [];
+    return {
+      data: [],
+      total: 0,
+      page: 1,
+      perPage: limite,
+      lastPage: 1,
+    };
   }
 };

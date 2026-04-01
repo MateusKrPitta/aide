@@ -3,5 +3,5 @@ export const headerContasPagar = [
   { key: "data", label: "Data" },
   { key: "categoria", label: "Categoria" },
   { key: "valor", label: "Valor" },
-  { key: "status", label: "Status Pagamento" },
+  { key: "status_pagamento", label: "Status Pagamento" },
 ];

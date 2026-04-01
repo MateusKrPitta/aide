@@ -1,7 +1,11 @@
 import CustomToast from "../../components/toast";
 import httpsInstance from "../url";
 
-export const buscarPalestraCurso = async () => {
+export const buscarPalestraCurso = async (
+  page = 1,
+  perPage = 10,
+  search = "",
+) => {
   const https = httpsInstance();
   const token = sessionStorage.getItem("token");
 
@@ -9,6 +13,11 @@ export const buscarPalestraCurso = async () => {
     const response = await https.get("/palestra_cursos", {
       headers: {
         Authorization: `Bearer ${token}`,
+      },
+      params: {
+        page,
+        perPage,
+        search: search || undefined,
       },
     });
     return response.data;

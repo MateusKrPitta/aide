@@ -1,11 +1,12 @@
 export const mascaraValor = (valor) => {
+  const valorString = valor.toString();
 
-  const valorNumerico = valor.replace(/\D/g, '');
-  
-  const valorFormatado = (parseFloat(valorNumerico) / 100).toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
+  const valorNumerico = valorString.replace(/[^\d,.-]/g, "");
+
+  const numero = parseFloat(valorNumerico) || 0;
+
+  return numero.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
   });
-
-  return valorFormatado;
 };

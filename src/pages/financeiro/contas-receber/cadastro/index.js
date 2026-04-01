@@ -14,6 +14,7 @@ import {
   InputAdornment,
   MenuItem,
   TextField,
+  Autocomplete,
 } from "@mui/material";
 import TransformIcon from "@mui/icons-material/Transform";
 import ButtonComponent from "../../../../components/button";
@@ -30,6 +31,7 @@ const CadastrarContaReceber = ({
   const [loading, setLoading] = useState(false);
   const [nome, setNome] = useState("");
   const [categoriaId, setCategoriaId] = useState("");
+  const [categoriaNome, setCategoriaNome] = useState("");
   const [dataInicio, setDataInicio] = useState("");
   const [quantidadeParcelas, setQuantidadeParcelas] = useState("");
   const [valorMensal, setValorMensal] = useState("");
@@ -44,6 +46,7 @@ const CadastrarContaReceber = ({
   const limparCampos = () => {
     setNome("");
     setCategoriaId("");
+    setCategoriaNome("");
     setDataInicio("");
     setQuantidadeParcelas("");
     setValorMensal("");
@@ -126,6 +129,7 @@ const CadastrarContaReceber = ({
       setCadastroUsuario(false);
       setNome("");
       setCategoriaId("");
+      setCategoriaNome("");
       setDataInicio("");
       setQuantidadeParcelas("");
       setValorMensal("");
@@ -214,36 +218,50 @@ const CadastrarContaReceber = ({
               }}
             />
 
-            <TextField
-              select
+            {/* Substitua o TextField select pelo Autocomplete */}
+            <Autocomplete
               fullWidth
-              variant="outlined"
               size="small"
-              label="Categoria"
-              value={categoriaId}
-              onChange={(e) => setCategoriaId(e.target.value)}
+              options={categoriasAtivas}
+              getOptionLabel={(option) => option.nome}
+              value={
+                categoriasAtivas.find(
+                  (cat) => cat.id === parseInt(categoriaId),
+                ) || null
+              }
+              onChange={(event, newValue) => {
+                if (newValue) {
+                  setCategoriaId(newValue.id.toString());
+                  setCategoriaNome(newValue.nome);
+                } else {
+                  setCategoriaId("");
+                  setCategoriaNome("");
+                }
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Categoria"
+                  variant="outlined"
+                  InputProps={{
+                    ...params.InputProps,
+                    startAdornment: (
+                      <>
+                        <InputAdornment position="start">
+                          <Category />
+                        </InputAdornment>
+                        {params.InputProps.startAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
               sx={{
                 width: { xs: "100%", sm: "50%", md: "40%", lg: "45%" },
               }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Category />
-                  </InputAdornment>
-                ),
-              }}
-            >
-              <MenuItem value="">Selecione uma categoria</MenuItem>
-              {categoriasAtivas.length > 0 ? (
-                categoriasAtivas.map((categoria) => (
-                  <MenuItem key={categoria.id} value={categoria.id}>
-                    {categoria.nome}
-                  </MenuItem>
-                ))
-              ) : (
-                <MenuItem disabled>Nenhuma categoria ativa disponível</MenuItem>
-              )}
-            </TextField>
+              noOptionsText="Nenhuma categoria encontrada"
+              isOptionEqualToValue={(option, value) => option.id === value?.id}
+            />
 
             {tipoCusto === "fixo" && (
               <>

@@ -6,7 +6,9 @@ export const criarFluxoCaixa = async (
   assunto,
   observacao,
   categoria_id,
-  valor
+  valor,
+  status = 1,
+  data_vencimento = null,
 ) => {
   const https = httpsInstance();
   const token = sessionStorage.getItem("token");
@@ -17,28 +19,40 @@ export const criarFluxoCaixa = async (
   }
 
   try {
-    const response = await https.post(
-      "/movimentacoes",
-      {
-        tipo,
-        assunto,
-        observacao,
-        categoria_id,
-        valor,
+    const dados = {
+      tipo,
+      assunto,
+      observacao,
+      categoria_id,
+      valor,
+      status,
+    };
+
+    if (data_vencimento) {
+      dados.data_vencimento = data_vencimento;
+    }
+
+    const response = await https.post("/movimentacoes", dados, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        setor: sessionStorage.getItem("setor_id"),
       },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          setor: sessionStorage.getItem("setor_id"),
-        },
-      }
-    );
+    });
+
+    CustomToast({
+      type: "success",
+      message: "Movimentação cadastrada com sucesso!",
+    });
 
     return response.data;
   } catch (error) {
     const errorMessage =
-      error.response?.data?.errors || error.response?.data?.success;
+      error.response?.data?.errors ||
+      error.response?.data?.message ||
+      error.response?.data?.success ||
+      "Erro ao cadastrar movimentação";
+
     CustomToast({ type: "error", message: errorMessage });
     throw error;
   }

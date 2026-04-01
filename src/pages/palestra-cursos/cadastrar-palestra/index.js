@@ -104,10 +104,6 @@ const CadastrarPalestra = ({ onSuccess }) => {
       setLista(palestrasFormatadas);
     } catch (error) {
       const errorMessage = error.response?.data?.errors?.nome;
-      CustomToast({
-        type: "error",
-        message: errorMessage || "Erro ao buscar palestras",
-      });
     } finally {
       setLoading(false);
     }
@@ -182,7 +178,7 @@ const CadastrarPalestra = ({ onSuccess }) => {
     if (paymentType === "Parcelado" && selectedLectures.length > 0) {
       const total = selectedLectures.reduce(
         (sum, lecture) => sum + parseFloat(lecture.price || 0),
-        0
+        0,
       );
       setInstallmentValue(calculateInstallmentValue(total, installments));
     }
@@ -212,7 +208,7 @@ const CadastrarPalestra = ({ onSuccess }) => {
   const validarPagamento = () => {
     const valorTotal = sessoesAdicionadas.reduce(
       (total, sessao) => total + parseFloat(sessao.valor || 0),
-      0
+      0,
     );
 
     if (paymentMethods.length === 0) {
@@ -225,14 +221,14 @@ const CadastrarPalestra = ({ onSuccess }) => {
 
     const totalPago = paymentMethods.reduce(
       (sum, payment) => sum + parseFloat(payment.value || 0),
-      0
+      0,
     );
 
     if (Math.abs(totalPago - valorTotal) > 0.01) {
       CustomToast({
         type: "warning",
         message: `O valor total pago (R$ ${totalPago.toFixed(
-          2
+          2,
         )}) não corresponde ao valor da palestra (R$ ${valorTotal.toFixed(2)})`,
       });
       setPagamentoError();
@@ -285,13 +281,14 @@ const CadastrarPalestra = ({ onSuccess }) => {
 
   const handleRemoverSessao = (id) => {
     setSessoesAdicionadas(
-      sessoesAdicionadas.filter((sessao) => sessao.id !== id)
+      sessoesAdicionadas.filter((sessao) => sessao.id !== id),
     );
+    setBotaoAdicionarDesabilitado(false);
   };
 
   const valorTotal = sessoesAdicionadas.reduce(
     (total, sessao) => total + parseFloat(sessao.valor || 0),
-    0
+    0,
   );
 
   const CadastrarPalestraCurso = async () => {
@@ -326,7 +323,7 @@ const CadastrarPalestra = ({ onSuccess }) => {
       setLoading(true);
 
       const tipoPalestra = tiposPalestra.find(
-        (t) => t.nome === primeiraSessao.palestra
+        (t) => t.nome === primeiraSessao.palestra,
       );
       if (!tipoPalestra) {
         throw new Error("Tipo de palestra não encontrado");
@@ -347,18 +344,18 @@ const CadastrarPalestra = ({ onSuccess }) => {
         secoes: primeiraSessao.secoes
           ? parseInt(primeiraSessao.secoes, 10)
           : null,
-        status_pagamento: paymentStatus === "Pago" ? 1 : 2,
+        status_pagamento: paymentStatus === "Pago" ? 2 : 1,
         tipo_pagamento: paymentType === "À vista" ? 1 : 2,
         forma_pagamento:
           currentPaymentMethod === "Dinheiro"
             ? 1
             : currentPaymentMethod === "PIX"
-            ? 2
-            : currentPaymentMethod === "Débito"
-            ? 3
-            : currentPaymentMethod === "Crédito"
-            ? 4
-            : 5,
+              ? 2
+              : currentPaymentMethod === "Débito"
+                ? 3
+                : currentPaymentMethod === "Crédito"
+                  ? 4
+                  : 5,
         qtd_parcelas:
           paymentType === "Parcelado" ? parseInt(installments, 10) : null,
         primeira_data_parcela:
@@ -500,7 +497,7 @@ const CadastrarPalestra = ({ onSuccess }) => {
                   variants={fadeIn}
                   transition={{ duration: 0.9 }}
                 >
-                  <div className="flex w-full flex-wrap gap-2 items-center">
+                  <div className="flex w-full flex-wrap gap-3 items-center">
                     <TextField
                       fullWidth
                       variant="outlined"
@@ -513,8 +510,8 @@ const CadastrarPalestra = ({ onSuccess }) => {
                         width: {
                           xs: "72%",
                           sm: "50%",
-                          md: "40%",
-                          lg: "48%",
+                          md: "50%",
+                          lg: "50%",
                         },
                       }}
                       InputProps={{
@@ -526,7 +523,7 @@ const CadastrarPalestra = ({ onSuccess }) => {
                       }}
                     />
                     <Autocomplete
-                      options={clientes.filter(cliente => cliente.ativo)}
+                      options={clientes.filter((cliente) => cliente.ativo)}
                       getOptionLabel={(option) => option.nome}
                       value={selectedCliente}
                       onChange={(event, newValue) =>
@@ -535,8 +532,13 @@ const CadastrarPalestra = ({ onSuccess }) => {
                       isOptionEqualToValue={(option, value) =>
                         option.id === value.id
                       }
-                      style={{
-                        width: "45%",
+                      sx={{
+                        width: {
+                          xs: "72%",
+                          sm: "50%",
+                          md: "48%",
+                          lg: "48%",
+                        },
                       }}
                       renderInput={(params) => (
                         <TextField
@@ -572,7 +574,7 @@ const CadastrarPalestra = ({ onSuccess }) => {
                           xs: "72%",
                           sm: "50%",
                           md: "40%",
-                          lg: "95%",
+                          lg: "100%",
                         },
                       }}
                       InputProps={{
@@ -762,7 +764,7 @@ const CadastrarPalestra = ({ onSuccess }) => {
                                       <DateRange fontSize="small" />
                                       <label className="text-xs font-semibold">
                                         {new Date(
-                                          sessao.data
+                                          sessao.data,
                                         ).toLocaleDateString()}
                                       </label>
                                     </div>
@@ -904,7 +906,7 @@ const CadastrarPalestra = ({ onSuccess }) => {
                               value={currentPaymentValue}
                               onChange={(e) =>
                                 setCurrentPaymentValue(
-                                  e.target.value.replace(/[^0-9.]/g, "")
+                                  e.target.value.replace(/[^0-9.]/g, ""),
                                 )
                               }
                               sx={{ width: { xs: "40%", lg: "47%" } }}
@@ -979,7 +981,7 @@ const CadastrarPalestra = ({ onSuccess }) => {
                                         <span className="text-xs text-gray-500">
                                           {payment.date
                                             ? new Date(
-                                                payment.date
+                                                payment.date,
                                               ).toLocaleDateString()
                                             : "Sem data"}
                                         </span>
@@ -1011,7 +1013,7 @@ const CadastrarPalestra = ({ onSuccess }) => {
                                       .reduce(
                                         (sum, lecture) =>
                                           sum + parseFloat(lecture.price || 0),
-                                        0
+                                        0,
                                       )
                                       .toFixed(2)}
                                   </span>

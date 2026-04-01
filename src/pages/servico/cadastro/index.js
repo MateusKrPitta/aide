@@ -85,9 +85,8 @@ const CadastroServicosCliente = ({ onSuccess }) => {
       setLoading(true);
       const response = await buscarPretadores();
 
-      // Filtrar apenas prestadores ativos
       const prestadoresAtivos = response.data.filter(
-        (prestador) => prestador.ativo
+        (prestador) => prestador.ativo,
       );
 
       const prestadoresFormatados = prestadoresAtivos.map((prestador) => ({
@@ -103,7 +102,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
         servicos:
           prestador.servicos?.map((s) => s.nome).join(", ") || "Nenhum serviço",
         ativo: prestador.ativo,
-        statusLabel: "Ativo", // Como já filtramos, todos são ativos
+        statusLabel: "Ativo",
         servicosArray: prestador.servicos || [],
       }));
 
@@ -121,7 +120,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
     setServicosPorPrestador((prev) => {
       const updated = { ...prev };
       const servicoIndex = updated[prestadorId].findIndex(
-        (s) => s.id === servicoId
+        (s) => s.id === servicoId,
       );
 
       if (servicoIndex !== -1) {
@@ -297,7 +296,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
     setServicosPorPrestador((prev) => ({
       ...prev,
       [prestadorId]: (prev[prestadorId] || []).filter(
-        (s) => s.id !== servicoId
+        (s) => s.id !== servicoId,
       ),
     }));
   };
@@ -474,8 +473,8 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                             options={listaPrestadores.filter(
                               (prestador) =>
                                 !prestadoresAdicionados.some(
-                                  (p) => p.id === prestador.id
-                                )
+                                  (p) => p.id === prestador.id,
+                                ),
                             )}
                             getOptionLabel={(option) => option.nome}
                             value={prestadorSelecionado}
@@ -526,8 +525,8 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                 onClick={() => {
                                   setPrestadoresAdicionados(
                                     prestadoresAdicionados.filter(
-                                      (p) => p.id !== prestador.id
-                                    )
+                                      (p) => p.id !== prestador.id,
+                                    ),
                                   );
                                   const novosServicos = {
                                     ...servicosPorPrestador,
@@ -563,7 +562,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                   onChange={(e) =>
                                     handleServicoChange(
                                       prestador.id,
-                                      e.target.value
+                                      e.target.value,
                                     )
                                   }
                                   style={{ width: "50%" }}
@@ -576,7 +575,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                   }}
                                 >
                                   {prestador.servicosArray
-                                    ?.filter((servico) => servico.ativo) // Filtra apenas serviços ativos
+                                    ?.filter((servico) => servico.ativo)
                                     ?.map((servico) => (
                                       <MenuItem
                                         key={servico.id}
@@ -613,7 +612,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                           onClick={() =>
                                             removerServico(
                                               prestador.id,
-                                              servico.id
+                                              servico.id,
                                             )
                                           }
                                           className="text-[#9D4B5B] hover:text-[#cf7889]"
@@ -636,7 +635,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                               prestador.id,
                                               servico.id,
                                               "tipo",
-                                              e.target.value
+                                              e.target.value,
                                             )
                                           }
                                           style={{ width: "30%" }}
@@ -666,7 +665,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                               prestador.id,
                                               servico.id,
                                               "metodo",
-                                              e.target.value
+                                              e.target.value,
                                             )
                                           }
                                           style={{ width: "30%" }}
@@ -700,7 +699,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                                 prestador.id,
                                                 servico.id,
                                                 "parcelas",
-                                                e.target.value
+                                                e.target.value,
                                               )
                                             }
                                             style={{ width: "15%" }}
@@ -726,7 +725,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                               prestador.id,
                                               servico.id,
                                               "valorTotal",
-                                              e.target.value
+                                              e.target.value,
                                             )
                                           }
                                           style={{ width: "20%" }}
@@ -746,7 +745,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                             size="small"
                                             label="Valor Parcela"
                                             value={servico.pagamento.valorParcela.toFixed(
-                                              2
+                                              2,
                                             )}
                                             disabled
                                             style={{ width: "20%" }}
@@ -771,7 +770,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                               prestador.id,
                                               servico.id,
                                               "comissao",
-                                              e.target.value
+                                              e.target.value,
                                             )
                                           }
                                           style={{ width: "16%" }}
@@ -798,7 +797,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                               prestador.id,
                                               servico.id,
                                               "valorPrestador",
-                                              e.target.value
+                                              e.target.value,
                                             )
                                           }
                                           style={{ width: "20%" }}
@@ -822,7 +821,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                               prestador.id,
                                               servico.id,
                                               "dataInicio",
-                                              e.target.value
+                                              e.target.value,
                                             )
                                           }
                                           style={{ width: "25%" }}
@@ -843,7 +842,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                               prestador.id,
                                               servico.id,
                                               "dataEntrega",
-                                              e.target.value
+                                              e.target.value,
                                             )
                                           }
                                           InputProps={{
@@ -868,7 +867,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                               prestador.id,
                                               servico.id,
                                               "dataPagamento",
-                                              e.target.value
+                                              e.target.value,
                                             )
                                           }
                                           style={{ width: "25%" }}
@@ -882,7 +881,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                         ></TextField>
                                       </div>
                                     </div>
-                                  )
+                                  ),
                                 )}
                               </div>
                             </div>

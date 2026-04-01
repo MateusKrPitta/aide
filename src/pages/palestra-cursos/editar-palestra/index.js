@@ -326,10 +326,7 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
       setLista(palestrasFormatadas);
     } catch (error) {
       const errorMessage = error.response?.data?.errors?.nome;
-      CustomToast({
-        type: "error",
-        message: errorMessage || "Erro ao buscar palestras",
-      });
+     
     } finally {
       setLoading(false);
     }

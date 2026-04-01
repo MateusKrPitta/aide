@@ -31,10 +31,17 @@ const TableComponent = ({
   rowStyle,
   selectedCheckboxes,
   setSelectedCheckboxes,
+  pagination = false,
+  totalRows = 0,
+  page = 0,
+  rowsPerPage = 10,
+  onPageChange,
+  onRowsPerPageChange,
+  forceShowDelete = false,
 }) => {
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [pageList, setPageList] = useState([]);
+  const [localPage, setLocalPage] = useState(0);
+  const [localRowsPerPage, setLocalRowsPerPage] = useState(10);
   const hasActions = Object.keys(actionCalls).length > 0;
   const actionTypes = Object.keys(actionCalls);
 
@@ -63,13 +70,26 @@ const TableComponent = ({
     }
   }, [rows]);
 
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
+  const handleLocalChangePage = (event, newPage) => {
+    setLocalPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+  const handleLocalChangeRowsPerPage = (event) => {
+    setLocalRowsPerPage(parseInt(event.target.value, 10));
+    setLocalPage(0);
+  };
+
+  const handleExternalPageChange = (event, newPage) => {
+    if (onPageChange) {
+      onPageChange(newPage + 1);
+    }
+  };
+
+  const handleExternalRowsPerPageChange = (event) => {
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    if (onRowsPerPageChange) {
+      onRowsPerPageChange(newRowsPerPage);
+    }
   };
 
   const renderActions = (row, rowIndex) => {
@@ -130,26 +150,24 @@ const TableComponent = ({
             <EditIcon fontSize={"small"} />
           </IconButton>
         ),
-      delete: row.tipo !== "Serviço" &&
-        row.tipoOrigem !== "Prestador" &&
-        row.tipo !== "Palestra/Curso" && (
-          <IconButton
-            onClick={() => actionCalls.delete(row)}
-            title="Excluir Registro"
-            className="delete-button"
-            sx={{
-              color: "#9a0000",
-              border: "1px solid #9a0000",
-              "&:hover": {
-                color: "#fff",
-                backgroundColor: "#9a0000",
-                border: "1px solid #b22222",
-              },
-            }}
-          >
-            <DeleteOutlineIcon fontSize={"small"} />
-          </IconButton>
-        ),
+      delete: (forceShowDelete || row.podeExcluir === true) && (
+        <IconButton
+          onClick={() => actionCalls.delete(row)}
+          title="Excluir Registro"
+          className="delete-button"
+          sx={{
+            color: "#9a0000",
+            border: "1px solid #9a0000",
+            "&:hover": {
+              color: "#fff",
+              backgroundColor: "#9a0000",
+              border: "1px solid #b22222",
+            },
+          }}
+        >
+          <DeleteOutlineIcon fontSize={"small"} />
+        </IconButton>
+      ),
       tirar: (
         <IconButton
           onClick={() => actionCalls.tirar(rowIndex)}
@@ -253,136 +271,156 @@ const TableComponent = ({
     });
   };
 
-  const paginatedRows = pageList.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage,
-  );
-
-  useEffect(() => {
-    setPageList(rows);
-  }, [rows]);
+  const displayRows = pagination
+    ? rows
+    : pageList.slice(
+        localPage * localRowsPerPage,
+        localPage * localRowsPerPage + localRowsPerPage,
+      );
 
   return (
-    <TableContainer
-      component={Paper}
-      style={{ maxHeight: "370px", overflowY: "auto" }}
-      className="scrollbar"
-    >
-      <Table stickyHeader>
-        <TableHead>
-          <TableRow>
-            {headersList.map(
-              ({ key, label, sort }) =>
-                sort !== false && (
-                  <TableCell
-                    key={key}
-                    style={{
-                      fontWeight: "bold",
-                      textAlign: key === "actions" ? "center" : "left",
-                    }}
-                  >
-                    {label}
-                  </TableCell>
-                ),
-            )}
-          </TableRow>
-        </TableHead>
-
-        <TableBody>
-          {paginatedRows.map((row, rowIndex) => (
-            <TableRow key={row.id} style={rowStyle ? rowStyle(row) : {}}>
+    <>
+      <TableContainer
+        component={Paper}
+        style={{ maxHeight: "370px", overflowY: "auto" }}
+        className="scrollbar"
+      >
+        <Table stickyHeader>
+          <TableHead>
+            <TableRow>
               {headersList.map(
-                ({ key, label, sort, type }) =>
-                  sort !== false &&
-                  (key === "actions" && hasActions ? (
+                ({ key, label, sort }) =>
+                  sort !== false && (
                     <TableCell
                       key={key}
                       style={{
-                        display: "flex",
-                        gap: 5,
-                        justifyContent: "center",
+                        fontWeight: "bold",
+                        textAlign: key === "actions" ? "center" : "left",
                       }}
                     >
-                      {renderActions(row, rowIndex)}
+                      {label}
                     </TableCell>
-                  ) : type === "checkbox" ? (
-                    <TableCell key={key}>
-                      <input
-                        type="checkbox"
-                        checked={selectedCheckboxes[row.produto] || false}
-                        onChange={(e) => {
-                          const updatedSelectedCheckboxes = {
-                            ...selectedCheckboxes,
-                          };
-                          if (e.target.checked) {
-                            updatedSelectedCheckboxes[row.produto] = true;
-                          } else {
-                            delete updatedSelectedCheckboxes[row.produto];
-                          }
-                          setSelectedCheckboxes(updatedSelectedCheckboxes);
-                        }}
-                      />
-                    </TableCell>
-                  ) : key === "tipo" ? (
-                    <TableCell
-                      key={key}
-                      style={{
-                        backgroundColor:
-                          row.tipo === "entrada"
-                            ? "#006b33"
-                            : row.tipo === "saida"
-                              ? "#ff0000"
-                              : row.tipo === "desperdicio"
-                                ? "#000000"
-                                : "transparent",
-                        color: "black",
-                      }}
-                    >
-                      {row.tipo === "3" ? "Desperdício" : row[key]}
-                    </TableCell>
-                  ) : key === "entrada" ||
-                    key === "estoqueInicial" ||
-                    key === "estoqueFinal" ? (
-                    <TableCell key={key}>
-                      <TextField
-                        type="number"
-                        value={row[key] || ""}
-                        onChange={(e) =>
-                          handleInputChange(
-                            page * rowsPerPage + rowIndex,
-                            key,
-                            e.target.value,
-                          )
-                        }
-                        variant="outlined"
-                        size="small"
-                      />
-                    </TableCell>
-                  ) : key === "cpf" ? (
-                    <TableCell style={{ fontSize: "12px" }} key={key}>
-                      {maskCPF(row[key])}
-                    </TableCell>
-                  ) : (
-                    <TableCell style={{ fontSize: "12px" }} key={key}>
-                      {row[key] || "-"}
-                    </TableCell>
-                  )),
+                  ),
               )}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      <TablePagination
-        component="div"
-        count={pageList.length}
-        page={page}
-        onPageChange={handleChangePage}
-        rowsPerPage={rowsPerPage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-        rowsPerPageOptions={[5, 10, 25, 50, 100]}
-        labelRowsPerPage="Linhas por página"
-      />
-    </TableContainer>
+          </TableHead>
+
+          <TableBody>
+            {displayRows.map((row, rowIndex) => (
+              <TableRow
+                key={row.id || rowIndex}
+                style={rowStyle ? rowStyle(row) : {}}
+              >
+                {headersList.map(
+                  ({ key, label, sort, type }) =>
+                    sort !== false &&
+                    (key === "actions" && hasActions ? (
+                      <TableCell
+                        key={key}
+                        style={{
+                          display: "flex",
+                          gap: 5,
+                          justifyContent: "center",
+                        }}
+                      >
+                        {renderActions(row, rowIndex)}
+                      </TableCell>
+                    ) : type === "checkbox" ? (
+                      <TableCell key={key}>
+                        <input
+                          type="checkbox"
+                          checked={selectedCheckboxes[row.produto] || false}
+                          onChange={(e) => {
+                            const updatedSelectedCheckboxes = {
+                              ...selectedCheckboxes,
+                            };
+                            if (e.target.checked) {
+                              updatedSelectedCheckboxes[row.produto] = true;
+                            } else {
+                              delete updatedSelectedCheckboxes[row.produto];
+                            }
+                            setSelectedCheckboxes(updatedSelectedCheckboxes);
+                          }}
+                        />
+                      </TableCell>
+                    ) : key === "tipo" ? (
+                      <TableCell
+                        key={key}
+                        style={{
+                          backgroundColor:
+                            row.tipo === "entrada"
+                              ? "#006b33"
+                              : row.tipo === "saida"
+                                ? "#ff0000"
+                                : row.tipo === "desperdicio"
+                                  ? "#000000"
+                                  : "transparent",
+                          color: "black",
+                        }}
+                      >
+                        {row.tipo === "3" ? "Desperdício" : row[key]}
+                      </TableCell>
+                    ) : key === "entrada" ||
+                      key === "estoqueInicial" ||
+                      key === "estoqueFinal" ? (
+                      <TableCell key={key}>
+                        <TextField
+                          type="number"
+                          value={row[key] || ""}
+                          onChange={(e) =>
+                            handleInputChange(
+                              pagination
+                                ? rowIndex
+                                : localPage * localRowsPerPage + rowIndex,
+                              key,
+                              e.target.value,
+                            )
+                          }
+                          variant="outlined"
+                          size="small"
+                        />
+                      </TableCell>
+                    ) : key === "cpf" ? (
+                      <TableCell style={{ fontSize: "12px" }} key={key}>
+                        {maskCPF(row[key])}
+                      </TableCell>
+                    ) : (
+                      <TableCell style={{ fontSize: "12px" }} key={key}>
+                        {row[key] || "-"}
+                      </TableCell>
+                    )),
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        {pagination ? (
+          <TablePagination
+            component="div"
+            count={totalRows}
+            page={page - 1}
+            onPageChange={handleExternalPageChange}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleExternalRowsPerPageChange}
+            rowsPerPageOptions={[5, 10, 25, 50, 100]}
+            labelRowsPerPage="Linhas por página"
+          />
+        ) : (
+          pageList.length > 0 && (
+            <TablePagination
+              component="div"
+              count={pageList.length}
+              page={localPage}
+              onPageChange={handleLocalChangePage}
+              rowsPerPage={localRowsPerPage}
+              onRowsPerPageChange={handleLocalChangeRowsPerPage}
+              rowsPerPageOptions={[5, 10, 25, 50, 100]}
+              labelRowsPerPage="Linhas por página"
+            />
+          )
+        )}
+      </TableContainer>
+    </>
   );
 };
 

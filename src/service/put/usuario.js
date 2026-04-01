@@ -8,12 +8,11 @@ export const atualizarUsuario = async (
   email,
   telefone,
   permissao,
-  password
+  password,
 ) => {
   const https = httpsInstance();
   const token = sessionStorage.getItem("token");
 
-  // Cria objeto de dados
   const data = {
     nome,
     username,
@@ -22,7 +21,6 @@ export const atualizarUsuario = async (
     permissao,
   };
 
-  // Só adiciona password se não for vazio
   if (password && password.trim() !== "") {
     data.password = password;
   }

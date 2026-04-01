@@ -1,12 +1,14 @@
 import CustomToast from "../../components/toast";
 import httpsInstance from "../url";
 
-export const buscarFluxoCaixa = async () => {
+export const buscarFluxoCaixa = async (params = new URLSearchParams()) => {
   const https = httpsInstance();
   const token = sessionStorage.getItem("token");
 
   try {
-    const response = await https.get("/movimentacoes", {
+    const url = `/movimentacoes${params.toString() ? `?${params.toString()}` : ""}`;
+
+    const response = await https.get(url, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

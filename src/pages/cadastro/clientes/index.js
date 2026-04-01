@@ -59,16 +59,16 @@ const Clientes = () => {
         return `${cleaned.slice(0, 2)}.${cleaned.slice(2)}`;
       if (cleaned.length <= 8)
         return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(
-          5
+          5,
         )}`;
       if (cleaned.length <= 12)
         return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(
           5,
-          8
+          8,
         )}/${cleaned.slice(8)}`;
       return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(
         5,
-        8
+        8,
       )}/${cleaned.slice(8, 12)}-${cleaned.slice(12, 14)}`;
     } else {
       if (cleaned.length <= 3) return cleaned;
@@ -76,11 +76,11 @@ const Clientes = () => {
         return `${cleaned.slice(0, 3)}.${cleaned.slice(3)}`;
       if (cleaned.length <= 9)
         return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(
-          6
+          6,
         )}`;
       return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(
         6,
-        9
+        9,
       )}-${cleaned.slice(9, 11)}`;
     }
   };
@@ -95,11 +95,11 @@ const Clientes = () => {
       return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
     if (cleaned.length <= 10)
       return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(
-        6
+        6,
       )}`;
     return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(
       7,
-      11
+      11,
     )}`;
   };
 
@@ -150,7 +150,7 @@ const Clientes = () => {
         numero,
         complemento,
         responsavel,
-        cep
+        cep,
       );
       setCep("");
       setNome("");
@@ -206,7 +206,7 @@ const Clientes = () => {
         clienteEditando.cpf_cnpj,
         clienteEditando.complemento,
         clienteEditando.responsavel,
-        clienteEditando.cep
+        clienteEditando.cep,
       );
 
       await carregarClientes();
@@ -358,7 +358,7 @@ const Clientes = () => {
                     actionCalls={{
                       edit: (row) =>
                         EditarOpcao(
-                          filteredClients.find((c) => c.id === row.id)
+                          filteredClients.find((c) => c.id === row.id),
                         ),
                       inactivate: AlternarAtivacaoCliente,
                     }}
@@ -536,7 +536,7 @@ const Clientes = () => {
                         ),
                       }}
                       inputProps={{
-                        maxLength: 9, // Para "12345-678"
+                        maxLength: 9,
                       }}
                     />
 
@@ -987,7 +987,7 @@ const Clientes = () => {
                             xs: "100%",
                             sm: "50%",
                             md: "40%",
-                            lg: "100%", // Ajuste conforme necessário
+                            lg: "100%",
                           },
                         }}
                         InputProps={{

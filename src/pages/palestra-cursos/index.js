@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import MenuMobile from "../../components/menu-mobile";
 import HeaderPerfil from "../../components/navbars/perfil";
 import Navbar from "../../components/navbars/header";
@@ -23,22 +23,34 @@ const PalestrasCursos = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [lista, setLista] = useState([]);
 
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalRows, setTotalRows] = useState(0);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setPage(1);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   const handleEditar = (id) => {
     const palestraParaEditar = lista.find((item) => item.id === id);
-
     setPalestraEditando(palestraParaEditar);
-    buscarPalestras();
     setEditando(true);
   };
 
   const handleSalvarEdicao = (palestraAtualizada) => {
     setLista(
       lista.map((item) =>
-        item.id === palestraAtualizada.id ? palestraAtualizada : item
-      )
+        item.id === palestraAtualizada.id ? palestraAtualizada : item,
+      ),
     );
     setEditando(false);
-    buscarPalestras();
+    buscarPalestras(page, rowsPerPage, debouncedSearchTerm);
     setPalestraEditando(null);
   };
 
@@ -60,40 +72,65 @@ const PalestrasCursos = () => {
     visible: { opacity: 1 },
   };
 
-  const buscarPalestras = async () => {
-    try {
-      setLoading(true);
-      const response = await buscarPalestraCurso();
-      const palestrasFormatadas = cadastrosPalestraCurso(response.data);
-      setLista(palestrasFormatadas);
-    } catch (error) {
-      const errorMessage = error.response?.data?.errors?.nome;
-      CustomToast({
-        type: "error",
-        message: errorMessage || "Erro ao buscar palestras",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-  useEffect(() => {
-    buscarPalestras();
-  }, []);
+  const buscarPalestras = useCallback(
+    async (currentPage, currentPerPage, search) => {
+      try {
+        setLoading(true);
+        const response = await buscarPalestraCurso(
+          currentPage,
+          currentPerPage,
+          search,
+        );
 
-  const filteredList = lista.filter((item) =>
-    Object.values(item).some(
-      (value) =>
-        value &&
-        value.toString().toLowerCase().includes(searchTerm.toLowerCase())
-    )
+        if (response.success && response.data) {
+          if (response.data.data && Array.isArray(response.data.data)) {
+            const palestrasFormatadas = cadastrosPalestraCurso(
+              response.data.data,
+            );
+            setLista(palestrasFormatadas);
+            setTotalRows(parseInt(response.data.total) || 0);
+          } else if (Array.isArray(response.data)) {
+            const palestrasFormatadas = cadastrosPalestraCurso(response.data);
+            setLista(palestrasFormatadas);
+            setTotalRows(response.data.length);
+          }
+        } else {
+          setLista([]);
+          setTotalRows(0);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar palestras:", error);
+        setLista([]);
+        setTotalRows(0);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
   );
+
+  useEffect(() => {
+    buscarPalestras(page, rowsPerPage, debouncedSearchTerm);
+  }, [page, rowsPerPage, debouncedSearchTerm, buscarPalestras]);
+
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+  };
+
+  const handleRowsPerPageChange = (newRowsPerPage) => {
+    setRowsPerPage(newRowsPerPage);
+    setPage(1);
+  };
 
   const handleDeletar = async (id) => {
     try {
       setLoading(true);
       await deletarPalestra(id);
-
-      buscarPalestras();
+      if (lista.length === 1 && page > 1) {
+        setPage(page - 1);
+      } else {
+        buscarPalestras(page, rowsPerPage, debouncedSearchTerm);
+      }
     } catch (error) {
       CustomToast({
         type: "error",
@@ -108,7 +145,7 @@ const PalestrasCursos = () => {
     <div className="flex w-full">
       <Navbar />
 
-      <div className="flex ml-0 flex-col gap-3 w-full items-end  just">
+      <div className="flex ml-0 flex-col gap-3 w-full items-end just">
         <MenuMobile />
         <motion.div
           style={{ width: "100%" }}
@@ -119,7 +156,7 @@ const PalestrasCursos = () => {
         >
           <HeaderPerfil pageTitle="Palestras e Cursos" />
 
-          <div className=" items-center justify-center lg:justify-start w-full mt-[95px] gap-2 flex-wrap md:items-start pl-2">
+          <div className="items-center justify-center lg:justify-start w-full mt-[95px] gap-2 flex-wrap md:items-start pl-2">
             <div className="w-[100%] itens-center mt-2 ml-2 sm:mt-0 md:flex md:justify-start flex-col lg:w-[95%]">
               <div className="flex gap-2 flex-wrap w-full justify-center md:justify-start">
                 <TextField
@@ -139,51 +176,42 @@ const PalestrasCursos = () => {
                     ),
                   }}
                 />
-                <CadastrarPalestra onSuccess={buscarPalestras} />
+                <CadastrarPalestra
+                  onSuccess={() =>
+                    buscarPalestras(1, rowsPerPage, debouncedSearchTerm)
+                  }
+                />
               </div>
               <div className="w-full flex justify-center">
                 {loading ? (
                   <div className="w-full flex items-center h-[300px] flex-col gap-3 justify-center">
                     <TableLoading />
                     <label className="text-xs text-primary">
-                      Carregando Informações !
+                      Carregando Informações!
                     </label>
                   </div>
-                ) : filteredList.length > 0 ? (
-                  <>
-                    <TableComponent
-                      headers={palestraCursosLista}
-                      rows={filteredList}
-                      actionsLabel={"Ações"}
-                      actionCalls={{
-                        edit: (row) => handleEditar(row.id),
-                        delete: (row) => handleDeletar(row.id),
-                      }}
-                    />
-                    {editando && (
-                      <EditarPalestra
-                        open={editando}
-                        onClose={handleCancelarEdicao}
-                        onSave={handleSalvarEdicao}
-                        palestra={palestraEditando}
-                      />
-                    )}
-                  </>
+                ) : lista.length > 0 ? (
+                  <TableComponent
+                    headers={palestraCursosLista}
+                    rows={lista}
+                    actionsLabel={"Ações"}
+                    forceShowDelete={true}
+                    pagination={true}
+                    totalRows={totalRows}
+                    page={page}
+                    rowsPerPage={rowsPerPage}
+                    onPageChange={handlePageChange}
+                    onRowsPerPageChange={handleRowsPerPageChange}
+                    actionCalls={{
+                      edit: (row) => handleEditar(row.id),
+                      delete: (row) => handleDeletar(row.id),
+                    }}
+                  />
                 ) : (
                   <div className="text-center flex items-center mt-28 w-full h-full justify-center gap-5 flex-col text-primary">
-                    {lista.length === 0 ? (
-                      <div className="flex w-full flex-col mt-12 gap-2 justify-center itens-center">
-                        <TableLoading />
-                        <label className="text-sm">
-                          Nenhuma palestra encontrada!
-                        </label>
-                      </div>
-                    ) : (
-                      <label className="text-sm flex  mt-12 flex-col gap-2">
-                        <TableLoading />
-                        Nenhuma palestra encontrada!
-                      </label>
-                    )}
+                    <label className="text-sm">
+                      Nenhuma palestra encontrada!
+                    </label>
                   </div>
                 )}
               </div>
@@ -191,6 +219,16 @@ const PalestrasCursos = () => {
           </div>
         </motion.div>
       </div>
+
+      {/* Modal de edição */}
+      {editando && (
+        <EditarPalestra
+          open={editando}
+          onClose={handleCancelarEdicao}
+          onSave={handleSalvarEdicao}
+          palestra={palestraEditando}
+        />
+      )}
     </div>
   );
 };

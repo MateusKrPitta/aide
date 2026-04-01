@@ -4,6 +4,7 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import ClearIcon from "@mui/icons-material/Clear";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import DeleteIcon from "@mui/icons-material/Delete";
+import PaymentsIcon from "@mui/icons-material/Payments";
 import {
   Modal,
   Box,
@@ -17,15 +18,19 @@ import {
   ListItemText,
   Divider,
   Button,
+  Tabs,
+  Tab,
+  Chip,
+  CircularProgress,
 } from "@mui/material";
 import Title from "../../title";
 import ButtonComponent from "../../button";
 import LogoutIcon from "@mui/icons-material/Logout";
 import CustomToast from "../../toast";
-import { buscarContasPagar } from "../../../service/get/contas-pagar";
-import { buscarContasReceber } from "../../../service/get/contas-receber";
-import { buscarRelatorioPalestras } from "../../../service/get/relatorio-palestra-cursos";
-import { buscarRelatorioPretadores } from "../../../service/get/relatorio-prestador";
+import { buscarContasPagarPendente } from "../../../service/get/contas-pagar-pendente";
+import { buscarServicoPendente } from "../../../service/get/servico-pendente";
+import { buscarContasReceberPendente } from "../../../service/get/contas-receber-pendente";
+import { buscarContasReceberComissaoPendente } from "../../../service/get/contas-receber-comissao-pendente";
 
 const style = {
   position: "absolute",
@@ -43,8 +48,8 @@ const notificationStyle = {
   position: "absolute",
   top: "50px",
   right: "20px",
-  width: 350,
-  maxHeight: 400,
+  width: 450,
+  maxHeight: 550,
   overflow: "auto",
   bgcolor: "background.paper",
   boxShadow: 24,
@@ -55,122 +60,351 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [notifAnchorEl, setNotifAnchorEl] = useState(null);
-  const [contasPagar, setContasPagar] = useState([]);
-  const [contasReceber, setContasReceber] = useState([]);
-  const [relatorioPrestador, setRelatorioPrestador] = useState([]);
-  const [relatorioPalestra, setRelatorioPalestra] = useState([]);
+  const [parcelasPendentes, setParcelasPendentes] = useState([]);
+  const [servicosPendentes, setServicosPendentes] = useState([]);
+  const [contasReceberPendentes, setContasReceberPendentes] = useState([]);
+  const [comissoesPendentes, setComissoesPendentes] = useState([]);
   const [openLogoutConfirm, setOpenLogoutConfirm] = useState(false);
+  const [notificationTab, setNotificationTab] = useState(0);
+  const [loading, setLoading] = useState({
+    contas: false,
+    servicos: false,
+    contasReceber: false,
+    comissoes: false,
+  });
+
   const userName = sessionStorage.getItem("nome");
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState({
+    contas: [],
+    servicos: [],
+    contasReceber: [],
+    comissoes: [],
+  });
 
-  const checkParcelasVencidas = useCallback(() => {
+  const formatarData = (dataStr) => {
+    if (!dataStr) return "Data não informada";
+    try {
+      const data = new Date(dataStr);
+      if (isNaN(data.getTime())) return "Data inválida";
+      return data.toLocaleDateString("pt-BR");
+    } catch {
+      return "Data inválida";
+    }
+  };
+
+  const verificarComissoesVencidas = useCallback(() => {
     const now = new Date();
-    const novasNotificacoes = [];
-    const today = now.toISOString().split("T")[0];
+    now.setHours(0, 0, 0, 0);
 
-    contasPagar.forEach((conta) => {
-      conta.parcelas.forEach((parcelas) => {
-        const vencimentoDate = new Date(parcelas.data_vencimento);
-        const vencimentoStr = vencimentoDate.toISOString().split("T")[0];
+    const novasNotificacoesComissoes = [];
 
-        if (vencimentoStr <= today && parcelas.status_pagamento === 1) {
-          novasNotificacoes.push({
-            id: `pagar-${conta.id}-${parcelas.id}`,
-            text: `Conta a pagar "${conta.nome}" vencida`,
-            details: `Parcela: ${
-              parcelas.descricao
-            } | Vencimento: ${vencimentoDate.toLocaleDateString()} | Valor: R$ ${
-              parcelas.valor
-            }`,
-            read: false,
-            time: "Vencida",
-            type: "conta_pagar",
-          });
+    const processarItemComissao = (item, origem = "comissao") => {
+      try {
+        if (!item.data_vencimento && !item.data_pagamento) {
+          console.log("Item sem data de vencimento:", item);
+          return;
         }
-      });
-    });
 
-    contasReceber.forEach((conta) => {
-      conta.parcelas.forEach((parcela) => {
-        const dataVencimento = new Date(parcela.data_vencimento);
-        if (dataVencimento <= now && parcela.status_pagamento !== 1) {
-          novasNotificacoes.push({
-            id: `receber-${conta.id}-${parcela.id}`,
-            text: `Conta a receber "${conta.nome}" vencida`,
-            details: `Parcela: ${
-              parcela.descricao
-            } | Vencimento: ${dataVencimento.toLocaleDateString()} | Valor: R$ ${
-              parcela.valor
-            }`,
-            read: false,
-            time: "Vencida",
-            type: "conta_receber",
-          });
+        const dataVencimento = item.data_vencimento || item.data_pagamento;
+        const vencimentoDate = new Date(dataVencimento);
+
+        if (isNaN(vencimentoDate.getTime())) {
+          console.error("Data inválida:", dataVencimento);
+          return;
         }
-      });
-    });
 
-    relatorioPalestra.forEach((palestra) => {
-      palestra.parcelas.forEach((parcela) => {
-        const dataVencimento = new Date(parcela.data_vencimento);
-        if (dataVencimento <= now && parcela.status_pagamento !== "2") {
-          novasNotificacoes.push({
-            id: `palestra-${palestra.id}-${parcela.id}`,
-            text: `Palestra/Curso "${palestra.nome}" vencida`,
-            details: `Parcela ${
-              parcela.numero_parcela
-            } | Vencimento: ${dataVencimento.toLocaleDateString()} | Valor: R$ ${
-              parcela.valor
-            }`,
-            read: false,
-            time: "Vencida",
-            type: "palestra",
-          });
-        }
-      });
-    });
+        vencimentoDate.setHours(0, 0, 0, 0);
+        const diffTime = vencimentoDate - now;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    relatorioPrestador.forEach((prestador) => {
-      prestador.servicos.forEach((servico) => {
-        servico.parcelas.forEach((parcela) => {
-          const dataPagamento = new Date(parcela.data_pagamento);
+        if (diffDays < 0) {
+          const diasAtraso = Math.abs(diffDays);
+          const dataFormatada = formatarData(dataVencimento);
 
-          if (
-            parcela.status_pagamento_prestador === 2 &&
-            dataPagamento <= now
-          ) {
-            novasNotificacoes.push({
-              id: `prestador-${prestador.id}-${servico.id}-${parcela.id}`,
-              text: `Pagamento pendente para ${prestador.prestador.nome}`,
-              details: `Serviço: ${servico.servico.nome} | Parcela ${
-                parcela.numero_parcela
-              } | Vencimento: ${dataPagamento.toLocaleDateString()} | Valor: R$ ${
-                parcela.valor_prestador
-              }`,
-              read: false,
-              time: "Vencida",
-              type: "prestador",
-              meta: {
-                prestadorId: prestador.id,
-                servicoId: servico.id,
-                parcelaId: parcela.id,
-              },
-            });
+          const servicoNome =
+            item.servico?.nome ||
+            item.servico_nome ||
+            item.nome_servico ||
+            "Serviço não identificado";
+
+          const prestadorNome =
+            item.prestador?.nome ||
+            item.prestador_nome ||
+            "Prestador não informado";
+
+          const clienteNome =
+            item.cliente?.nome || item.cliente_nome || "Cliente não informado";
+
+          const valorComissao = parseFloat(
+            item.valor_comissao || item.valor || 0,
+          ).toFixed(2);
+
+          let urgencia = "normal";
+          let corUrgencia = "warning";
+
+          if (diasAtraso >= 30) {
+            urgencia = "critico";
+            corUrgencia = "error";
+          } else if (diasAtraso >= 15) {
+            urgencia = "alto";
+            corUrgencia = "error";
+          } else if (diasAtraso >= 7) {
+            urgencia = "medio";
+            corUrgencia = "warning";
           }
-        });
-      });
-    });
 
-    setNotifications((prev) => {
-      const existingIds = prev.map((n) => n.id);
-      const toAdd = novasNotificacoes.filter(
-        (n) => !existingIds.includes(n.id),
+          novasNotificacoesComissoes.push({
+            id: `comissao-${item.id || Date.now()}-${Math.random()}`,
+            text: `💰 Comissão vencida: ${servicoNome}`,
+            details: {
+              prestador: prestadorNome,
+              cliente: clienteNome,
+              vencimento: dataFormatada,
+              valor: `R$ ${valorComissao}`,
+              diasAtraso,
+              urgencia,
+            },
+            read: false,
+            time: `Vencida há ${diasAtraso} ${diasAtraso === 1 ? "dia" : "dias"}`,
+            type: "comissao",
+            categoria: "Comissões",
+            urgencia,
+            corUrgencia,
+            dadosCompletos: item,
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao processar item de comissão:", error, item);
+      }
+    };
+
+    if (Array.isArray(comissoesPendentes)) {
+      comissoesPendentes.forEach((item) => processarItemComissao(item));
+    } else if (comissoesPendentes?.data?.comissoes) {
+      comissoesPendentes.data.comissoes.forEach((item) =>
+        processarItemComissao(item),
       );
-      return [...toAdd, ...prev];
-    });
-  }, [contasPagar, contasReceber, relatorioPalestra, relatorioPrestador]);
+    } else if (comissoesPendentes?.comissoes) {
+      comissoesPendentes.comissoes.forEach((item) =>
+        processarItemComissao(item),
+      );
+    } else if (comissoesPendentes?.data) {
+      Object.values(comissoesPendentes.data).forEach((item) => {
+        if (Array.isArray(item)) {
+          item.forEach((subItem) => processarItemComissao(subItem));
+        } else {
+          processarItemComissao(item);
+        }
+      });
+    }
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+    novasNotificacoesComissoes.sort((a, b) => {
+      const prioridade = { critico: 0, alto: 1, medio: 2, normal: 3 };
+      if (prioridade[a.urgencia] !== prioridade[b.urgencia]) {
+        return prioridade[a.urgencia] - prioridade[b.urgencia];
+      }
+      return b.details.diasAtraso - a.details.diasAtraso;
+    });
+
+    if (novasNotificacoesComissoes.length > 0) {
+      setNotifications((prev) => ({
+        ...prev,
+        comissoes: [...novasNotificacoesComissoes, ...prev.comissoes],
+      }));
+    }
+  }, [comissoesPendentes]);
+
+  const verificarParcelasVencidas = useCallback(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const novasNotificacoesContas = [];
+
+    (parcelasPendentes || []).forEach((parcela) => {
+      const vencimentoDate = new Date(parcela.data_vencimento);
+      vencimentoDate.setHours(0, 0, 0, 0);
+      const diffDays = Math.ceil(
+        (vencimentoDate - now) / (1000 * 60 * 60 * 24),
+      );
+
+      if (diffDays < 0 && parcela.status === "Pendente") {
+        const diasAtraso = Math.abs(diffDays);
+        novasNotificacoesContas.push({
+          id: `conta-${parcela.id}`,
+          text: `💰 Conta vencida: "${parcela.nome_conta}"`,
+          details: {
+            descricao: parcela.descricao_parcela,
+            vencimento: vencimentoDate.toLocaleDateString(),
+            valor: `R$ ${parcela.valor.toFixed(2)}`,
+            diasAtraso,
+          },
+          read: false,
+          time: `Vencida há ${diasAtraso} ${diasAtraso === 1 ? "dia" : "dias"}`,
+          type: "conta",
+          categoria: parcela.categoria,
+        });
+      }
+    });
+
+    setNotifications((prev) => ({
+      ...prev,
+      contas: [...novasNotificacoesContas, ...prev.contas],
+    }));
+  }, [parcelasPendentes]);
+
+  const verificarServicosVencidos = useCallback(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const novasNotificacoesServicos = [];
+
+    (servicosPendentes || []).forEach((servico) => {
+      try {
+        const vencimentoDate = new Date(servico.data_vencimento);
+        vencimentoDate.setHours(0, 0, 0, 0);
+
+        const diffTime = vencimentoDate - now;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        const nomeServico =
+          servico.nome ||
+          servico.servico_nome ||
+          servico.tipo ||
+          "Serviço sem nome";
+
+        const valorServico = servico.valor || 0;
+        const statusServico = (servico.status || "pendente").toLowerCase();
+        const clienteNome = servico.cliente_nome || "Não informado";
+        const prestadorNome = servico.prestador_nome || "";
+
+        if (diffDays < 0 && statusServico === "pendente") {
+          const diasAtraso = Math.abs(diffDays);
+          const detalhesPrestador = prestadorNome
+            ? `Prestador: ${prestadorNome}`
+            : "";
+
+          novasNotificacoesServicos.push({
+            id: `servico-${servico.id || Date.now()}-${Math.random()}`,
+            text: `🔧 Serviço vencido: "${nomeServico}"`,
+            details: {
+              descricao: servico.descricao || "Sem descrição",
+              cliente: clienteNome,
+              prestador: prestadorNome,
+              vencimento: vencimentoDate.toLocaleDateString(),
+              valor: `R$ ${typeof valorServico === "number" ? valorServico.toFixed(2) : valorServico}`,
+              diasAtraso,
+            },
+            read: false,
+            time: `Vencido há ${diasAtraso} ${diasAtraso === 1 ? "dia" : "dias"}`,
+            type: "servico",
+            categoria: servico.categoria || "Serviços",
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao processar serviço:", error, servico);
+      }
+    });
+
+    if (novasNotificacoesServicos.length > 0) {
+      setNotifications((prev) => ({
+        ...prev,
+        servicos: [...novasNotificacoesServicos, ...prev.servicos],
+      }));
+    }
+  }, [servicosPendentes]);
+
+  const verificarContasReceberVencidas = useCallback(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const novasNotificacoesContasReceber = [];
+
+    (contasReceberPendentes || []).forEach((parcela) => {
+      try {
+        const normalizarData = (dataStr) => {
+          if (!dataStr) return null;
+          let dataCorrigida = dataStr.replace(/ GM$/, " GMT");
+          const data = new Date(dataCorrigida);
+
+          if (isNaN(data.getTime())) {
+            const partes = dataStr.split(" ");
+            if (partes.length >= 5) {
+              const meses = {
+                Jan: 0,
+                Feb: 1,
+                Mar: 2,
+                Apr: 3,
+                May: 4,
+                Jun: 5,
+                Jul: 6,
+                Aug: 7,
+                Sep: 8,
+                Oct: 9,
+                Nov: 10,
+                Dec: 11,
+              };
+              const mes = meses[partes[1]];
+              const dia = parseInt(partes[2]);
+              const ano = parseInt(partes[3]);
+              if (mes !== undefined && !isNaN(dia) && !isNaN(ano)) {
+                return new Date(ano, mes, dia);
+              }
+            }
+            return null;
+          }
+          return data;
+        };
+
+        const vencimentoDate = normalizarData(parcela.data_vencimento);
+
+        if (!vencimentoDate) {
+          console.error("Data inválida:", parcela.data_vencimento);
+          return;
+        }
+
+        vencimentoDate.setHours(0, 0, 0, 0);
+        const diffTime = vencimentoDate - now;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const dataFormatada = vencimentoDate.toLocaleDateString("pt-BR");
+
+        if (diffDays < 0) {
+          const diasAtraso = Math.abs(diffDays);
+          novasNotificacoesContasReceber.push({
+            id: `conta-receber-${parcela.id}-${Date.now()}`,
+            text: `📋 Conta a receber vencida: "${parcela.nome}"`,
+            details: {
+              descricao: parcela.descricao,
+              vencimento: dataFormatada,
+              valor: `R$ ${parseFloat(parcela.valor).toFixed(2)}`,
+              diasAtraso,
+            },
+            read: false,
+            time: `Vencido há ${diasAtraso} ${diasAtraso === 1 ? "dia" : "dias"}`,
+            type: "conta_receber",
+            categoria: "Contas a Receber",
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao processar conta a receber:", error, parcela);
+      }
+    });
+
+    if (novasNotificacoesContasReceber.length > 0) {
+      setNotifications((prev) => ({
+        ...prev,
+        contasReceber: [
+          ...novasNotificacoesContasReceber,
+          ...prev.contasReceber,
+        ],
+      }));
+    }
+  }, [contasReceberPendentes]);
+
+  const unreadCount =
+    notifications.contas.filter((n) => !n.read).length +
+    notifications.servicos.filter((n) => !n.read).length +
+    notifications.contasReceber.filter((n) => !n.read).length +
+    notifications.comissoes.filter((n) => !n.read).length;
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -183,11 +417,20 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
   const handleNotifOpen = (event) => {
     setNotifAnchorEl(event.currentTarget);
 
-    setNotifications(notifications.map((n) => ({ ...n, read: true })));
+    setNotifications((prev) => ({
+      contas: prev.contas.map((n) => ({ ...n, read: true })),
+      servicos: prev.servicos.map((n) => ({ ...n, read: true })),
+      contasReceber: prev.contasReceber.map((n) => ({ ...n, read: true })),
+      comissoes: prev.comissoes.map((n) => ({ ...n, read: true })),
+    }));
   };
 
   const handleNotifClose = () => {
     setNotifAnchorEl(null);
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setNotificationTab(newValue);
   };
 
   const handleOpenLogoutConfirm = () => setOpenLogoutConfirm(true);
@@ -200,91 +443,462 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
     CustomToast({ type: "success", message: "Logout realizado com sucesso!" });
   };
 
-  const clearAllNotifications = () => {
-    setNotifications([]);
+  const clearNotificationsByType = (type) => {
+    setNotifications((prev) => ({
+      ...prev,
+      [type]: [],
+    }));
+
+    const tipoLabel = {
+      contas: "contas a pagar",
+      servicos: "serviços",
+      contasReceber: "contas a receber",
+      comissoes: "comissões",
+    }[type];
+
     CustomToast({
       type: "success",
-      message: "Notificações limpas com sucesso!",
+      message: `Notificações de ${tipoLabel} limpas com sucesso!`,
     });
   };
 
-  const buscarContasPagarRelatorio = async () => {
+  const clearAllNotifications = () => {
+    setNotifications({
+      contas: [],
+      servicos: [],
+      contasReceber: [],
+      comissoes: [],
+    });
+    CustomToast({
+      type: "success",
+      message: "Todas as notificações foram limpas!",
+    });
+  };
+
+  const buscarParcelasPendentes = async () => {
+    setLoading((prev) => ({ ...prev, contas: true }));
     try {
-      const response = await buscarContasPagar();
-      setContasPagar(response.data || []);
+      const response = await buscarContasPagarPendente();
+      const parcelas = response?.parcelas || [];
+      setParcelasPendentes(parcelas);
+      return parcelas;
     } catch (error) {
-      const errorMessage = error.response?.data?.errors?.nome;
-      CustomToast({
-        type: "error",
-        message: errorMessage || "Erro ao buscar contas a pagar",
-      });
+      console.error("Erro ao buscar parcelas pendentes:", error);
+      setParcelasPendentes([]);
+    } finally {
+      setLoading((prev) => ({ ...prev, contas: false }));
     }
   };
 
-  const buscarContasReceberRelatorio = async () => {
+  const buscarServicosPendentes = async () => {
+    setLoading((prev) => ({ ...prev, servicos: true }));
     try {
-      const response = await buscarContasReceber();
-      setContasReceber(response.data || []);
-    } catch (error) {
-      const errorMessage = error.response?.data?.errors?.nome;
-      CustomToast({
-        type: "error",
-        message: errorMessage || "Erro ao buscar contas a receber",
+      const response = await buscarServicoPendente();
+
+      let todasPendencias = [];
+
+      if (response?.data?.pendencias) {
+        todasPendencias = response.data.pendencias;
+      } else if (response?.pendencias) {
+        todasPendencias = response.pendencias;
+      } else if (Array.isArray(response)) {
+        todasPendencias = response;
+      } else if (response?.data && Array.isArray(response.data)) {
+        todasPendencias = response.data;
+      }
+
+      const servicosFiltrados = todasPendencias.filter((item) => {
+        const isServico =
+          item.tipo === "prestador" ||
+          item.origem === "prestador" ||
+          item.tipo?.toLowerCase() === "serviço" ||
+          item.tipo?.toLowerCase() === "servico";
+
+        const isNotConta =
+          item.tipo !== "conta_fixa" &&
+          item.tipo !== "conta_variavel" &&
+          item.origem !== "conta_pagar_fixa" &&
+          item.origem !== "conta_pagar_variavel";
+
+        return isServico && isNotConta;
       });
+
+      setServicosPendentes(servicosFiltrados);
+      return servicosFiltrados;
+    } catch (error) {
+      console.error("Erro ao buscar serviços pendentes:", error);
+      setServicosPendentes([]);
+    } finally {
+      setLoading((prev) => ({ ...prev, servicos: false }));
     }
   };
 
-  const buscarContasRelatorioPalestra = async () => {
+  const buscarContasReceberPendentesFn = async () => {
+    setLoading((prev) => ({ ...prev, contasReceber: true }));
     try {
-      const response = await buscarRelatorioPalestras();
-      setRelatorioPalestra(response.data || []);
+      const response = await buscarContasReceberPendente();
+      const parcelas = response?.data || [];
+      setContasReceberPendentes(parcelas);
+      return parcelas;
     } catch (error) {
-      const errorMessage = error.response?.data?.errors?.nome;
+      console.error("Erro ao buscar contas a receber pendentes:", error);
       CustomToast({
         type: "error",
-        message: errorMessage || "Erro ao buscar palestras/cursos",
+        message: error.message || "Erro ao buscar contas a receber pendentes",
       });
+      setContasReceberPendentes([]);
+    } finally {
+      setLoading((prev) => ({ ...prev, contasReceber: false }));
     }
   };
 
-  const buscarContasRelatorioPrestador = async () => {
+  const buscarComissoesPendentes = async () => {
+    setLoading((prev) => ({ ...prev, comissoes: true }));
+
     try {
-      const response = await buscarRelatorioPretadores();
-      setRelatorioPrestador(response.data || []);
-    } catch (error) {
-      const errorMessage = error.response?.data?.errors?.nome;
-      CustomToast({
-        type: "error",
-        message: errorMessage || "Erro ao buscar prestadores",
+      const response = await buscarContasReceberComissaoPendente();
+
+      let comissoes = [];
+
+      if (response?.data?.comissoes) {
+        comissoes = response.data.comissoes;
+      } else if (response?.data?.data?.comissoes) {
+        comissoes = response.data.data.comissoes;
+      } else if (response?.comissoes) {
+        comissoes = response.comissoes;
+      } else if (response?.data?.pendencias) {
+        comissoes = response.data.pendencias.filter(
+          (item) =>
+            item.origem === "comissao_servico" || item.tipo === "comissao",
+        );
+      } else if (Array.isArray(response)) {
+        comissoes = response;
+      } else if (response?.data && Array.isArray(response.data)) {
+        comissoes = response.data;
+      }
+
+      const comissoesPendentesFiltradas = comissoes.filter((item) => {
+        const status =
+          item.status || item.status_pagamento || item.status_codigo;
+        return status === "pendente" || status === 1 || status === "Pendente";
       });
+
+      setComissoesPendentes(comissoesPendentesFiltradas);
+
+      return comissoesPendentesFiltradas;
+    } catch (error) {
+      console.error("Erro ao buscar comissões pendentes:", error);
+
+      if (error.response?.status === 500) {
+        CustomToast({
+          type: "error",
+          message: "Erro ao carregar comissões pendentes",
+        });
+      }
+
+      setComissoesPendentes([]);
+    } finally {
+      setLoading((prev) => ({ ...prev, comissoes: false }));
     }
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      await buscarContasPagarRelatorio();
-      await buscarContasReceberRelatorio();
-      await buscarContasRelatorioPalestra();
-      await buscarContasRelatorioPrestador();
+    const fetchAllData = async () => {
+      await Promise.all([
+        buscarParcelasPendentes(),
+        buscarServicosPendentes(),
+        buscarContasReceberPendentesFn(),
+        buscarComissoesPendentes(),
+      ]);
     };
 
-    fetchData();
+    fetchAllData();
 
-    const intervalId = setInterval(fetchData, 4 * 60 * 60 * 1000);
+    const intervalId = setInterval(fetchAllData, 4 * 60 * 60 * 1000);
 
     return () => clearInterval(intervalId);
   }, []);
 
   useEffect(() => {
-    if (
-      contasPagar.length > 0 ||
-      contasReceber.length > 0 ||
-      relatorioPalestra.length > 0 ||
-      relatorioPrestador.length > 0
-    ) {
-      checkParcelasVencidas();
+    if (parcelasPendentes.length > 0) {
+      verificarParcelasVencidas();
     }
-  }, [contasPagar, contasReceber, relatorioPalestra, relatorioPrestador]);
+  }, [parcelasPendentes, verificarParcelasVencidas]);
+
+  useEffect(() => {
+    if (servicosPendentes.length > 0) {
+      verificarServicosVencidos();
+    }
+  }, [servicosPendentes, verificarServicosVencidos]);
+
+  useEffect(() => {
+    if (contasReceberPendentes.length > 0) {
+      verificarContasReceberVencidas();
+    }
+  }, [contasReceberPendentes, verificarContasReceberVencidas]);
+
+  useEffect(() => {
+    if (comissoesPendentes.length > 0) {
+      verificarComissoesVencidas();
+    }
+  }, [comissoesPendentes, verificarComissoesVencidas]);
+
+  const getCurrentNotifications = () => {
+    switch (notificationTab) {
+      case 0:
+        return notifications.contas;
+      case 1:
+        return notifications.servicos;
+      case 2:
+        return notifications.contasReceber;
+      case 3:
+        return notifications.comissoes;
+      default:
+        return [];
+    }
+  };
+
+  const getCurrentNotificationCount = () => {
+    switch (notificationTab) {
+      case 0:
+        return notifications.contas.length;
+      case 1:
+        return notifications.servicos.length;
+      case 2:
+        return notifications.contasReceber.length;
+      case 3:
+        return notifications.comissoes.length;
+      default:
+        return 0;
+    }
+  };
+
+  const getCurrentLoading = () => {
+    switch (notificationTab) {
+      case 0:
+        return loading.contas;
+      case 1:
+        return loading.servicos;
+      case 2:
+        return loading.contasReceber;
+      case 3:
+        return loading.comissoes;
+      default:
+        return false;
+    }
+  };
+
+  const renderComissaoNotification = (notification) => (
+    <ListItem
+      button
+      key={notification.id}
+      sx={{
+        backgroundColor: notification.read
+          ? "transparent"
+          : notification.urgencia === "critico"
+            ? "#ffebee"
+            : notification.urgencia === "alto"
+              ? "#fff3e0"
+              : notification.urgencia === "medio"
+                ? "#fff8e1"
+                : "transparent",
+        "&:hover": {
+          backgroundColor:
+            notification.urgencia === "critico"
+              ? "#ffcdd2"
+              : notification.urgencia === "alto"
+                ? "#ffe0b2"
+                : notification.urgencia === "medio"
+                  ? "#ffecb3"
+                  : "#f5f5f5",
+        },
+      }}
+    >
+      <ListItemText
+        primary={
+          <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+            <Typography
+              style={{
+                fontWeight: notification.read ? "normal" : "bold",
+                fontSize: "0.95rem",
+              }}
+            >
+              {notification.text}
+            </Typography>
+            {notification.urgencia === "critico" && (
+              <Chip
+                label="Crítico"
+                size="small"
+                color="error"
+                sx={{ height: 20, fontSize: "0.7rem" }}
+              />
+            )}
+            {notification.urgencia === "alto" && (
+              <Chip
+                label="Alto"
+                size="small"
+                color="error"
+                variant="outlined"
+                sx={{ height: 20, fontSize: "0.7rem" }}
+              />
+            )}
+            {notification.urgencia === "medio" && (
+              <Chip
+                label="Médio"
+                size="small"
+                color="warning"
+                sx={{ height: 20, fontSize: "0.7rem" }}
+              />
+            )}
+          </Box>
+        }
+        secondary={
+          <Box sx={{ mt: 0.5 }}>
+            <Typography component="div" variant="body2" color="textSecondary">
+              <strong>Prestador:</strong> {notification.details.prestador}
+              <br />
+              <strong>Cliente:</strong> {notification.details.cliente}
+              <br />
+              <strong>Vencimento:</strong> {notification.details.vencimento}
+              <br />
+              <strong>Valor:</strong> {notification.details.valor}
+            </Typography>
+            <Typography
+              component="div"
+              variant="caption"
+              sx={{
+                color:
+                  notification.urgencia === "critico"
+                    ? "error.main"
+                    : notification.urgencia === "alto"
+                      ? "error.light"
+                      : notification.urgencia === "medio"
+                        ? "warning.main"
+                        : "warning.light",
+                fontWeight: "bold",
+                marginTop: 1,
+              }}
+            >
+              {notification.time}
+            </Typography>
+          </Box>
+        }
+      />
+    </ListItem>
+  );
+
+  const renderContaNotification = (notification) => (
+    <ListItem button key={notification.id}>
+      <ListItemText
+        primary={
+          <Typography
+            style={{
+              fontWeight: notification.read ? "normal" : "bold",
+            }}
+          >
+            {notification.text}
+          </Typography>
+        }
+        secondary={
+          <Box sx={{ mt: 0.5 }}>
+            <Typography component="div" variant="body2" color="textSecondary">
+              {notification.details.descricao}
+              <br />
+              <strong>Vencimento:</strong> {notification.details.vencimento}
+              <br />
+              <strong>Valor:</strong> {notification.details.valor}
+            </Typography>
+            <Typography
+              component="div"
+              variant="caption"
+              color="error"
+              style={{ marginTop: 4 }}
+            >
+              {notification.time}
+            </Typography>
+          </Box>
+        }
+      />
+    </ListItem>
+  );
+
+  const renderServicoNotification = (notification) => (
+    <ListItem button key={notification.id}>
+      <ListItemText
+        primary={
+          <Typography
+            style={{
+              fontWeight: notification.read ? "normal" : "bold",
+            }}
+          >
+            {notification.text}
+          </Typography>
+        }
+        secondary={
+          <Box sx={{ mt: 0.5 }}>
+            <Typography component="div" variant="body2" color="textSecondary">
+              {notification.details.descricao}
+              <br />
+              <strong>Cliente:</strong> {notification.details.cliente}
+              <br />
+              {notification.details.prestador && (
+                <>
+                  <strong>Prestador:</strong> {notification.details.prestador}
+                  <br />
+                </>
+              )}
+              <strong>Vencimento:</strong> {notification.details.vencimento}
+              <br />
+              <strong>Valor:</strong> {notification.details.valor}
+            </Typography>
+            <Typography
+              component="div"
+              variant="caption"
+              color="error"
+              style={{ marginTop: 4 }}
+            >
+              {notification.time}
+            </Typography>
+          </Box>
+        }
+      />
+    </ListItem>
+  );
+
+  const renderContaReceberNotification = (notification) => (
+    <ListItem button key={notification.id}>
+      <ListItemText
+        primary={
+          <Typography
+            style={{
+              fontWeight: notification.read ? "normal" : "bold",
+            }}
+          >
+            {notification.text}
+          </Typography>
+        }
+        secondary={
+          <Box sx={{ mt: 0.5 }}>
+            <Typography component="div" variant="body2" color="textSecondary">
+              {notification.details.descricao}
+              <br />
+              <strong>Vencimento:</strong> {notification.details.vencimento}
+              <br />
+              <strong>Valor:</strong> {notification.details.valor}
+            </Typography>
+            <Typography
+              component="div"
+              variant="caption"
+              color="error"
+              style={{ marginTop: 4 }}
+            >
+              {notification.time}
+            </Typography>
+          </Box>
+        }
+      />
+    </ListItem>
+  );
 
   return (
     <>
@@ -316,7 +930,6 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
                 {userName || "Usuário"}
               </span>
 
-              {/* Ícone de notificações */}
               <IconButton
                 onClick={handleNotifOpen}
                 size="small"
@@ -343,7 +956,6 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
         </div>
       </div>
 
-      {/* Menu de logout */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -388,7 +1000,7 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
           >
             Notificações
           </Typography>
-          {notifications.length > 0 && (
+          {unreadCount > 0 && (
             <Button
               startIcon={<DeleteIcon />}
               onClick={clearAllNotifications}
@@ -396,56 +1008,108 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
               color="error"
               style={{ textTransform: "none" }}
             >
-              Limpar
+              Limpar Todas
             </Button>
           )}
         </div>
+
         <Divider />
 
-        {notifications.length > 0 ? (
+        <Tabs
+          value={notificationTab}
+          onChange={handleTabChange}
+          variant="fullWidth"
+          indicatorColor="primary"
+          textColor="primary"
+        >
+          <Tab
+            label={`Contas a Pagar (${notifications.contas.length})`}
+            id="notification-tab-0"
+          />
+          <Tab
+            label={`Serviços (${notifications.servicos.length})`}
+            id="notification-tab-1"
+          />
+          <Tab
+            label={`Contas a Receber (${notifications.contasReceber.length})`}
+            id="notification-tab-2"
+          />
+          <Tab
+            label={`Comissões (${notifications.comissoes.length})`}
+            id="notification-tab-3"
+            icon={<PaymentsIcon fontSize="small" />}
+            iconPosition="start"
+          />
+        </Tabs>
+
+        <Divider />
+
+        {getCurrentNotificationCount() > 0 && (
+          <div style={{ padding: "8px 16px", textAlign: "right" }}>
+            <Button
+              startIcon={<DeleteIcon />}
+              onClick={() => {
+                const tipoMap = {
+                  0: "contas",
+                  1: "servicos",
+                  2: "contasReceber",
+                  3: "comissoes",
+                };
+                clearNotificationsByType(tipoMap[notificationTab]);
+              }}
+              size="small"
+              color="error"
+              style={{ textTransform: "none" }}
+            >
+              Limpar{" "}
+              {notificationTab === 0
+                ? "Contas a Pagar"
+                : notificationTab === 1
+                  ? "Serviços"
+                  : notificationTab === 2
+                    ? "Contas a Receber"
+                    : "Comissões"}
+            </Button>
+          </div>
+        )}
+
+        {getCurrentLoading() ? (
+          <Box display="flex" justifyContent="center" p={3}>
+            <CircularProgress size={30} />
+          </Box>
+        ) : getCurrentNotificationCount() > 0 ? (
           <List style={{ padding: 0 }}>
-            {notifications.map((notification) => (
-              <React.Fragment key={notification.id}>
-                <ListItem button>
-                  <ListItemText
-                    primary={notification.text}
-                    secondary={
-                      <>
-                        <Typography component="div" variant="body2">
-                          {notification.details}
-                        </Typography>
-                        <Typography
-                          component="div"
-                          variant="caption"
-                          color="textSecondary"
-                        >
-                          {notification.time}
-                        </Typography>
-                      </>
-                    }
-                    style={{
-                      color: notification.read
-                        ? "inherit"
-                        : "rgba(0, 0, 0, 0.87)",
-                      fontWeight: notification.read ? "normal" : "bold",
-                    }}
-                  />
-                </ListItem>
-                <Divider />
-              </React.Fragment>
-            ))}
+            {getCurrentNotifications().map((notification) => {
+              if (notification.type === "comissao") {
+                return renderComissaoNotification(notification);
+              } else if (notification.type === "conta") {
+                return renderContaNotification(notification);
+              } else if (notification.type === "servico") {
+                return renderServicoNotification(notification);
+              } else if (notification.type === "conta_receber") {
+                return renderContaReceberNotification(notification);
+              }
+              return null;
+            })}
           </List>
         ) : (
           <Typography
             variant="body2"
             style={{ padding: "16px", color: "gray", textAlign: "center" }}
           >
-            Nenhuma notificação
+            Nenhuma{" "}
+            {notificationTab === 0
+              ? "conta a pagar"
+              : notificationTab === 1
+                ? "serviço"
+                : notificationTab === 2
+                  ? "conta a receber"
+                  : "comissão"}{" "}
+            vencida
           </Typography>
         )}
       </Menu>
 
-      {/* Modal de confirmação de logout */}
       <Modal
         open={openLogoutConfirm}
         aria-labelledby="logout-modal-title"

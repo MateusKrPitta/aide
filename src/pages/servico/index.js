@@ -57,6 +57,26 @@ const Servico = () => {
   const [comissao, setComissao] = useState(0);
   const [valorPrestador, setValorPrestador] = useState(0);
   const [termoBusca, setTermoBusca] = useState("");
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalRows, setTotalRows] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    if (debouncedSearchTerm !== undefined) {
+      setPage(1);
+      carregarDados(1, rowsPerPage, debouncedSearchTerm);
+    }
+  }, [debouncedSearchTerm]);
 
   const EditarOpcao = (rowData) => {
     try {
@@ -83,22 +103,45 @@ const Servico = () => {
     }
   };
 
-  const carregarDados = async () => {
+  const carregarDados = async (
+    pagina = page,
+    limite = rowsPerPage,
+    busca = debouncedSearchTerm,
+  ) => {
     try {
       setLoading(true);
-      const response = await buscarOrcamento();
+
+      const response = await buscarOrcamento(pagina, limite, busca);
+
       const dadosTransformados = transformarOrcamentosParaTabela(response.data);
+
       setListaUsuarios(dadosTransformados);
       setOrcamentos(response.data || []);
+      setTotalRows(response.pagination.total);
     } catch (error) {
       console.error("Erro ao carregar orçamentos:", error);
       setListaUsuarios([]);
       setOrcamentos([]);
+      setTotalRows(0);
     } finally {
       setLoading(false);
     }
   };
 
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    carregarDados(newPage, rowsPerPage, debouncedSearchTerm);
+  };
+
+  const handleRowsPerPageChange = (newRowsPerPage) => {
+    setRowsPerPage(newRowsPerPage);
+    setPage(1);
+    carregarDados(1, newRowsPerPage, debouncedSearchTerm);
+  };
+  const handleSearch = (e) => {
+    const termo = e.target.value;
+    setSearchTerm(termo);
+  };
   useEffect(() => {
     const timer = setTimeout(() => {
       setEfeito(true);
@@ -173,7 +216,7 @@ const Servico = () => {
     setServicosPorPrestador((prev) => {
       const updated = { ...prev };
       const servicoIndex = updated[prestadorId]?.findIndex(
-        (s) => s.id === servicoId
+        (s) => s.id === servicoId,
       );
 
       if (servicoIndex !== -1) {
@@ -354,7 +397,7 @@ const Servico = () => {
     setServicosPorPrestador((prev) => ({
       ...prev,
       [prestadorId]: (prev[prestadorId] || []).filter(
-        (s) => s.id !== servicoId
+        (s) => s.id !== servicoId,
       ),
     }));
   };
@@ -365,7 +408,7 @@ const Servico = () => {
     setNomeServico(orcamento.nome);
     setSelectedCliente(orcamento.cliente);
     const prestadoresAdicionados = orcamento.prestadores.map(
-      (p) => p.prestador
+      (p) => p.prestador,
     );
     setPrestadoresAdicionados(prestadoresAdicionados);
     const servicosPorPrestadorFormatado = {};
@@ -418,7 +461,7 @@ const Servico = () => {
 
       const response = await atualizaOrcamento(
         dadosParaEnvio,
-        orcamentoParaEditar.id
+        orcamentoParaEditar.id,
       );
 
       if (response) {
@@ -465,21 +508,7 @@ const Servico = () => {
     }
   }, [orcamentoParaEditar]);
 
-  const filtrarServicos = () => {
-    if (!termoBusca.trim()) {
-      return listaUsuarios;
-    }
-
-    const termo = termoBusca.toLowerCase();
-    return listaUsuarios.filter(
-      (servico) =>
-        servico.nome.toLowerCase().includes(termo) ||
-        servico.cliente.toLowerCase().includes(termo) ||
-        servico.prestadores.toLowerCase().includes(termo)
-    );
-  };
-
-  const servicosFiltrados = filtrarServicos();
+  const servicosFiltrados = listaUsuarios;
 
   return (
     <div className="flex w-full">
@@ -505,8 +534,8 @@ const Servico = () => {
                   size="small"
                   label="Buscar Serviço"
                   autoComplete="off"
-                  value={termoBusca}
-                  onChange={(e) => setTermoBusca(e.target.value)}
+                  value={searchTerm}
+                  onChange={handleSearch}
                   sx={{ width: { xs: "72%", sm: "50%", md: "40%", lg: "40%" } }}
                   InputProps={{
                     startAdornment: (
@@ -520,16 +549,25 @@ const Servico = () => {
               </div>
               <div className="w-full flex">
                 {loading ? (
-                  <TableLoading />
+                  <div className="w-full itens-center justify-center h-[200px]">
+                    <TableLoading />
+                  </div>
                 ) : servicosFiltrados.length > 0 ? (
                   <TableComponent
                     headers={atendimentosCadastrados}
+                    forceShowDelete={true}
                     rows={servicosFiltrados}
                     actionsLabel={"Ações"}
                     actionCalls={{
                       edit: (rowData) => EditarOpcao(rowData),
                       delete: handleDeletar,
                     }}
+                    pagination={true}
+                    totalRows={totalRows}
+                    page={page}
+                    rowsPerPage={rowsPerPage}
+                    onPageChange={handlePageChange}
+                    onRowsPerPageChange={handleRowsPerPageChange}
                   />
                 ) : (
                   <div className="text-center flex items-center mt-28 justify-center gap-5 w-full flex-col text-primary">
@@ -700,8 +738,8 @@ const Servico = () => {
                                       options={listaPrestadores.filter(
                                         (prestador) =>
                                           !prestadoresAdicionados.some(
-                                            (p) => p.id === prestador.id
-                                          )
+                                            (p) => p.id === prestador.id,
+                                          ),
                                       )}
                                       getOptionLabel={(option) => option.nome}
                                       value={prestadorSelecionado}
@@ -757,15 +795,15 @@ const Servico = () => {
                                           onClick={() => {
                                             setPrestadoresAdicionados(
                                               prestadoresAdicionados.filter(
-                                                (p) => p.id !== prestador.id
-                                              )
+                                                (p) => p.id !== prestador.id,
+                                              ),
                                             );
                                             const novosServicos = {
                                               ...servicosPorPrestador,
                                             };
                                             delete novosServicos[prestador.id];
                                             setServicosPorPrestador(
-                                              novosServicos
+                                              novosServicos,
                                             );
 
                                             const novosSelecionados = {
@@ -775,7 +813,7 @@ const Servico = () => {
                                               prestador.id
                                             ];
                                             setServicosSelecionados(
-                                              novosSelecionados
+                                              novosSelecionados,
                                             );
                                           }}
                                           className="absolute top-2 right-2 text-[#9D4B5B] hover:text-[#cf7889]"
@@ -802,7 +840,7 @@ const Servico = () => {
                                             onChange={(e) =>
                                               handleServicoChange(
                                                 prestador.id,
-                                                e.target.value
+                                                e.target.value,
                                               )
                                             }
                                             style={{ width: "50%" }}
@@ -822,7 +860,7 @@ const Servico = () => {
                                                 >
                                                   {servico.nome}
                                                 </MenuItem>
-                                              )
+                                              ),
                                             )}
                                           </TextField>
                                           <ButtonComponent
@@ -861,7 +899,7 @@ const Servico = () => {
                                                   onClick={() =>
                                                     removerServico(
                                                       prestador.id,
-                                                      servico.id
+                                                      servico.id,
                                                     )
                                                   }
                                                   className="text-[#9D4B5B] hover:text-[#cf7889]"
@@ -884,7 +922,7 @@ const Servico = () => {
                                                       prestador.id,
                                                       servico.id,
                                                       "tipo",
-                                                      e.target.value
+                                                      e.target.value,
                                                     )
                                                   }
                                                   style={{ width: "26%" }}
@@ -918,7 +956,7 @@ const Servico = () => {
                                                       prestador.id,
                                                       servico.id,
                                                       "metodo",
-                                                      e.target.value
+                                                      e.target.value,
                                                     )
                                                   }
                                                   style={{ width: "30%" }}
@@ -963,7 +1001,7 @@ const Servico = () => {
                                                         prestador.id,
                                                         servico.id,
                                                         "parcelas",
-                                                        e.target.value
+                                                        e.target.value,
                                                       )
                                                     }
                                                     style={{ width: "15%" }}
@@ -991,7 +1029,7 @@ const Servico = () => {
                                                       prestador.id,
                                                       servico.id,
                                                       "valorTotal",
-                                                      e.target.value
+                                                      e.target.value,
                                                     )
                                                   }
                                                   style={{ width: "20%" }}
@@ -1012,7 +1050,7 @@ const Servico = () => {
                                                     label="Valor Parcela"
                                                     value={Number(
                                                       servico.pagamento
-                                                        .valorParcela || 0
+                                                        .valorParcela || 0,
                                                     ).toFixed(2)}
                                                     disabled
                                                     style={{ width: "20%" }}
@@ -1039,7 +1077,7 @@ const Servico = () => {
                                                       prestador.id,
                                                       servico.id,
                                                       "comissao",
-                                                      e.target.value
+                                                      e.target.value,
                                                     )
                                                   }
                                                   style={{ width: "20%" }}
@@ -1067,7 +1105,7 @@ const Servico = () => {
                                                       prestador.id,
                                                       servico.id,
                                                       "valorPrestador",
-                                                      e.target.value
+                                                      e.target.value,
                                                     )
                                                   }
                                                   style={{ width: "20%" }}
@@ -1093,7 +1131,7 @@ const Servico = () => {
                                                       prestador.id,
                                                       servico.id,
                                                       "dataInicio",
-                                                      e.target.value
+                                                      e.target.value,
                                                     )
                                                   }
                                                   style={{ width: "25%" }}
@@ -1117,7 +1155,7 @@ const Servico = () => {
                                                       prestador.id,
                                                       servico.id,
                                                       "dataEntrega",
-                                                      e.target.value
+                                                      e.target.value,
                                                     )
                                                   }
                                                   InputProps={{
@@ -1143,7 +1181,7 @@ const Servico = () => {
                                                       prestador.id,
                                                       servico.id,
                                                       "dataPagamento",
-                                                      e.target.value
+                                                      e.target.value,
                                                     )
                                                   }
                                                   style={{ width: "27%" }}
