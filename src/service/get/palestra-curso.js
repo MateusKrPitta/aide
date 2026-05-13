@@ -5,6 +5,7 @@ export const buscarPalestraCurso = async (
   page = 1,
   perPage = 10,
   search = "",
+  filters = {},
 ) => {
   const https = httpsInstance();
   const token = sessionStorage.getItem("token");
@@ -18,6 +19,10 @@ export const buscarPalestraCurso = async (
         page,
         perPage,
         search: search || undefined,
+        tipo_palestra_id: filters.tipo_palestra_id || undefined,
+        status_pagamento: filters.status_pagamento || undefined,
+        data_inicio: filters.data_inicio || undefined,
+        data_fim: filters.data_fim || undefined,
       },
     });
     return response.data;

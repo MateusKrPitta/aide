@@ -8,6 +8,8 @@ import {
   BottomNavigation,
   BottomNavigationAction,
   Box,
+  Checkbox,
+  FormControlLabel,
   InputAdornment,
   MenuItem,
   TextField,
@@ -22,7 +24,22 @@ import {
   Person,
   Search,
   Work,
+  FilterList,
+  FilterListOff,
+  Print,
 } from "@mui/icons-material";
+import { 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogActions, 
+  Button, 
+  Tooltip, 
+  IconButton, 
+  FormControl, 
+  InputLabel, 
+  Select
+} from "@mui/material";
 import TableLoading from "../../components/loading/loading-table/loading";
 import TableComponent from "../../components/table";
 import { atendimentosCadastrados } from "../../entities/header/atendimentos";
@@ -36,6 +53,7 @@ import CustomToast from "../../components/toast";
 import ModalLateral from "../../components/modal-lateral";
 import ButtonComponent from "../../components/button";
 import { atualizaOrcamento } from "../../service/put/orcamento";
+import { buscarServico } from "../../service/get/servicos";
 
 const Servico = () => {
   const [orcamentoParaEditar, setOrcamentoParaEditar] = useState(null);
@@ -63,7 +81,20 @@ const Servico = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
+  // Novos estados para filtros
+  const [dataInicio, setDataInicio] = useState("");
+  const [dataFim, setDataFim] = useState("");
+  const [clienteId, setClienteId] = useState("");
+  const [prestadorId, setPrestadorId] = useState("");
+  const [servicoId, setServicoId] = useState("");
+  const [listaServicos, setListaServicos] = useState([]);
+  const [showFiltersModal, setShowFiltersModal] = useState(false);
+
   useEffect(() => {
+    if (searchTerm === "") {
+      setDebouncedSearchTerm("");
+      return;
+    }
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
     }, 500);
@@ -74,9 +105,34 @@ const Servico = () => {
   useEffect(() => {
     if (debouncedSearchTerm !== undefined) {
       setPage(1);
-      carregarDados(1, rowsPerPage, debouncedSearchTerm);
+      const filters = {
+        data_inicio: dataInicio,
+        data_fim: dataFim,
+        cliente_id: clienteId,
+        prestador_id: prestadorId,
+        servico_id: servicoId,
+      };
+      carregarDados(1, rowsPerPage, debouncedSearchTerm, filters);
     }
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, dataInicio, dataFim, clienteId, prestadorId, servicoId]);
+
+  useEffect(() => {
+    if (showFiltersModal || editando) {
+      const fetchFiltros = async () => {
+        try {
+          const resServicos = await buscarServico();
+          if (resServicos && resServicos.data) {
+            setListaServicos(resServicos.data);
+          }
+          carregarClientes();
+          buscarPrestadoresCadastrados();
+        } catch (error) {
+          console.error("Erro ao carregar dados dos filtros:", error);
+        }
+      };
+      fetchFiltros();
+    }
+  }, [showFiltersModal, editando]);
 
   const EditarOpcao = (rowData) => {
     try {
@@ -107,11 +163,18 @@ const Servico = () => {
     pagina = page,
     limite = rowsPerPage,
     busca = debouncedSearchTerm,
+    filters = {
+      data_inicio: dataInicio,
+      data_fim: dataFim,
+      cliente_id: clienteId,
+      prestador_id: prestadorId,
+      servico_id: servicoId,
+    }
   ) => {
     try {
       setLoading(true);
 
-      const response = await buscarOrcamento(pagina, limite, busca);
+      const response = await buscarOrcamento(pagina, limite, busca, filters);
 
       const dadosTransformados = transformarOrcamentosParaTabela(response.data);
 
@@ -128,6 +191,100 @@ const Servico = () => {
     }
   };
 
+  const handleImprimir = async () => {
+    try {
+      setLoading(true);
+      const filters = {
+        data_inicio: dataInicio,
+        data_fim: dataFim,
+        cliente_id: clienteId,
+        prestador_id: prestadorId,
+        servico_id: servicoId,
+      };
+      
+      const response = await buscarOrcamento(1, 1000, debouncedSearchTerm, filters);
+      let dadosParaImprimir = [];
+      
+      if (response && response.data) {
+        dadosParaImprimir = transformarOrcamentosParaTabela(response.data);
+      }
+
+      if (dadosParaImprimir.length === 0) {
+        CustomToast({ type: "warning", message: "Nenhum dado encontrado para imprimir." });
+        return;
+      }
+
+      const printWindow = window.open("", "_blank");
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Relatório de Serviços</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #9D4B5B; color: white; text-transform: uppercase; }
+              tr:nth-child(even) { background-color: #f9f9f9; }
+              h2 { color: #9D4B5B; margin-bottom: 5px; }
+              .header { text-align: center; border-bottom: 2px solid #9D4B5B; padding-bottom: 10px; margin-bottom: 20px; }
+              .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #777; }
+              @media print {
+                th { background-color: #9D4B5B !important; color: white !important; -webkit-print-color-adjust: exact; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h2>Relatório de Serviços e Atendimentos</h2>
+              <p>Data de emissão: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  ${atendimentosCadastrados.map(h => `<th>${h.label}</th>`).join('')}
+                </tr>
+              </thead>
+              <tbody>
+                ${dadosParaImprimir.map(row => `
+                  <tr>
+                    ${atendimentosCadastrados.map(h => `<td>${row[h.key] || '-'}</td>`).join('')}
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            <div class="footer">
+              <p>Sistema Aidê - Gestão de Serviços</p>
+            </div>
+            <script>
+              window.onload = function() { 
+                setTimeout(() => {
+                  window.print(); 
+                  window.close();
+                }, 500);
+              }
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } catch (error) {
+      console.error("Erro ao imprimir:", error);
+      CustomToast({ type: "error", message: "Erro ao gerar relatório para impressão." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const limparFiltros = () => {
+    setDataInicio("");
+    setDataFim("");
+    setClienteId("");
+    setPrestadorId("");
+    setServicoId("");
+    setSearchTerm("");
+    setShowFiltersModal(false);
+  };
+
   const handlePageChange = (newPage) => {
     setPage(newPage);
     carregarDados(newPage, rowsPerPage, debouncedSearchTerm);
@@ -136,7 +293,14 @@ const Servico = () => {
   const handleRowsPerPageChange = (newRowsPerPage) => {
     setRowsPerPage(newRowsPerPage);
     setPage(1);
-    carregarDados(1, newRowsPerPage, debouncedSearchTerm);
+    const filters = {
+      data_inicio: dataInicio,
+      data_fim: dataFim,
+      cliente_id: clienteId,
+      prestador_id: prestadorId,
+      servico_id: servicoId,
+    };
+    carregarDados(1, newRowsPerPage, debouncedSearchTerm, filters);
   };
   const handleSearch = (e) => {
     const termo = e.target.value;
@@ -146,8 +310,6 @@ const Servico = () => {
     const timer = setTimeout(() => {
       setEfeito(true);
     }, 100);
-
-    carregarDados();
 
     return () => clearTimeout(timer);
   }, []);
@@ -241,6 +403,27 @@ const Servico = () => {
               ? numericValue
               : numericValue /
                 updated[prestadorId][servicoIndex].pagamento.parcelas;
+
+          // Recalcula comissão
+          updated[prestadorId][servicoIndex].pagamento.comissao =
+            numericValue -
+            (updated[prestadorId][servicoIndex].pagamento.valorPrestador || 0);
+        }
+
+        if (field === "valorPrestador") {
+          // Recalcula comissão
+          updated[prestadorId][servicoIndex].pagamento.comissao =
+            (updated[prestadorId][servicoIndex].pagamento.valorTotal || 0) -
+            numericValue;
+        }
+
+        if (field === "is_servico_aide") {
+          updated[prestadorId][servicoIndex].pagamento.is_servico_aide = value;
+          if (value) {
+            updated[prestadorId][servicoIndex].pagamento.valorPrestador = 0;
+            updated[prestadorId][servicoIndex].pagamento.comissao =
+              updated[prestadorId][servicoIndex].pagamento.valorTotal || 0;
+          }
         }
 
         if (field === "parcelas") {
@@ -248,28 +431,6 @@ const Servico = () => {
           updated[prestadorId][servicoIndex].pagamento.parcelas = num;
           updated[prestadorId][servicoIndex].pagamento.valorParcela =
             updated[prestadorId][servicoIndex].pagamento.valorTotal / num;
-        }
-
-        if (field === "comissao") {
-          if (
-            numericValue <=
-            updated[prestadorId][servicoIndex].pagamento.valorTotal
-          ) {
-            updated[prestadorId][servicoIndex].pagamento.valorPrestador =
-              updated[prestadorId][servicoIndex].pagamento.valorTotal -
-              numericValue;
-          }
-        }
-
-        if (field === "valorPrestador") {
-          if (
-            numericValue <=
-            updated[prestadorId][servicoIndex].pagamento.valorTotal
-          ) {
-            updated[prestadorId][servicoIndex].pagamento.comissao =
-              updated[prestadorId][servicoIndex].pagamento.valorTotal -
-              numericValue;
-          }
         }
       }
 
@@ -321,6 +482,7 @@ const Servico = () => {
               valorParcela: 0,
               comissao: 0,
               valorPrestador: 0,
+              is_servico_aide: false,
               dataInicio: new Date().toISOString().split("T")[0],
               dataEntrega: new Date().toISOString().split("T")[0],
               dataPagamento: new Date().toISOString().split("T")[0],
@@ -337,6 +499,21 @@ const Servico = () => {
   };
 
   const prepararDadosParaEnvio = () => {
+    // Validação de Serviço Aidê vs Valor Prestador
+    for (const prestador of prestadoresAdicionados) {
+      const servicosDoPrestador = servicosPorPrestador[prestador.id] || [];
+      for (const servico of servicosDoPrestador) {
+        const valorPrestador = parseFloat(servico.pagamento.valorPrestador || 0);
+        if (valorPrestador === 0 && !servico.pagamento.is_servico_aide) {
+          CustomToast({
+            type: "error",
+            message: `Para o serviço "${servico.nome}", se não houver valor para o prestador, você deve marcar "Serviço Aidê".`,
+          });
+          return null;
+        }
+      }
+    }
+
     if (!nomeServico.trim()) {
       CustomToast({ type: "error", message: "Informe o nome do serviço" });
       return null;
@@ -381,8 +558,13 @@ const Servico = () => {
             numero_parcelas: servico.pagamento.parcelas,
             valor_total: parseFloat(servico.pagamento.valorTotal),
             valor_parcela: parseFloat(servico.pagamento.valorParcela),
-            comissao: parseFloat(servico.pagamento.comissao),
-            valor_prestador: parseFloat(servico.pagamento.valorPrestador),
+            comissao: servico.pagamento.is_servico_aide
+              ? 0
+              : parseFloat(servico.pagamento.comissao),
+            valor_prestador: servico.pagamento.is_servico_aide
+              ? 0
+              : parseFloat(servico.pagamento.valorPrestador),
+            is_servico_aide: servico.pagamento.is_servico_aide,
             data_inicio: servico.pagamento.dataInicio,
             data_entrega: servico.pagamento.dataEntrega,
             data_pagamento: servico.pagamento.dataPagamento,
@@ -428,15 +610,16 @@ const Servico = () => {
             valorParcela: parseFloat(servico.valor_parcela) || 0,
             comissao: parseFloat(servico.comissao) || 0,
             valorPrestador: parseFloat(servico.valor_prestador) || 0,
+            is_servico_aide: servico.is_servico_aide || false,
             dataInicio:
               servico.data_inicio?.split("T")[0] ||
-              new Date().toISOString().split("T")[0],
+              new Date().toLocaleDateString("en-CA"),
             dataEntrega:
               servico.data_entrega?.split("T")[0] ||
-              new Date().toISOString().split("T")[0],
+              new Date().toLocaleDateString("en-CA"),
             dataPagamento:
               servico.data_pagamento?.split("T")[0] ||
-              new Date().toISOString().split("T")[0],
+              new Date().toLocaleDateString("en-CA"),
           },
         }));
     });
@@ -497,10 +680,7 @@ const Servico = () => {
     }
   }, [valorTotal, comissao, valorPrestador]);
 
-  useEffect(() => {
-    carregarClientes();
-    buscarPrestadoresCadastrados();
-  }, []);
+
 
   useEffect(() => {
     if (orcamentoParaEditar) {
@@ -509,6 +689,7 @@ const Servico = () => {
   }, [orcamentoParaEditar]);
 
   const servicosFiltrados = listaUsuarios;
+  const filtersActive = dataInicio || dataFim || clienteId || prestadorId || servicoId;
 
   return (
     <div className="flex w-full">
@@ -545,6 +726,23 @@ const Servico = () => {
                     ),
                   }}
                 />
+                
+                <Tooltip title="Filtros Avançados">
+                  <IconButton 
+                    onClick={() => setShowFiltersModal(true)}
+                    color={filtersActive ? "primary" : "default"}
+                  >
+                    <FilterList />
+                  </IconButton>
+                </Tooltip>
+
+                {filtersActive && (
+                  <Tooltip title="Limpar Filtros">
+                    <IconButton onClick={limparFiltros} color="error">
+                      <FilterListOff />
+                    </IconButton>
+                  </Tooltip>
+                )}
                 <CadastroServicosCliente onSuccess={carregarDados} />
               </div>
               <div className="w-full flex">
@@ -570,10 +768,9 @@ const Servico = () => {
                     onRowsPerPageChange={handleRowsPerPageChange}
                   />
                 ) : (
-                  <div className="text-center flex items-center mt-28 justify-center gap-5 w-full flex-col text-primary">
-                    <TableLoading />
+                  <div className="text-center flex items-center mt-28 w-full h-full justify-center gap-5 flex-col text-primary">
                     <label className="text-sm">
-                      Nenhum serviço encontrado com esse nome !"
+                      Nenhum serviço encontrado!
                     </label>
                   </div>
                 )}
@@ -826,43 +1023,34 @@ const Servico = () => {
                                         </div>
 
                                         <div className="w-full flex items-center gap-2 mt-3">
-                                          <TextField
-                                            fullWidth
-                                            variant="outlined"
-                                            size="small"
-                                            select
-                                            label="Serviços"
-                                            value={
-                                              servicosSelecionados[
-                                                prestador.id
-                                              ] || ""
-                                            }
-                                            onChange={(e) =>
-                                              handleServicoChange(
-                                                prestador.id,
-                                                e.target.value,
-                                              )
-                                            }
-                                            style={{ width: "50%" }}
-                                            InputProps={{
-                                              startAdornment: (
+                                    <Autocomplete
+                                      options={prestador.servicosArray || []}
+                                      getOptionLabel={(option) => option.nome || ""}
+                                      value={servicosSelecionados[prestador.id] || null}
+                                      onChange={(event, newValue) => handleServicoChange(prestador.id, newValue)}
+                                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                                      style={{ width: "50%" }}
+                                      renderInput={(params) => (
+                                        <TextField
+                                          {...params}
+                                          fullWidth
+                                          variant="outlined"
+                                          size="small"
+                                          label="Serviços"
+                                          InputProps={{
+                                            ...params.InputProps,
+                                            startAdornment: (
+                                              <>
                                                 <InputAdornment position="start">
                                                   <Work />
                                                 </InputAdornment>
-                                              ),
-                                            }}
-                                          >
-                                            {prestador.servicosArray?.map(
-                                              (servico) => (
-                                                <MenuItem
-                                                  key={servico.id}
-                                                  value={servico}
-                                                >
-                                                  {servico.nome}
-                                                </MenuItem>
-                                              ),
-                                            )}
-                                          </TextField>
+                                                {params.InputProps.startAdornment}
+                                              </>
+                                            ),
+                                          }}
+                                        />
+                                      )}
+                                    />
                                           <ButtonComponent
                                             startIcon={
                                               <AddCircleOutline fontSize="small" />
@@ -909,7 +1097,6 @@ const Servico = () => {
                                               </div>
 
                                               <div className="w-full flex flex-wrap gap-2 items-center">
-                                                {/* Tipo de Pagamento */}
                                                 <TextField
                                                   fullWidth
                                                   variant="outlined"
@@ -941,7 +1128,6 @@ const Servico = () => {
                                                     Parcelado
                                                   </MenuItem>
                                                 </TextField>
-                                                {/* Método de Pagamento */}
                                                 <TextField
                                                   fullWidth
                                                   variant="outlined"
@@ -984,7 +1170,6 @@ const Servico = () => {
                                                     Cheque
                                                   </MenuItem>
                                                 </TextField>
-                                                {/* Número de Parcelas (só aparece se for parcelado) */}
                                                 {servico.pagamento.tipo ===
                                                   "2" && (
                                                   <TextField
@@ -1014,7 +1199,93 @@ const Servico = () => {
                                                     }}
                                                   />
                                                 )}
-                                                {/* Valor Total */}
+                                                <FormControlLabel
+                                                  control={
+                                                    <Checkbox
+                                                      size="small"
+                                                      checked={
+                                                        servico.pagamento
+                                                          .is_servico_aide
+                                                      }
+                                                      onChange={(e) =>
+                                                        handlePagamentoChange(
+                                                          prestador.id,
+                                                          servico.id,
+                                                          "is_servico_aide",
+                                                          e.target.checked,
+                                                        )
+                                                      }
+                                                      sx={{
+                                                        color: "#9D4B5B",
+                                                        "&.Mui-checked": {
+                                                          color: "#9D4B5B",
+                                                        },
+                                                      }}
+                                                    />
+                                                  }
+                                                  label={
+                                                    <span className="text-xs font-semibold text-[#9D4B5B]">
+                                                      Serviço Aidê
+                                                    </span>
+                                                  }
+                                                />
+                                                {!servico.pagamento.is_servico_aide && (
+                                                  <>
+                                                    <TextField
+                                                      fullWidth
+                                                      variant="outlined"
+                                                      size="small"
+                                                      label="Comissão"
+                                                      type="number"
+                                                      value={
+                                                        servico.pagamento.comissao
+                                                      }
+                                                      onChange={(e) =>
+                                                        handlePagamentoChange(
+                                                          prestador.id,
+                                                          servico.id,
+                                                          "comissao",
+                                                          e.target.value,
+                                                        )
+                                                      }
+                                                      style={{ width: "16%" }}
+                                                      InputProps={{
+                                                        startAdornment: (
+                                                          <InputAdornment position="start">
+                                                            <Money />
+                                                          </InputAdornment>
+                                                        ),
+                                                      }}
+                                                    />
+                                                    <TextField
+                                                      fullWidth
+                                                      variant="outlined"
+                                                      size="small"
+                                                      label="Valor Prestador"
+                                                      type="number"
+                                                      value={
+                                                        servico.pagamento
+                                                          .valorPrestador
+                                                      }
+                                                      onChange={(e) =>
+                                                        handlePagamentoChange(
+                                                          prestador.id,
+                                                          servico.id,
+                                                          "valorPrestador",
+                                                          e.target.value,
+                                                        )
+                                                      }
+                                                      style={{ width: "20%" }}
+                                                      InputProps={{
+                                                        startAdornment: (
+                                                          <InputAdornment position="start">
+                                                            <Money />
+                                                          </InputAdornment>
+                                                        ),
+                                                      }}
+                                                    />
+                                                  </>
+                                                )}
                                                 <TextField
                                                   fullWidth
                                                   variant="outlined"
@@ -1063,60 +1334,7 @@ const Servico = () => {
                                                     }}
                                                   />
                                                 )}
-                                                <TextField
-                                                  fullWidth
-                                                  variant="outlined"
-                                                  size="small"
-                                                  label="Comissão"
-                                                  type="number"
-                                                  value={
-                                                    servico.pagamento.comissao
-                                                  }
-                                                  onChange={(e) =>
-                                                    handlePagamentoChange(
-                                                      prestador.id,
-                                                      servico.id,
-                                                      "comissao",
-                                                      e.target.value,
-                                                    )
-                                                  }
-                                                  style={{ width: "20%" }}
-                                                  InputProps={{
-                                                    startAdornment: (
-                                                      <InputAdornment position="start">
-                                                        <Money />
-                                                      </InputAdornment>
-                                                    ),
-                                                  }}
-                                                />
-                                                {/* Valor Prestador */}
-                                                <TextField
-                                                  fullWidth
-                                                  variant="outlined"
-                                                  size="small"
-                                                  label="Valor Prestador"
-                                                  type="number"
-                                                  value={
-                                                    servico.pagamento
-                                                      .valorPrestador
-                                                  }
-                                                  onChange={(e) =>
-                                                    handlePagamentoChange(
-                                                      prestador.id,
-                                                      servico.id,
-                                                      "valorPrestador",
-                                                      e.target.value,
-                                                    )
-                                                  }
-                                                  style={{ width: "20%" }}
-                                                  InputProps={{
-                                                    startAdornment: (
-                                                      <InputAdornment position="start">
-                                                        <Money />
-                                                      </InputAdornment>
-                                                    ),
-                                                  }}
-                                                />
+
                                                 <TextField
                                                   fullWidth
                                                   variant="outlined"
@@ -1246,6 +1464,84 @@ const Servico = () => {
             </div>
           </div>
         </motion.div>
+        {/* Modal de Filtros Avançados */}
+        <Dialog 
+          open={showFiltersModal} 
+          onClose={() => setShowFiltersModal(false)}
+          fullWidth
+          maxWidth="sm"
+        >
+          <DialogTitle className="text-primary font-bold">Filtros Avançados - Serviços</DialogTitle>
+          <DialogContent dividers>
+            <div className="flex flex-col gap-5 mt-2">
+              <Autocomplete
+                fullWidth
+                size="small"
+                options={clientes}
+                getOptionLabel={(option) => option.nome || ""}
+                value={clientes.find(c => c.id === clienteId) || null}
+                onChange={(event, newValue) => setClienteId(newValue ? newValue.id : "")}
+                renderInput={(params) => <TextField {...params} label="Cliente" />}
+              />
+
+              <Autocomplete
+                fullWidth
+                size="small"
+                options={listaPrestadores}
+                getOptionLabel={(option) => option.nome || ""}
+                value={listaPrestadores.find(p => p.id === prestadorId) || null}
+                onChange={(event, newValue) => setPrestadorId(newValue ? newValue.id : "")}
+                renderInput={(params) => <TextField {...params} label="Prestador" />}
+              />
+
+              <Autocomplete
+                fullWidth
+                size="small"
+                options={listaServicos}
+                getOptionLabel={(option) => option.nome || ""}
+                value={listaServicos.find(s => s.id === servicoId) || null}
+                onChange={(event, newValue) => setServicoId(newValue ? newValue.id : "")}
+                renderInput={(params) => <TextField {...params} label="Tipo de Serviço" />}
+              />
+
+              <div className="flex gap-4">
+                <TextField
+                  fullWidth
+                  type="date"
+                  size="small"
+                  label="Data Início"
+                  InputLabelProps={{ shrink: true }}
+                  value={dataInicio}
+                  onChange={(e) => setDataInicio(e.target.value)}
+                />
+
+                <TextField
+                  fullWidth
+                  type="date"
+                  size="small"
+                  label="Data Fim"
+                  InputLabelProps={{ shrink: true }}
+                  value={dataFim}
+                  onChange={(e) => setDataFim(e.target.value)}
+                />
+              </div>
+            </div>
+          </DialogContent>
+          <DialogActions className="justify-between px-6 pb-4">
+            <Button onClick={limparFiltros} color="error" variant="outlined">Limpar Filtros</Button>
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleImprimir} 
+                variant="outlined" 
+                startIcon={<Print />}
+                className="text-primary border-primary"
+              >
+                Imprimir
+              </Button>
+              <Button onClick={() => setShowFiltersModal(false)} variant="contained" className="bg-primary text-white px-6">Aplicar</Button>
+            </div>
+          </DialogActions>
+        </Dialog>
       </div>
     </div>
   );

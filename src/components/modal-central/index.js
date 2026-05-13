@@ -36,7 +36,7 @@ const CentralModal = ({
             top: { xs: "10%", sm: "20%", md: "15%", lg: top || "15%" },
             left: { xs: "5%", sm: "15%", md: "15%", lg: left || "20%" },
             bottom: { bottom },
-            maxHeight: maxHeight,
+            maxHeight: maxHeight || "90vh",
             overflowY: "auto",
             transform: "translate(-50%, -50%)",
             width: { xs: "90%", sm: "70%", md: "50%", lg: width || "450px" },
@@ -115,9 +115,9 @@ const CentralModal = ({
           </Box>
 
           {/* Conteúdo do modal */}
-          <Typography id="central-modal-description" sx={{ mb: 2 }}>
+          <Box id="central-modal-description" sx={{ mb: 2 }}>
             {children}
-          </Typography>
+          </Box>
         </Box>
       </Grow>
     </Modal>

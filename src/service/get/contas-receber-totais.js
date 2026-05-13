@@ -1,15 +1,23 @@
 import CustomToast from "../../components/toast";
 import httpsInstance from "../url";
 
-export const buscarContasReceberTotal = async () => {
+export const buscarContasReceberTotal = async (filtros = {}) => {
   const https = httpsInstance();
   const token = sessionStorage.getItem("token");
 
   try {
+    const params = {};
+    if (filtros.dataInicio) params.data_inicio = filtros.dataInicio;
+    if (filtros.dataFim) params.data_fim = filtros.dataFim;
+    if (filtros.status) params.status = filtros.status;
+    if (filtros.custo_fixo !== undefined) params.custo_fixo = filtros.custo_fixo;
+    if (filtros.custo_variavel !== undefined) params.custo_variavel = filtros.custo_variavel;
+
     const response = await https.get("/contas-receber/totais", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      params,
     });
 
     return response.data;

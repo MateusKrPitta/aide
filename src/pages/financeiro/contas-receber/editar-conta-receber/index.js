@@ -14,6 +14,7 @@ import {
   TableChart,
 } from "@mui/icons-material";
 import {
+  Autocomplete,
   Checkbox,
   FormControlLabel,
   InputAdornment,
@@ -426,14 +427,13 @@ const EditarContaREceber = ({
                     disabled={loading}
                   />
 
-                  <TextField
-                    select
+                  <Autocomplete
                     fullWidth
-                    variant="outlined"
                     size="small"
-                    label="Categoria"
-                    value={categoriaId}
-                    onChange={(e) => setCategoriaId(e.target.value)}
+                    options={categoriasCadastradas}
+                    getOptionLabel={(option) => option.nome || ""}
+                    value={categoriasCadastradas.find(cat => cat.id === parseInt(categoriaId)) || null}
+                    onChange={(event, newValue) => setCategoriaId(newValue ? newValue.id.toString() : "")}
                     sx={{
                       width: {
                         xs: "100%",
@@ -442,22 +442,27 @@ const EditarContaREceber = ({
                         lg: "50%",
                       },
                     }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Category />
-                        </InputAdornment>
-                      ),
-                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Categoria"
+                        variant="outlined"
+                        InputProps={{
+                          ...params.InputProps,
+                          startAdornment: (
+                            <>
+                              <InputAdornment position="start">
+                                <Category />
+                              </InputAdornment>
+                              {params.InputProps.startAdornment}
+                            </>
+                          ),
+                        }}
+                      />
+                    )}
                     disabled={loading}
-                  >
-                    <MenuItem value="">Selecione uma categoria</MenuItem>
-                    {categoriasCadastradas.map((categoria) => (
-                      <MenuItem key={categoria.id} value={categoria.id}>
-                        {categoria.nome}
-                      </MenuItem>
-                    ))}
-                  </TextField>
+                    noOptionsText="Nenhuma categoria encontrada"
+                  />
 
                   {tipoCusto === "fixo" ? (
                     <>

@@ -66,7 +66,6 @@ const CadastrarPalestra = ({ onSuccess }) => {
   const [pagamentoError, setPagamentoError] = useState("");
   const [lista, setLista] = useState([]);
 
-  const tiposPalestraAtivas = tiposPalestra.filter((tipo) => tipo.ativo);
   const mascaraValorMoeda = (e) => {
     let value = e.target.value;
 
@@ -185,18 +184,7 @@ const CadastrarPalestra = ({ onSuccess }) => {
     return { valido: true, mensagem: "" };
   };
 
-  const buscarPalestras = async () => {
-    try {
-      setLoading(true);
-      const response = await buscarPalestraCurso();
-      const palestrasFormatadas = cadastrosPalestraCurso(response.data);
-      setLista(palestrasFormatadas);
-    } catch (error) {
-      const errorMessage = error.response?.data?.errors?.nome;
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const handleAdicionarSessao = () => {
     const validacaoHorario = validarHorario(horario);
@@ -471,7 +459,7 @@ const CadastrarPalestra = ({ onSuccess }) => {
         type: "success",
         message: "Palestra/Curso cadastrado com sucesso!",
       });
-      buscarPalestras();
+
       FecharCadastro();
       limparEstados();
       onSuccess();
@@ -505,10 +493,14 @@ const CadastrarPalestra = ({ onSuccess }) => {
   };
 
   useEffect(() => {
-    buscarTipoPalestraCadastradas();
-    carregarClientes();
-    buscarPalestras();
-  }, []);
+    if (cadastro) {
+      buscarTipoPalestraCadastradas();
+      carregarClientes();
+    }
+  }, [cadastro]);
+
+  const tiposPalestraAtivas = tiposPalestra.filter((tipo) => tipo.ativo);
+
   return (
     <div>
       <ButtonComponent
@@ -770,12 +762,11 @@ const CadastrarPalestra = ({ onSuccess }) => {
                               ),
                             }}
                           />
-                          <TextField
-                            select
-                            fullWidth
-                            label="Selecione a Palestra/Curso"
-                            value={selectedLecture}
-                            onChange={(e) => setSelectedLecture(e.target.value)}
+                          <Autocomplete
+                            options={tiposPalestraAtivas}
+                            getOptionLabel={(option) => option.nome || ""}
+                            value={tiposPalestraAtivas.find(t => t.nome === selectedLecture) || null}
+                            onChange={(event, newValue) => setSelectedLecture(newValue ? newValue.nome : "")}
                             sx={{
                               width: {
                                 xs: "66%",
@@ -784,23 +775,27 @@ const CadastrarPalestra = ({ onSuccess }) => {
                                 lg: "70%",
                               },
                             }}
-                            variant="outlined"
-                            size="small"
-                            InputProps={{
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <Article />
-                                </InputAdornment>
-                              ),
-                            }}
-                          >
-                            <MenuItem value="">Selecione</MenuItem>
-                            {tiposPalestraAtivas.map((tipo) => (
-                              <MenuItem key={tipo.id} value={tipo.nome}>
-                                {tipo.nome}
-                              </MenuItem>
-                            ))}
-                          </TextField>
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                fullWidth
+                                label="Selecione a Palestra/Curso"
+                                variant="outlined"
+                                size="small"
+                                InputProps={{
+                                  ...params.InputProps,
+                                  startAdornment: (
+                                    <>
+                                      <InputAdornment position="start">
+                                        <Article />
+                                      </InputAdornment>
+                                      {params.InputProps.startAdornment}
+                                    </>
+                                  ),
+                                }}
+                              />
+                            )}
+                          />
 
                           <TextField
                             fullWidth
@@ -856,9 +851,12 @@ const CadastrarPalestra = ({ onSuccess }) => {
                                     <div className="w-[48%] flex items-center gap-2">
                                       <DateRange fontSize="small" />
                                       <label className="text-xs font-semibold">
-                                        {new Date(
-                                          sessao.data,
-                                        ).toLocaleDateString()}
+                                        {(() => {
+                                          if (!sessao.data) return "-";
+                                          const [year, month, day] =
+                                            sessao.data.split("-");
+                                          return `${day}/${month}/${year}`;
+                                        })()}
                                       </label>
                                     </div>
                                     <button
@@ -1070,9 +1068,11 @@ const CadastrarPalestra = ({ onSuccess }) => {
                                         <DateRange fontSize="small" />
                                         <span className="text-xs text-gray-500">
                                           {payment.date
-                                            ? new Date(
-                                                payment.date,
-                                              ).toLocaleDateString()
+                                            ? (() => {
+                                                const [year, month, day] =
+                                                  payment.date.split("-");
+                                                return `${day}/${month}/${year}`;
+                                              })()
                                             : "Sem data"}
                                         </span>
                                       </div>

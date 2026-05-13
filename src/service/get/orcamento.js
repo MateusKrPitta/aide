@@ -1,7 +1,7 @@
 import CustomToast from "../../components/toast";
 import httpsInstance from "../url";
 
-export const buscarOrcamento = async (page = 1, limit = 10, search = "") => {
+export const buscarOrcamento = async (page = 1, limit = 10, search = "", filters = {}) => {
   const https = httpsInstance();
   const token = sessionStorage.getItem("token");
 
@@ -14,6 +14,11 @@ export const buscarOrcamento = async (page = 1, limit = 10, search = "") => {
         page,
         limit,
         search: search || undefined,
+        data_inicio: filters.data_inicio || undefined,
+        data_fim: filters.data_fim || undefined,
+        cliente_id: filters.cliente_id || undefined,
+        prestador_id: filters.prestador_id || undefined,
+        servico_id: filters.servico_id || undefined,
       },
     });
     return response.data;

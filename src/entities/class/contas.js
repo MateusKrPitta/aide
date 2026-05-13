@@ -22,6 +22,7 @@ export const contasPagarem = (contas) => {
     categoria: conta.categoria || "Não categorizado",
     valor: formatarValor(conta.valor),
     status_pagamento: conta.status_pagamento || "Pendente",
+    cliente: conta.cliente_nome || "N/A",
     tipo: "Conta",
     originalData: conta,
   }));

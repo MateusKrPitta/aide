@@ -104,6 +104,7 @@ const CadastrarContaReceber = ({
         fim.setMonth(inicio.getMonth() + meses - 1);
 
         dadosParaEnvio.custo_fixo = true;
+        dadosParaEnvio.custo_variavel = false;
         dadosParaEnvio.quantidade_parcelas = meses;
         dadosParaEnvio.valor_mensal = parseFloat(valorMensal);
         dadosParaEnvio.prestador_id = prestadorId
@@ -111,6 +112,7 @@ const CadastrarContaReceber = ({
           : null;
         dadosParaEnvio.data_fim = fim.toISOString().split("T")[0];
       } else {
+        dadosParaEnvio.custo_fixo = false;
         dadosParaEnvio.custo_variavel = true;
         dadosParaEnvio.valor_total = parseFloat(valorTotal);
       }

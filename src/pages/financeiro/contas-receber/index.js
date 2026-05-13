@@ -11,8 +11,10 @@ import {
   DateRange,
   FilterAlt,
   StarOutlineSharp,
+  Print,
 } from "@mui/icons-material";
 import {
+  Autocomplete,
   InputAdornment,
   TextField,
   Select,
@@ -27,18 +29,19 @@ import TableComponent from "../../../components/table";
 import HeaderFinanceiro from "../../../components/navbars/financeiro";
 import { buscarCategoria } from "../../../service/get/categoria";
 import CustomToast from "../../../components/toast";
-import { buscarContasReceber } from "../../../service/get/contas-receber";
+import {
+  buscarContasReceber,
+  buscarContasReceberImprimir,
+} from "../../../service/get/contas-receber";
 import { headerContasReceber } from "../../../entities/header/financeiro/contas-receber";
 import { deletarContasReceber } from "../../../service/delete/contas-receber";
 import CadastrarContaReceber from "./cadastro";
 import EditarContaREceber from "./editar-conta-receber";
 import { buscarContasReceberTotal } from "../../../service/get/contas-receber-totais";
-import ComissaoServico from "./comissao-servicos";
 
 const ContasReceber = () => {
   const [informacoes, setInformacoes] = useState(false);
   const [cadastroUsuario, setCadastroUsuario] = useState(false);
-  const [secaoAtiva, setSecaoAtiva] = useState("contas");
   const [loading, setLoading] = useState(false);
   const [filtro, setFiltro] = useState(false);
   const [parcelas, setParcelas] = useState(false);
@@ -46,11 +49,13 @@ const ContasReceber = () => {
   const [contasReceberVi, setContasReceberVi] = useState([]);
   const [contaSelecionada, setContaSelecionada] = useState(null);
   const [termoBusca, setTermoBusca] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
   const [filtroDataInicio, setFiltroDataInicio] = useState("");
   const [filtroDataFim, setFiltroDataFim] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("");
+  const [filtroTipoCusto, setFiltroTipoCusto] = useState("todos");
 
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [itensPorPagina, setItensPorPagina] = useState(10);
@@ -61,22 +66,7 @@ const ContasReceber = () => {
     total: 0,
   });
 
-  const buscarTotaisAPI = async () => {
-    try {
-      const filtros = getFiltrosAtuais();
-      const response = await buscarContasReceberTotal(filtros);
 
-      if (response && response.success) {
-        setTotaisAPI({
-          pendente: parseFloat(response.data.pendente || 0),
-          pago: parseFloat(response.data.pago || 0),
-          total: parseFloat(response.data.total || 0),
-        });
-      }
-    } catch (error) {
-      console.error("Erro ao buscar totais da API:", error);
-    }
-  };
 
   const buscarCategoriaCadastradas = async () => {
     try {
@@ -106,12 +96,15 @@ const ContasReceber = () => {
     setFiltroDataFim("");
     setFiltroCategoria("");
     setFiltroStatus("");
+    setFiltroTipoCusto("todos");
     buscarContas(1, itensPorPagina, {
       termoBusca: "",
       dataInicio: "",
       dataFim: "",
       categoria: "",
       status: "",
+      custo_fixo: null,
+      custo_variavel: null,
     });
   };
 
@@ -185,6 +178,7 @@ const ContasReceber = () => {
         status: status,
         status_pagamento: conta.status_pagamento,
         status_label: conta.status_label,
+        tipo: conta.custo_fixo ? "Fixo" : "Variável",
         tipoOrigem: "Conta à Receber",
         categoria: "Conta à Receber",
       };
@@ -200,6 +194,12 @@ const ContasReceber = () => {
     if (filtroCategoria && filtroCategoria !== "todas")
       filtros.categoria = filtroCategoria;
     if (filtroStatus) filtros.status = filtroStatus;
+
+    if (filtroTipoCusto === "fixo") {
+      filtros.custo_fixo = true;
+    } else if (filtroTipoCusto === "variavel") {
+      filtros.custo_variavel = true;
+    }
 
     return filtros;
   };
@@ -252,21 +252,30 @@ const ContasReceber = () => {
   };
 
   useEffect(() => {
+    if (termoBusca === "") {
+      setDebouncedSearchTerm("");
+      return;
+    }
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(termoBusca);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [termoBusca]);
+
+  useEffect(() => {
     const carregarDados = async () => {
       await buscarCategoriaCadastradas();
-      await buscarContas(1, itensPorPagina);
-      await buscarTotaisAPI();
     };
     carregarDados();
   }, []);
 
+  useEffect(() => {
+    buscarContas(1, itensPorPagina, { nome: debouncedSearchTerm });
+  }, [debouncedSearchTerm]);
+
   const handleBuscaChange = (valor) => {
     setTermoBusca(valor);
-    const timeoutId = setTimeout(() => {
-      buscarContas(1, itensPorPagina, { nome: valor });
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
   };
 
   const calcularTotais = (dados) => {
@@ -314,6 +323,134 @@ const ContasReceber = () => {
     setItensPorPagina(novoLimite);
     setPaginaAtual(1);
     buscarContas(1, novoLimite);
+  };
+
+  const handleImprimir = async () => {
+    try {
+      setLoading(true);
+
+      const filtrosAtuais = getFiltrosAtuais();
+
+      const response = await buscarContasReceberImprimir(filtrosAtuais);
+      const dadosBrutos = response.contas || [];
+
+      if (dadosBrutos.length === 0) {
+        CustomToast({
+          type: "warning",
+          message: "Nenhum dado encontrado para imprimir.",
+        });
+        return;
+      }
+
+      const totaisResponse = await buscarContasReceberTotal(filtrosAtuais);
+      const totaisRelatorio = totaisResponse?.data || {
+        pago: 0,
+        pendente: 0,
+        total: 0,
+      };
+
+      const printWindow = window.open("", "_blank");
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Relatório de Contas a Receber</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #9D4B5B; color: white; text-transform: uppercase; }
+              tr:nth-child(even) { background-color: #f9f9f9; }
+              h2 { color: #9D4B5B; margin-bottom: 5px; }
+              .header { text-align: center; border-bottom: 2px solid #9D4B5B; padding-bottom: 10px; margin-bottom: 20px; }
+              .summary { display: flex; justify-content: space-around; margin-top: 20px; padding: 15px; background: #f8f8f8; border: 1px solid #eee; border-radius: 8px; }
+              .summary-item { text-align: center; }
+              .summary-item span { display: block; font-size: 10px; color: #666; text-transform: uppercase; margin-bottom: 5px; }
+              .summary-item strong { display: block; color: #9D4B5B; font-size: 16px; }
+              .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #777; }
+              @media print {
+                .no-print { display: none; }
+                th { background-color: #9D4B5B !important; color: white !important; -webkit-print-color-adjust: exact; }
+                .summary { background-color: #f8f8f8 !important; -webkit-print-color-adjust: exact; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h2>Relatório de Contas a Receber</h2>
+              <p>Gerado em: ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")}</p>
+            </div>
+            
+            <div class="summary">
+              <div class="summary-item">
+                <span>Total Geral</span>
+                <strong>${formatarMoeda(totaisRelatorio.total)}</strong>
+              </div>
+              <div class="summary-item">
+                <span>Total Recebido</span>
+                <strong>${formatarMoeda(totaisRelatorio.pago)}</strong>
+              </div>
+              <div class="summary-item">
+                <span>Total Pendente</span>
+                <strong>${formatarMoeda(totaisRelatorio.pendente)}</strong>
+              </div>
+              <div class="summary-item">
+                <span>Qtd. Registros</span>
+                <strong>${dadosBrutos.length}</strong>
+              </div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Tipo</th>
+                  <th>Categoria</th>
+                  <th>Vencimento</th>
+                  <th>Valor</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${dadosBrutos
+                  .map(
+                    (row) => `
+                  <tr>
+                    <td>${row.nome || "-"}</td>
+                    <td>${row.tipo || "-"}</td>
+                    <td>${row.categoria || "-"}</td>
+                    <td>${row.data_inicio ? new Date(row.data_inicio).toLocaleDateString("pt-BR") : "-"}</td>
+                    <td>${formatarMoeda(row.valor_total || 0)}</td>
+                    <td>${row.status || "-"}</td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+            <div class="footer">
+              <p>Sistema Aidê - Gestão Financeira</p>
+            </div>
+            <script>
+              window.onload = function() { 
+                setTimeout(() => {
+                  window.print(); 
+                  window.close();
+                }, 500);
+              }
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } catch (error) {
+      console.error("Erro ao imprimir:", error);
+      CustomToast({
+        type: "error",
+        message: "Erro ao gerar relatório para impressão.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const aplicarFiltros = () => {
@@ -410,6 +547,20 @@ const ContasReceber = () => {
           buttonSize="large"
           onClick={() => setCadastroUsuario(true)}
         />
+        <ButtonComponent
+          startIcon={<FilterAlt fontSize="small" />}
+          title={"Filtrar"}
+          subtitle={"Filtrar"}
+          buttonSize="large"
+          onClick={() => setFiltro(true)}
+        />
+        <ButtonComponent
+          startIcon={<Print fontSize="small" />}
+          title={"Imprimir"}
+          subtitle={"Imprimir"}
+          buttonSize="large"
+          onClick={handleImprimir}
+        />
       </div>
       <div className="w-full flex itens-center  justify-center">
         {loading ? (
@@ -466,46 +617,7 @@ const ContasReceber = () => {
               <HeaderFinanceiro />
             </div>
             <div className="w-[100%] itens-center mt-2 ml-2 sm:mt-0 md:flex md:justify-start flex-col lg:w-[80%]">
-              <div className="flex items-center bg-gray-100 p-1 rounded-lg w-fit mb-4">
-                <button
-                  onClick={() => setSecaoAtiva("contas")}
-                  className={`
-      px-6 py-2 text-xs font-bold rounded-md transition-all duration-200
-      ${
-        secaoAtiva === "contas"
-          ? "bg-[#9D4B5B] text-white  font-bold shadow-md"
-          : "text-gray-600 font-bold hover:text-[#9D4B5B]"
-      }
-    `}
-                >
-                  Contas a Receber
-                </button>
-                <button
-                  onClick={() => setSecaoAtiva("comissao")}
-                  className={`
-      px-6 py-2 text-xs font-boldrounded-md transition-all duration-200
-      ${
-        secaoAtiva === "comissao"
-          ? "bg-[#9D4B5B] text-white  font-bold shadow-md"
-          : "text-gray-600  font-bold hover:text-[#9D4B5B]"
-      }
-    `}
-                >
-                  Comissão de Serviços
-                </button>
-              </div>
-
-              {/* CONTEÚDO - ALTERNAR ENTRE OS COMPONENTES */}
-              {secaoAtiva === "contas" ? (
-                <ContasReceberContent />
-              ) : (
-                <div className="w-full">
-                  <ComissaoServico
-                    onVoltar={() => setSecaoAtiva("contas")}
-                    isActive={true}
-                  />
-                </div>
-              )}
+              <ContasReceberContent />
 
               {/* Modais - sempre disponíveis */}
               <CadastrarContaReceber
@@ -576,32 +688,35 @@ const ContasReceber = () => {
                         ),
                       }}
                     />
-                    <FormControl
+                    <Autocomplete
                       fullWidth
-                      variant="outlined"
                       size="small"
+                      options={categoriasCadastradas}
+                      getOptionLabel={(option) => option.nome || ""}
+                      value={categoriasCadastradas.find(c => c.id === filtroCategoria) || null}
+                      onChange={(event, newValue) => setFiltroCategoria(newValue ? newValue.id : "")}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Categoria"
+                          variant="outlined"
+                          InputProps={{
+                            ...params.InputProps,
+                            startAdornment: (
+                              <>
+                                <InputAdornment position="start">
+                                  <Category />
+                                </InputAdornment>
+                                {params.InputProps.startAdornment}
+                              </>
+                            ),
+                          }}
+                        />
+                      )}
                       sx={{
                         width: { xs: "47%", sm: "50%", md: "40%", lg: "47%" },
                       }}
-                    >
-                      <InputLabel id="categoria-label">Categoria</InputLabel>
-                      <Select
-                        labelId="categoria-label"
-                        value={filtroCategoria}
-                        onChange={(e) => setFiltroCategoria(e.target.value)}
-                        label="Categoria"
-                        startAdornment={
-                          <InputAdornment position="start">
-                            <Category />
-                          </InputAdornment>
-                        }
-                      >
-                        <MenuItem value="">Todas</MenuItem>
-                        <MenuItem value="Conta à Receber">
-                          Conta à Receber
-                        </MenuItem>
-                      </Select>
-                    </FormControl>
+                    />
 
                     <FormControl
                       fullWidth
@@ -624,8 +739,31 @@ const ContasReceber = () => {
                         }
                       >
                         <MenuItem value="">Todos</MenuItem>
-                        <MenuItem value="Pendente">Pendente</MenuItem>
-                        <MenuItem value="Pago">Pago</MenuItem>
+                        <MenuItem value="1">Pendente</MenuItem>
+                        <MenuItem value="2">Pago</MenuItem>
+                        <MenuItem value="3">Atrasado</MenuItem>
+                        <MenuItem value="4">Em Andamento</MenuItem>
+                      </Select>
+                    </FormControl>
+
+                    <FormControl
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      sx={{
+                        width: { xs: "95%", sm: "95%", md: "95%", lg: "97%" },
+                      }}
+                    >
+                      <InputLabel id="tipo-custo-label">Tipo de Custo</InputLabel>
+                      <Select
+                        labelId="tipo-custo-label"
+                        value={filtroTipoCusto}
+                        onChange={(e) => setFiltroTipoCusto(e.target.value)}
+                        label="Tipo de Custo"
+                      >
+                        <MenuItem value="todos">Todos</MenuItem>
+                        <MenuItem value="fixo">Custo Fixo</MenuItem>
+                        <MenuItem value="variavel">Custo Variável</MenuItem>
                       </Select>
                     </FormControl>
                     <div className="flex items-end justify-end w-full gap-2">

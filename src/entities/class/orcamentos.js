@@ -15,12 +15,12 @@ export const transformarOrcamentosParaTabela = (orcamentos) => {
   };
 
   return orcamentos.map((orcamento) => {
-    const dataInicio = new Date(
-      orcamento.prestadores[0]?.servicos[0]?.data_inicio,
-    );
-    const dataEntrega = new Date(
-      orcamento.prestadores[0]?.servicos[0]?.data_entrega,
-    );
+    const formatarData = (dataStr) => {
+      if (!dataStr) return "-";
+      const [data] = dataStr.split("T");
+      const [ano, mes, dia] = data.split("-");
+      return `${dia}/${mes}/${ano}`;
+    };
 
     let valorTotal = 0;
     let comissaoTotal = 0;
@@ -39,8 +39,8 @@ export const transformarOrcamentosParaTabela = (orcamentos) => {
       prestadores: orcamento.prestadores
         .map((p) => p.prestador.nome)
         .join(", "),
-      data_inicio: dataInicio.toLocaleDateString("pt-BR"),
-      data_entrega: dataEntrega.toLocaleDateString("pt-BR"),
+      data_inicio: formatarData(orcamento.prestadores[0]?.servicos[0]?.data_inicio),
+      data_entrega: formatarData(orcamento.prestadores[0]?.servicos[0]?.data_entrega),
       valor_total: formatarValor(valorTotal),
       comissao: formatarValor(comissaoTotal),
     };

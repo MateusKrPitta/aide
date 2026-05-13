@@ -42,17 +42,14 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
       setHorario(palestra.horário ? formatTimeForInput(palestra.horário) : "");
       setValor(palestra.valor ? palestra.valor.replace("R$ ", "") : "");
       setPaymentStatus(
-        palestra.statusPagamento === "Pago"
+        palestra.status_pagamento == 2 || palestra.status_pagamento == "2" || palestra.statusPagamento === "Pago"
           ? "Pago"
-          : palestra.statusPagamento === "Pendente"
-          ? "Pendente"
-          : "Outro"
+          : "Pendente"
       );
       setHorario("");
       setValor("");
       setSecoes("");
       setSelectedLecture("");
-      setPaymentStatus("Pendente");
       setPaymentType("À vista");
       setCurrentPaymentMethod("Dinheiro");
       setCurrentPaymentDate("");
@@ -318,19 +315,7 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
     }
   }, [paymentType, installments, totalPaid]);
 
-  const buscarPalestras = async () => {
-    try {
-      setLoading(true);
-      const response = await buscarPalestraCurso();
-      const palestrasFormatadas = cadastrosPalestraCurso(response.data);
-      setLista(palestrasFormatadas);
-    } catch (error) {
-      const errorMessage = error.response?.data?.errors?.nome;
-     
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const handleSalvar = async () => {
     try {
@@ -348,8 +333,8 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
 
       const statusPagamentoMap = {
         Pendente: 1,
-        Andamento: 2,
-        Pago: 3,
+        Pago: 2,
+        Cancelado: 3,
       };
 
       const formaPagamentoMap = {
@@ -386,7 +371,7 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
         type: "success",
         message: "Palestra atualizada com sucesso!",
       });
-      buscarPalestras();
+
       onSave(response);
       onClose();
     } catch (error) {
@@ -403,7 +388,6 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
     buscarPrestadoresCadastrados();
     buscarTipoPalestraCadastradas();
     carregarClientes();
-    buscarPalestras();
   }, []);
   return (
     <div>
@@ -660,12 +644,11 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
                           />
 
                           {/* Seleção de Palestra */}
-                          <TextField
-                            select
-                            fullWidth
-                            label="Selecione a Palestra/Curso"
-                            value={selectedLecture}
-                            onChange={(e) => setSelectedLecture(e.target.value)}
+                          <Autocomplete
+                            options={tiposPalestra}
+                            getOptionLabel={(option) => option.nome || ""}
+                            value={tiposPalestra.find(t => t.nome === selectedLecture) || null}
+                            onChange={(event, newValue) => setSelectedLecture(newValue ? newValue.nome : "")}
                             sx={{
                               width: {
                                 xs: "66%",
@@ -674,23 +657,27 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
                                 lg: "100%",
                               },
                             }}
-                            variant="outlined"
-                            size="small"
-                            InputProps={{
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <Article />
-                                </InputAdornment>
-                              ),
-                            }}
-                          >
-                            <MenuItem value="">Selecione</MenuItem>
-                            {tiposPalestra.map((tipo) => (
-                              <MenuItem key={tipo.id} value={tipo.nome}>
-                                {tipo.nome}
-                              </MenuItem>
-                            ))}
-                          </TextField>
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                fullWidth
+                                label="Selecione a Palestra/Curso"
+                                variant="outlined"
+                                size="small"
+                                InputProps={{
+                                  ...params.InputProps,
+                                  startAdornment: (
+                                    <>
+                                      <InputAdornment position="start">
+                                        <Article />
+                                      </InputAdornment>
+                                      {params.InputProps.startAdornment}
+                                    </>
+                                  ),
+                                }}
+                              />
+                            )}
+                          />
 
                           {/* Campo de Valor */}
                           <TextField
@@ -747,9 +734,12 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
                                     <div className="w-[48%] flex items-center gap-2">
                                       <DateRange fontSize="small" />
                                       <label className="text-xs font-semibold">
-                                        {new Date(
-                                          sessao.data
-                                        ).toLocaleDateString()}
+                                        {(() => {
+                                          if (!sessao.data) return "-";
+                                          const [year, month, day] =
+                                            sessao.data.split("-");
+                                          return `${day}/${month}/${year}`;
+                                        })()}
                                       </label>
                                     </div>
                                     <button
@@ -965,9 +955,11 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
                                         <DateRange fontSize="small" />
                                         <span className="text-xs ">
                                           {payment.date
-                                            ? new Date(
-                                                payment.date
-                                              ).toLocaleDateString()
+                                            ? (() => {
+                                                const [year, month, day] =
+                                                  payment.date.split("-");
+                                                return `${day}/${month}/${year}`;
+                                              })()
                                             : "Sem data"}
                                         </span>
                                       </div>

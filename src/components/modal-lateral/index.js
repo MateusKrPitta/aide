@@ -17,6 +17,7 @@ const style = (width) => ({
   p: 2,
   borderTopLeftRadius: "16px",
   display: "flex",
+  flexDirection: "column",
 });
 
 export default function ModalLateral({
@@ -41,53 +42,53 @@ export default function ModalLateral({
       >
         <Slide direction="left" in={open} mountOnEnter unmountOnExit>
           <Box sx={style(width)}>
-            <div className="w-full h-full ">
-              <Lines
-                width={"100%"}
-                display={"flex"}
-                alignItems={"center"}
-                conteudo={
-                  <>
-                    <Lines
-                      width={tamanhoIcone || "10%"}
-                      alignItems={"center"}
-                      justifyContent={"center"}
-                      padding={"5px"}
-                      backgroundColor={"#9D4B5B"}
-                      borderRadius={"5px"}
-                      color={"#ffff"}
-                      conteudo={<>{icon}</>}
-                    />
-                    <Label
-                      fontSize={"15px"}
-                      color={"black"}
-                      width={tamanhoTitulo}
-                      fontWeight={"700"}
-                      conteudo={tituloModal}
-                    />
-                    <Lines
-                      width={tamanhoOpcao || "0%"}
-                      display={"flex"}
-                      alignItems={"center"}
-                      justifyContent={"center"}
-                      conteudo={opcao}
-                    />
-                    <ButtonClose funcao={handleClose} />
-                  </>
-                }
-              />
+            <Lines
+              width={"100%"}
+              display={"flex"}
+              alignItems={"center"}
+              flexWrap="nowrap"
+              conteudo={
+                <>
+                  <Lines
+                    width={tamanhoIcone || "10%"}
+                    alignItems={"center"}
+                    justifyContent={"center"}
+                    padding={"5px"}
+                    backgroundColor={"#9D4B5B"}
+                    borderRadius={"5px"}
+                    color={"#ffff"}
+                    conteudo={<>{icon}</>}
+                  />
+                  <Label
+                    fontSize={"15px"}
+                    color={"black"}
+                    width={tamanhoTitulo}
+                    fontWeight={"700"}
+                    conteudo={tituloModal}
+                  />
+                  <Lines
+                    width={tamanhoOpcao || "0%"}
+                    display={"flex"}
+                    alignItems={"center"}
+                    justifyContent={"center"}
+                    conteudo={opcao}
+                  />
+                  <ButtonClose funcao={handleClose} />
+                </>
+              }
+            />
 
-              <Lines
-                overflowY={"scroll"}
-                flex={1}
-                width={"100%"}
-                border={"1px solid #d9d9d9"}
-                borderRadius={"10px"}
-                padding={"10px"}
-                marginTop={"10px"}
-                conteudo={<>{conteudo}</>}
-              />
-            </div>
+            <Lines
+              overflowY={"auto"}
+              flex={1}
+              width={"100%"}
+              border={"1px solid #d9d9d9"}
+              borderRadius={"10px"}
+              padding={"10px"}
+              marginTop={"10px"}
+              display="block"
+              conteudo={<>{conteudo}</>}
+            />
           </Box>
         </Slide>
       </Modal>

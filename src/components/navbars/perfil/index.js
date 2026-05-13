@@ -27,10 +27,7 @@ import Title from "../../title";
 import ButtonComponent from "../../button";
 import LogoutIcon from "@mui/icons-material/Logout";
 import CustomToast from "../../toast";
-import { buscarContasPagarPendente } from "../../../service/get/contas-pagar-pendente";
-import { buscarServicoPendente } from "../../../service/get/servico-pendente";
-import { buscarContasReceberPendente } from "../../../service/get/contas-receber-pendente";
-import { buscarContasReceberComissaoPendente } from "../../../service/get/contas-receber-comissao-pendente";
+import { useNotifications } from "../../../context/NotificationContext";
 
 const style = {
   position: "absolute",
@@ -58,28 +55,21 @@ const notificationStyle = {
 
 const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
   const navigate = useNavigate();
+  const { 
+    notifications, 
+    loading: contextLoading, 
+    unreadCount, 
+    markAsRead, 
+    clearNotifications, 
+    clearAll 
+  } = useNotifications();
+
   const [anchorEl, setAnchorEl] = useState(null);
   const [notifAnchorEl, setNotifAnchorEl] = useState(null);
-  const [parcelasPendentes, setParcelasPendentes] = useState([]);
-  const [servicosPendentes, setServicosPendentes] = useState([]);
-  const [contasReceberPendentes, setContasReceberPendentes] = useState([]);
-  const [comissoesPendentes, setComissoesPendentes] = useState([]);
   const [openLogoutConfirm, setOpenLogoutConfirm] = useState(false);
   const [notificationTab, setNotificationTab] = useState(0);
-  const [loading, setLoading] = useState({
-    contas: false,
-    servicos: false,
-    contasReceber: false,
-    comissoes: false,
-  });
 
   const userName = sessionStorage.getItem("nome");
-  const [notifications, setNotifications] = useState({
-    contas: [],
-    servicos: [],
-    contasReceber: [],
-    comissoes: [],
-  });
 
   const formatarData = (dataStr) => {
     if (!dataStr) return "Data não informada";
@@ -92,319 +82,8 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
     }
   };
 
-  const verificarComissoesVencidas = useCallback(() => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-
-    const novasNotificacoesComissoes = [];
-
-    const processarItemComissao = (item, origem = "comissao") => {
-      try {
-        if (!item.data_vencimento && !item.data_pagamento) {
-          console.log("Item sem data de vencimento:", item);
-          return;
-        }
-
-        const dataVencimento = item.data_vencimento || item.data_pagamento;
-        const vencimentoDate = new Date(dataVencimento);
-
-        if (isNaN(vencimentoDate.getTime())) {
-          console.error("Data inválida:", dataVencimento);
-          return;
-        }
-
-        vencimentoDate.setHours(0, 0, 0, 0);
-        const diffTime = vencimentoDate - now;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        if (diffDays < 0) {
-          const diasAtraso = Math.abs(diffDays);
-          const dataFormatada = formatarData(dataVencimento);
-
-          const servicoNome =
-            item.servico?.nome ||
-            item.servico_nome ||
-            item.nome_servico ||
-            "Serviço não identificado";
-
-          const prestadorNome =
-            item.prestador?.nome ||
-            item.prestador_nome ||
-            "Prestador não informado";
-
-          const clienteNome =
-            item.cliente?.nome || item.cliente_nome || "Cliente não informado";
-
-          const valorComissao = parseFloat(
-            item.valor_comissao || item.valor || 0,
-          ).toFixed(2);
-
-          let urgencia = "normal";
-          let corUrgencia = "warning";
-
-          if (diasAtraso >= 30) {
-            urgencia = "critico";
-            corUrgencia = "error";
-          } else if (diasAtraso >= 15) {
-            urgencia = "alto";
-            corUrgencia = "error";
-          } else if (diasAtraso >= 7) {
-            urgencia = "medio";
-            corUrgencia = "warning";
-          }
-
-          novasNotificacoesComissoes.push({
-            id: `comissao-${item.id || Date.now()}-${Math.random()}`,
-            text: `💰 Comissão vencida: ${servicoNome}`,
-            details: {
-              prestador: prestadorNome,
-              cliente: clienteNome,
-              vencimento: dataFormatada,
-              valor: `R$ ${valorComissao}`,
-              diasAtraso,
-              urgencia,
-            },
-            read: false,
-            time: `Vencida há ${diasAtraso} ${diasAtraso === 1 ? "dia" : "dias"}`,
-            type: "comissao",
-            categoria: "Comissões",
-            urgencia,
-            corUrgencia,
-            dadosCompletos: item,
-          });
-        }
-      } catch (error) {
-        console.error("Erro ao processar item de comissão:", error, item);
-      }
-    };
-
-    if (Array.isArray(comissoesPendentes)) {
-      comissoesPendentes.forEach((item) => processarItemComissao(item));
-    } else if (comissoesPendentes?.data?.comissoes) {
-      comissoesPendentes.data.comissoes.forEach((item) =>
-        processarItemComissao(item),
-      );
-    } else if (comissoesPendentes?.comissoes) {
-      comissoesPendentes.comissoes.forEach((item) =>
-        processarItemComissao(item),
-      );
-    } else if (comissoesPendentes?.data) {
-      Object.values(comissoesPendentes.data).forEach((item) => {
-        if (Array.isArray(item)) {
-          item.forEach((subItem) => processarItemComissao(subItem));
-        } else {
-          processarItemComissao(item);
-        }
-      });
-    }
-
-    novasNotificacoesComissoes.sort((a, b) => {
-      const prioridade = { critico: 0, alto: 1, medio: 2, normal: 3 };
-      if (prioridade[a.urgencia] !== prioridade[b.urgencia]) {
-        return prioridade[a.urgencia] - prioridade[b.urgencia];
-      }
-      return b.details.diasAtraso - a.details.diasAtraso;
-    });
-
-    if (novasNotificacoesComissoes.length > 0) {
-      setNotifications((prev) => ({
-        ...prev,
-        comissoes: [...novasNotificacoesComissoes, ...prev.comissoes],
-      }));
-    }
-  }, [comissoesPendentes]);
-
-  const verificarParcelasVencidas = useCallback(() => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-
-    const novasNotificacoesContas = [];
-
-    (parcelasPendentes || []).forEach((parcela) => {
-      const vencimentoDate = new Date(parcela.data_vencimento);
-      vencimentoDate.setHours(0, 0, 0, 0);
-      const diffDays = Math.ceil(
-        (vencimentoDate - now) / (1000 * 60 * 60 * 24),
-      );
-
-      if (diffDays < 0 && parcela.status === "Pendente") {
-        const diasAtraso = Math.abs(diffDays);
-        novasNotificacoesContas.push({
-          id: `conta-${parcela.id}`,
-          text: `💰 Conta vencida: "${parcela.nome_conta}"`,
-          details: {
-            descricao: parcela.descricao_parcela,
-            vencimento: vencimentoDate.toLocaleDateString(),
-            valor: `R$ ${parcela.valor.toFixed(2)}`,
-            diasAtraso,
-          },
-          read: false,
-          time: `Vencida há ${diasAtraso} ${diasAtraso === 1 ? "dia" : "dias"}`,
-          type: "conta",
-          categoria: parcela.categoria,
-        });
-      }
-    });
-
-    setNotifications((prev) => ({
-      ...prev,
-      contas: [...novasNotificacoesContas, ...prev.contas],
-    }));
-  }, [parcelasPendentes]);
-
-  const verificarServicosVencidos = useCallback(() => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-
-    const novasNotificacoesServicos = [];
-
-    (servicosPendentes || []).forEach((servico) => {
-      try {
-        const vencimentoDate = new Date(servico.data_vencimento);
-        vencimentoDate.setHours(0, 0, 0, 0);
-
-        const diffTime = vencimentoDate - now;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        const nomeServico =
-          servico.nome ||
-          servico.servico_nome ||
-          servico.tipo ||
-          "Serviço sem nome";
-
-        const valorServico = servico.valor || 0;
-        const statusServico = (servico.status || "pendente").toLowerCase();
-        const clienteNome = servico.cliente_nome || "Não informado";
-        const prestadorNome = servico.prestador_nome || "";
-
-        if (diffDays < 0 && statusServico === "pendente") {
-          const diasAtraso = Math.abs(diffDays);
-          const detalhesPrestador = prestadorNome
-            ? `Prestador: ${prestadorNome}`
-            : "";
-
-          novasNotificacoesServicos.push({
-            id: `servico-${servico.id || Date.now()}-${Math.random()}`,
-            text: `🔧 Serviço vencido: "${nomeServico}"`,
-            details: {
-              descricao: servico.descricao || "Sem descrição",
-              cliente: clienteNome,
-              prestador: prestadorNome,
-              vencimento: vencimentoDate.toLocaleDateString(),
-              valor: `R$ ${typeof valorServico === "number" ? valorServico.toFixed(2) : valorServico}`,
-              diasAtraso,
-            },
-            read: false,
-            time: `Vencido há ${diasAtraso} ${diasAtraso === 1 ? "dia" : "dias"}`,
-            type: "servico",
-            categoria: servico.categoria || "Serviços",
-          });
-        }
-      } catch (error) {
-        console.error("Erro ao processar serviço:", error, servico);
-      }
-    });
-
-    if (novasNotificacoesServicos.length > 0) {
-      setNotifications((prev) => ({
-        ...prev,
-        servicos: [...novasNotificacoesServicos, ...prev.servicos],
-      }));
-    }
-  }, [servicosPendentes]);
-
-  const verificarContasReceberVencidas = useCallback(() => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-
-    const novasNotificacoesContasReceber = [];
-
-    (contasReceberPendentes || []).forEach((parcela) => {
-      try {
-        const normalizarData = (dataStr) => {
-          if (!dataStr) return null;
-          let dataCorrigida = dataStr.replace(/ GM$/, " GMT");
-          const data = new Date(dataCorrigida);
-
-          if (isNaN(data.getTime())) {
-            const partes = dataStr.split(" ");
-            if (partes.length >= 5) {
-              const meses = {
-                Jan: 0,
-                Feb: 1,
-                Mar: 2,
-                Apr: 3,
-                May: 4,
-                Jun: 5,
-                Jul: 6,
-                Aug: 7,
-                Sep: 8,
-                Oct: 9,
-                Nov: 10,
-                Dec: 11,
-              };
-              const mes = meses[partes[1]];
-              const dia = parseInt(partes[2]);
-              const ano = parseInt(partes[3]);
-              if (mes !== undefined && !isNaN(dia) && !isNaN(ano)) {
-                return new Date(ano, mes, dia);
-              }
-            }
-            return null;
-          }
-          return data;
-        };
-
-        const vencimentoDate = normalizarData(parcela.data_vencimento);
-
-        if (!vencimentoDate) {
-          console.error("Data inválida:", parcela.data_vencimento);
-          return;
-        }
-
-        vencimentoDate.setHours(0, 0, 0, 0);
-        const diffTime = vencimentoDate - now;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const dataFormatada = vencimentoDate.toLocaleDateString("pt-BR");
-
-        if (diffDays < 0) {
-          const diasAtraso = Math.abs(diffDays);
-          novasNotificacoesContasReceber.push({
-            id: `conta-receber-${parcela.id}-${Date.now()}`,
-            text: `📋 Conta a receber vencida: "${parcela.nome}"`,
-            details: {
-              descricao: parcela.descricao,
-              vencimento: dataFormatada,
-              valor: `R$ ${parseFloat(parcela.valor).toFixed(2)}`,
-              diasAtraso,
-            },
-            read: false,
-            time: `Vencido há ${diasAtraso} ${diasAtraso === 1 ? "dia" : "dias"}`,
-            type: "conta_receber",
-            categoria: "Contas a Receber",
-          });
-        }
-      } catch (error) {
-        console.error("Erro ao processar conta a receber:", error, parcela);
-      }
-    });
-
-    if (novasNotificacoesContasReceber.length > 0) {
-      setNotifications((prev) => ({
-        ...prev,
-        contasReceber: [
-          ...novasNotificacoesContasReceber,
-          ...prev.contasReceber,
-        ],
-      }));
-    }
-  }, [contasReceberPendentes]);
-
-  const unreadCount =
-    notifications.contas.filter((n) => !n.read).length +
-    notifications.servicos.filter((n) => !n.read).length +
-    notifications.contasReceber.filter((n) => !n.read).length +
-    notifications.comissoes.filter((n) => !n.read).length;
+  // Removidas as funções redundantes de verificação e busca
+  // Tudo agora é gerenciado pelo NotificationContext
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -416,13 +95,10 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
 
   const handleNotifOpen = (event) => {
     setNotifAnchorEl(event.currentTarget);
-
-    setNotifications((prev) => ({
-      contas: prev.contas.map((n) => ({ ...n, read: true })),
-      servicos: prev.servicos.map((n) => ({ ...n, read: true })),
-      contasReceber: prev.contasReceber.map((n) => ({ ...n, read: true })),
-      comissoes: prev.comissoes.map((n) => ({ ...n, read: true })),
-    }));
+    
+    // Marcar aba atual como lida
+    const tipos = ["contas", "servicos", "contasReceber", "comissoes"];
+    markAsRead(tipos[notificationTab]);
   };
 
   const handleNotifClose = () => {
@@ -444,11 +120,7 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
   };
 
   const clearNotificationsByType = (type) => {
-    setNotifications((prev) => ({
-      ...prev,
-      [type]: [],
-    }));
-
+    clearNotifications(type);
     const tipoLabel = {
       contas: "contas a pagar",
       servicos: "serviços",
@@ -463,185 +135,14 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
   };
 
   const clearAllNotifications = () => {
-    setNotifications({
-      contas: [],
-      servicos: [],
-      contasReceber: [],
-      comissoes: [],
-    });
+    clearAll();
     CustomToast({
       type: "success",
       message: "Todas as notificações foram limpas!",
     });
   };
 
-  const buscarParcelasPendentes = async () => {
-    setLoading((prev) => ({ ...prev, contas: true }));
-    try {
-      const response = await buscarContasPagarPendente();
-      const parcelas = response?.parcelas || [];
-      setParcelasPendentes(parcelas);
-      return parcelas;
-    } catch (error) {
-      console.error("Erro ao buscar parcelas pendentes:", error);
-      setParcelasPendentes([]);
-    } finally {
-      setLoading((prev) => ({ ...prev, contas: false }));
-    }
-  };
-
-  const buscarServicosPendentes = async () => {
-    setLoading((prev) => ({ ...prev, servicos: true }));
-    try {
-      const response = await buscarServicoPendente();
-
-      let todasPendencias = [];
-
-      if (response?.data?.pendencias) {
-        todasPendencias = response.data.pendencias;
-      } else if (response?.pendencias) {
-        todasPendencias = response.pendencias;
-      } else if (Array.isArray(response)) {
-        todasPendencias = response;
-      } else if (response?.data && Array.isArray(response.data)) {
-        todasPendencias = response.data;
-      }
-
-      const servicosFiltrados = todasPendencias.filter((item) => {
-        const isServico =
-          item.tipo === "prestador" ||
-          item.origem === "prestador" ||
-          item.tipo?.toLowerCase() === "serviço" ||
-          item.tipo?.toLowerCase() === "servico";
-
-        const isNotConta =
-          item.tipo !== "conta_fixa" &&
-          item.tipo !== "conta_variavel" &&
-          item.origem !== "conta_pagar_fixa" &&
-          item.origem !== "conta_pagar_variavel";
-
-        return isServico && isNotConta;
-      });
-
-      setServicosPendentes(servicosFiltrados);
-      return servicosFiltrados;
-    } catch (error) {
-      console.error("Erro ao buscar serviços pendentes:", error);
-      setServicosPendentes([]);
-    } finally {
-      setLoading((prev) => ({ ...prev, servicos: false }));
-    }
-  };
-
-  const buscarContasReceberPendentesFn = async () => {
-    setLoading((prev) => ({ ...prev, contasReceber: true }));
-    try {
-      const response = await buscarContasReceberPendente();
-      const parcelas = response?.data || [];
-      setContasReceberPendentes(parcelas);
-      return parcelas;
-    } catch (error) {
-      console.error("Erro ao buscar contas a receber pendentes:", error);
-      CustomToast({
-        type: "error",
-        message: error.message || "Erro ao buscar contas a receber pendentes",
-      });
-      setContasReceberPendentes([]);
-    } finally {
-      setLoading((prev) => ({ ...prev, contasReceber: false }));
-    }
-  };
-
-  const buscarComissoesPendentes = async () => {
-    setLoading((prev) => ({ ...prev, comissoes: true }));
-
-    try {
-      const response = await buscarContasReceberComissaoPendente();
-
-      let comissoes = [];
-
-      if (response?.data?.comissoes) {
-        comissoes = response.data.comissoes;
-      } else if (response?.data?.data?.comissoes) {
-        comissoes = response.data.data.comissoes;
-      } else if (response?.comissoes) {
-        comissoes = response.comissoes;
-      } else if (response?.data?.pendencias) {
-        comissoes = response.data.pendencias.filter(
-          (item) =>
-            item.origem === "comissao_servico" || item.tipo === "comissao",
-        );
-      } else if (Array.isArray(response)) {
-        comissoes = response;
-      } else if (response?.data && Array.isArray(response.data)) {
-        comissoes = response.data;
-      }
-
-      const comissoesPendentesFiltradas = comissoes.filter((item) => {
-        const status =
-          item.status || item.status_pagamento || item.status_codigo;
-        return status === "pendente" || status === 1 || status === "Pendente";
-      });
-
-      setComissoesPendentes(comissoesPendentesFiltradas);
-
-      return comissoesPendentesFiltradas;
-    } catch (error) {
-      console.error("Erro ao buscar comissões pendentes:", error);
-
-      if (error.response?.status === 500) {
-        CustomToast({
-          type: "error",
-          message: "Erro ao carregar comissões pendentes",
-        });
-      }
-
-      setComissoesPendentes([]);
-    } finally {
-      setLoading((prev) => ({ ...prev, comissoes: false }));
-    }
-  };
-
-  useEffect(() => {
-    const fetchAllData = async () => {
-      await Promise.all([
-        buscarParcelasPendentes(),
-        buscarServicosPendentes(),
-        buscarContasReceberPendentesFn(),
-        buscarComissoesPendentes(),
-      ]);
-    };
-
-    fetchAllData();
-
-    const intervalId = setInterval(fetchAllData, 4 * 60 * 60 * 1000);
-
-    return () => clearInterval(intervalId);
-  }, []);
-
-  useEffect(() => {
-    if (parcelasPendentes.length > 0) {
-      verificarParcelasVencidas();
-    }
-  }, [parcelasPendentes, verificarParcelasVencidas]);
-
-  useEffect(() => {
-    if (servicosPendentes.length > 0) {
-      verificarServicosVencidos();
-    }
-  }, [servicosPendentes, verificarServicosVencidos]);
-
-  useEffect(() => {
-    if (contasReceberPendentes.length > 0) {
-      verificarContasReceberVencidas();
-    }
-  }, [contasReceberPendentes, verificarContasReceberVencidas]);
-
-  useEffect(() => {
-    if (comissoesPendentes.length > 0) {
-      verificarComissoesVencidas();
-    }
-  }, [comissoesPendentes, verificarComissoesVencidas]);
+  // Removidas funções de busca locais
 
   const getCurrentNotifications = () => {
     switch (notificationTab) {
@@ -674,18 +175,7 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
   };
 
   const getCurrentLoading = () => {
-    switch (notificationTab) {
-      case 0:
-        return loading.contas;
-      case 1:
-        return loading.servicos;
-      case 2:
-        return loading.contasReceber;
-      case 3:
-        return loading.comissoes;
-      default:
-        return false;
-    }
+    return contextLoading;
   };
 
   const renderComissaoNotification = (notification) => (

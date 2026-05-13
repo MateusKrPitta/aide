@@ -45,7 +45,6 @@ import { deletarContas } from "../../../service/delete/contas";
 import { atualizarParcelaContasPagar } from "../../../service/put/atualiza-parcela-contas-pagar";
 
 import { buscarTotalContasPagar } from "../../../service/get/total-contas-pagar";
-import ContasPagarServico from "./servico";
 import { atualizarContasPagar } from "../../../service/put/contas-pagar";
 import { buscarContasPagarId } from "../../../service/get/contas-pagar-id";
 import { exportContasPagarToPDF } from "./imprimir";
@@ -78,6 +77,7 @@ const ContasPagar = () => {
   const [dataFimFiltro, setDataFimFiltro] = useState("");
   const [statusPagamentoFiltro, setStatusPagamentoFiltro] = useState("");
   const [valor, setValor] = useState("");
+  const [prestadorFiltro, setPrestadorFiltro] = useState("");
   const [contasPagar, setContasPagar] = useState([]);
   const [categoriaSelecionada, setCategoriaSelecionada] = useState("");
   const [categoriasCadastradas, setCategoriasCadastradas] = useState([]);
@@ -88,7 +88,6 @@ const ContasPagar = () => {
   const [itensPorPagina, setItensPorPagina] = useState(10);
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [totalRegistros, setTotalRegistros] = useState(0);
-  const [mostrarServicos, setMostrarServicos] = useState(false);
 
   const [totais, setTotais] = useState({
     total_pago: 0,
@@ -116,6 +115,7 @@ const ContasPagar = () => {
         data_inicio: dataInicioFiltro,
         data_fim: dataFimFiltro,
         categoria_id: categoriaFiltro,
+        prestador_id: prestadorFiltro,
         status_pagamento: statusPagamentoFiltro,
         search: termoBusca,
       };
@@ -197,6 +197,7 @@ const ContasPagar = () => {
         data_inicio: dataInicioFiltro,
         data_fim: dataFimFiltro,
         categoria_id: categoriaFiltro,
+        prestador_id: prestadorFiltro,
         status_geral: statusPagamentoFiltro,
       };
 
@@ -206,66 +207,110 @@ const ContasPagar = () => {
         }
       });
 
-      const dadosImpressao = await buscarContasImprimir(filtrosAtuais);
+      const response = await buscarContasImprimir(filtrosAtuais);
+      const dadosBrutos = response.contas || [];
 
-      if (!dadosImpressao) {
-        throw new Error("Dados não encontrados");
+      if (dadosBrutos.length === 0) {
+        CustomToast({
+          type: "warning",
+          message: "Nenhum dado encontrado para imprimir.",
+        });
+        return;
       }
 
-      const contasParaImpressao = dadosImpressao.contas || [];
-
+      const dadosParaImprimir = contasPagarem(dadosBrutos);
       const totaisResponse = await buscarTotalContasPagar(filtrosAtuais);
 
-      const totaisParaImpressao = {
-        total_geral: totaisResponse?.total_geral || 0,
-        total_pago: totaisResponse?.total_pago || 0,
-        total_pendente: totaisResponse?.total_pendente || 0,
-        quantidade_contas:
-          totaisResponse?.quantidade_contas || contasParaImpressao.length,
-      };
+      const printWindow = window.open("", "_blank");
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Relatório de Contas a Pagar</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #9D4B5B; color: white; text-transform: uppercase; }
+              tr:nth-child(even) { background-color: #f9f9f9; }
+              h2 { color: #9D4B5B; margin-bottom: 5px; }
+              .header { text-align: center; border-bottom: 2px solid #9D4B5B; padding-bottom: 10px; margin-bottom: 20px; }
+              .summary { display: flex; justify-content: space-around; margin-top: 20px; padding: 15px; background: #f8f8f8; border: 1px solid #eee; border-radius: 8px; }
+              .summary-item { text-align: center; }
+              .summary-item span { display: block; font-size: 10px; color: #666; text-transform: uppercase; margin-bottom: 5px; }
+              .summary-item strong { display: block; color: #9D4B5B; font-size: 16px; }
+              .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #777; }
+              @media print {
+                .no-print { display: none; }
+                th { background-color: #9D4B5B !important; color: white !important; -webkit-print-color-adjust: exact; }
+                .summary { background-color: #f8f8f8 !important; -webkit-print-color-adjust: exact; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h2>Relatório de Contas a Pagar</h2>
+              <p>Gerado em: ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")}</p>
+            </div>
+            
+            <div class="summary">
+              <div class="summary-item">
+                <span>Total Geral</span>
+                <strong>${formatCurrency(totaisResponse?.total_geral || 0)}</strong>
+              </div>
+              <div class="summary-item">
+                <span>Total Pago</span>
+                <strong>${formatCurrency(totaisResponse?.total_pago || 0)}</strong>
+              </div>
+              <div class="summary-item">
+                <span>Total Pendente</span>
+                <strong>${formatCurrency(totaisResponse?.total_pendente || 0)}</strong>
+              </div>
+              <div class="summary-item">
+                <span>Qtd. Registros</span>
+                <strong>${dadosParaImprimir.length}</strong>
+              </div>
+            </div>
 
-      let categoriaNome = "";
-      if (categoriaFiltro && categoriasCadastradas.length > 0) {
-        const categoriaEncontrada = categoriasCadastradas.find(
-          (cat) => cat.id === parseInt(categoriaFiltro),
-        );
-        categoriaNome = categoriaEncontrada ? categoriaEncontrada.nome : "";
-      }
-
-      const filtrosExibicao = {
-        search: termoBusca || undefined,
-        dataInicio: dataInicioFiltro || undefined,
-        dataFim: dataFimFiltro || undefined,
-        categoria: categoriaNome,
-        status: statusPagamentoFiltro || undefined,
-      };
-
-      Object.keys(filtrosExibicao).forEach((key) => {
-        if (!filtrosExibicao[key]) {
-          delete filtrosExibicao[key];
-        }
-      });
-
-      console.log("Filtros para exibição:", filtrosExibicao);
-
-      const nomeArquivo = `relatorio_contas_pagar_${new Date().toISOString().split("T")[0]}.pdf`;
-
-      await exportContasPagarToPDF(
-        contasParaImpressao,
-        totaisParaImpressao,
-        filtrosExibicao,
-        nomeArquivo,
-      );
-
-      CustomToast({
-        type: "success",
-        message: "Relatório gerado com sucesso!",
-      });
+            <table>
+              <thead>
+                <tr>
+                  ${headerContasPagar.map((h) => `<th>${h.label}</th>`).join("")}
+                </tr>
+              </thead>
+              <tbody>
+                ${dadosParaImprimir
+                  .map(
+                    (row) => `
+                  <tr>
+                    ${headerContasPagar
+                      .map((h) => `<td>${row[h.key] || "-"}</td>`)
+                      .join("")}
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+            <div class="footer">
+              <p>Sistema Aidê - Gestão Financeira</p>
+            </div>
+            <script>
+              window.onload = function() { 
+                setTimeout(() => {
+                  window.print(); 
+                  window.close();
+                }, 500);
+              }
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
     } catch (error) {
       console.error("Erro ao imprimir:", error);
       CustomToast({
         type: "error",
-        message: error.message || "Erro ao gerar relatório",
+        message: "Erro ao gerar relatório para impressão.",
       });
     } finally {
       setLoading(false);
@@ -615,7 +660,14 @@ const ContasPagar = () => {
   const fetchTotais = async () => {
     try {
       setLoadingTotais(true);
-      const response = await buscarTotalContasPagar();
+      const filters = {
+        data_inicio: dataInicioFiltro,
+        data_fim: dataFimFiltro,
+        categoria_id: categoriaFiltro,
+        prestador_id: prestadorFiltro,
+        status_geral: statusPagamentoFiltro,
+      };
+      const response = await buscarTotalContasPagar(filters);
       setTotais(
         response || {
           total_pago: 0,
@@ -639,17 +691,30 @@ const ContasPagar = () => {
 
   const handleAbrirFiltro = async () => {
     try {
+      setLoading(true);
+      const promessas = [];
+      
       if (categoriasCadastradas.length === 0) {
-        const response = await buscarCategoria();
-        setCategoriasCadastradas(response.data || []);
+        promessas.push(buscarCategoria().then(res => setCategoriasCadastradas(res.data || [])));
       }
+      
+      if (listaPrestadores.length === 0) {
+        promessas.push(buscarPretadores().then(res => setListaPrestadores(res.data || [])));
+      }
+
+      if (promessas.length > 0) {
+        await Promise.all(promessas);
+      }
+      
       setFiltro(true);
     } catch (error) {
-      console.error("Erro ao carregar categorias:", error);
+      console.error("Erro ao carregar dados para filtro:", error);
       CustomToast({
         type: "error",
-        message: "Erro ao carregar categorias para filtro",
+        message: "Erro ao carregar dados para filtro",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -679,58 +744,22 @@ const ContasPagar = () => {
     }
   };
 
+
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        await fetchContasPagarComPaginacao(paginaAtual, itensPorPagina);
-        await fetchTotais();
+        await Promise.all([
+          fetchContasPagarComPaginacao(1, itensPorPagina),
+          fetchTotais()
+        ]);
       } catch (error) {
-        CustomToast({
-          type: "error",
-          message: "Erro ao carregar contas",
-        });
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    const fetchTotaisComFiltros = async () => {
-      try {
-        setLoadingTotais(true);
-        const queryParams = new URLSearchParams();
-
-        if (dataInicioFiltro)
-          queryParams.append("data_inicio", dataInicioFiltro);
-        if (dataFimFiltro) queryParams.append("data_fim", dataFimFiltro);
-        if (categoriaFiltro)
-          queryParams.append("categoria_id", categoriaFiltro);
-        if (statusPagamentoFiltro)
-          queryParams.append("status_geral", statusPagamentoFiltro);
-
-        const queryString = queryParams.toString();
-        const url = queryString
-          ? `/contas-pagar/totais?${queryString}`
-          : "/contas-pagar/totais";
-        await fetchTotais();
-      } catch (error) {
-        console.error("Erro ao buscar totais com filtros:", error);
-      } finally {
-        setLoadingTotais(false);
+        console.error("Erro ao carregar dados:", error);
       }
     };
 
     const timeoutId = setTimeout(() => {
-      fetchTotaisComFiltros();
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [dataInicioFiltro, dataFimFiltro, categoriaFiltro, statusPagamentoFiltro]);
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      fetchContasPagarComPaginacao(1, itensPorPagina);
+      fetchData();
     }, 500);
 
     return () => clearTimeout(timeoutId);
@@ -738,6 +767,7 @@ const ContasPagar = () => {
     dataInicioFiltro,
     dataFimFiltro,
     categoriaFiltro,
+    prestadorFiltro,
     statusPagamentoFiltro,
     termoBusca,
   ]);
@@ -760,166 +790,155 @@ const ContasPagar = () => {
             </div>
             <div className="w-[100%] itens-center mt-2 ml-2 sm:mt-0 md:flex md:justify-start flex-col lg:w-[82%]">
               <div className="flex itens-start flex-wrap gap-2 w-full mb-3">
-                <ContasPagarServico
-                  onClick={() => setMostrarServicos(!mostrarServicos)}
-                  isActive={mostrarServicos}
+                <div className="flex items-center justify-center w-[27%]">
+                  <label
+                    className="flex w-[100%] items-center justify-center text-xs gap-4 font-bold"
+                    style={{
+                      backgroundColor: "white",
+                      color: "#9D4B5B",
+                      border: "1px solid #9D4B5B",
+                      borderRadius: "10px",
+                      padding: "10px",
+                    }}
+                  >
+                    <MonetizationOnIcon /> Pendente:{" "}
+                    {loadingTotais ? (
+                      <CircularProgress size={16} />
+                    ) : (
+                      formatCurrency(totais.total_pendente)
+                    )}
+                  </label>
+                </div>
+                <div className="flex items-center justify-center w-[28%]">
+                  <label
+                    className="flex w-[100%] items-center justify-center text-xs gap-4 font-bold"
+                    style={{
+                      backgroundColor: "white",
+                      color: "#9D4B5B",
+                      border: "1px solid #9D4B5B",
+                      borderRadius: "10px",
+                      padding: "10px",
+                    }}
+                  >
+                    <MonetizationOnIcon /> Pago:{" "}
+                    {loadingTotais ? (
+                      <CircularProgress size={16} />
+                    ) : (
+                      formatCurrency(totais.total_pago)
+                    )}
+                  </label>
+                </div>
+                <div className="flex items-center justify-center  w-[30%]">
+                  <label
+                    className="flex w-[100%] items-center justify-center text-xs gap-4 font-bold"
+                    style={{
+                      backgroundColor: "#9D4B5B",
+                      color: "white",
+                      borderRadius: "10px",
+                      padding: "10px",
+                    }}
+                  >
+                    <MonetizationOnIcon /> Total:{" "}
+                    {loadingTotais ? (
+                      <CircularProgress size={16} />
+                    ) : (
+                      formatCurrency(totais.total_geral)
+                    )}
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex gap-2 flex-wrap w-full items-center justify-center md:justify-start">
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  size="small"
+                  label="Pesquisar"
+                  autoComplete="off"
+                  value={termoBusca}
+                  onChange={(e) => setTermoBusca(e.target.value)}
+                  sx={{
+                    width: { xs: "72%", sm: "50%", md: "40%", lg: "40%" },
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon />
+                      </InputAdornment>
+                    ),
+                  }}
                 />
-                {!mostrarServicos && (
+                <ButtonComponent
+                  startIcon={<AddCircleOutline fontSize="small" />}
+                  title={"Cadastrar"}
+                  subtitle={"Cadastrar"}
+                  buttonSize="large"
+                  onClick={handleAbrirModalCadastro}
+                />
+                <IconButton
+                  title="Filtro"
+                  onClick={handleAbrirFiltro}
+                  className="view-button w-10 h-10 "
+                  sx={{
+                    color: "black",
+                    border: "1px solid black",
+                    "&:hover": {
+                      color: "#fff",
+                      backgroundColor: "#9D4B5B",
+                      border: "1px solid black",
+                    },
+                  }}
+                >
+                  <FilterAlt fontSize={"small"} />
+                </IconButton>
+              </div>
+              <div className="w-full flex justify-center mb-4">
+                {loading ? (
+                  <div className="w-full flex items-center h-[300px] flex-col gap-3 justify-center">
+                    <TableLoading />
+                    <label className="text-xs text-primary">
+                      Carregando Informações !
+                    </label>
+                  </div>
+                ) : contasPagar.length > 0 ? (
                   <>
-                    <div className="flex items-center justify-center w-[27%]">
-                      <label
-                        className="flex w-[100%] items-center justify-center text-xs gap-4 font-bold"
-                        style={{
-                          backgroundColor: "white",
-                          color: "#9D4B5B",
-                          border: "1px solid #9D4B5B",
-                          borderRadius: "10px",
-                          padding: "10px",
-                        }}
-                      >
-                        <MonetizationOnIcon /> Pendente:{" "}
-                        {loadingTotais ? (
-                          <CircularProgress size={16} />
-                        ) : (
-                          formatCurrency(totais.total_pendente)
-                        )}
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-center w-[28%]">
-                      <label
-                        className="flex w-[100%] items-center justify-center text-xs gap-4 font-bold"
-                        style={{
-                          backgroundColor: "white",
-                          color: "#9D4B5B",
-                          border: "1px solid #9D4B5B",
-                          borderRadius: "10px",
-                          padding: "10px",
-                        }}
-                      >
-                        <MonetizationOnIcon /> Pago:{" "}
-                        {loadingTotais ? (
-                          <CircularProgress size={16} />
-                        ) : (
-                          formatCurrency(totais.total_pago)
-                        )}
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-center  w-[30%]">
-                      <label
-                        className="flex w-[100%] items-center justify-center text-xs gap-4 font-bold"
-                        style={{
-                          backgroundColor: "#9D4B5B",
-                          color: "white",
-                          borderRadius: "10px",
-                          padding: "10px",
-                        }}
-                      >
-                        <MonetizationOnIcon /> Total:{" "}
-                        {loadingTotais ? (
-                          <CircularProgress size={16} />
-                        ) : (
-                          formatCurrency(totais.total_geral)
-                        )}
-                      </label>
-                    </div>
+                    <TableComponent
+                      headers={headerContasPagar}
+                      rows={contasPagarem(contasPagar)}
+                      actionsLabel={"Ações"}
+                      actionCalls={{
+                        view: (row) => handleVisualizarParcelas(row),
+                        delete: (row) =>
+                          handleDeleteConta(row.id || row._id),
+                      }}
+                      pagination={true}
+                      forceShowDelete={true}
+                      totalRows={totalRegistros}
+                      page={paginaAtual}
+                      rowsPerPage={itensPorPagina}
+                      onPageChange={(newPage) => {
+                        fetchContasPagarComPaginacao(
+                          newPage,
+                          itensPorPagina,
+                        );
+                      }}
+                      onRowsPerPageChange={(newRowsPerPage) => {
+                        setItensPorPagina(newRowsPerPage);
+                        fetchContasPagarComPaginacao(1, newRowsPerPage);
+                      }}
+                    />
                   </>
+                ) : (
+                  <div className="text-center flex items-center mt-28 justify-center gap-5 flex-col text-primary">
+                    <TableLoading />
+                    <label className="text-sm">
+                      {termoBusca
+                        ? `Nenhum resultado encontrado para "${termoBusca}"`
+                        : "Nenhuma conta encontrada!"}
+                    </label>
+                  </div>
                 )}
               </div>
-              {!mostrarServicos && (
-                <>
-                  <div className="flex gap-2 flex-wrap w-full items-center justify-center md:justify-start">
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      label="Pesquisar"
-                      autoComplete="off"
-                      value={termoBusca}
-                      onChange={(e) => setTermoBusca(e.target.value)}
-                      sx={{
-                        width: { xs: "72%", sm: "50%", md: "40%", lg: "40%" },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <SearchIcon />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                    <ButtonComponent
-                      startIcon={<AddCircleOutline fontSize="small" />}
-                      title={"Cadastrar"}
-                      subtitle={"Cadastrar"}
-                      buttonSize="large"
-                      onClick={handleAbrirModalCadastro}
-                    />
-                    <IconButton
-                      title="Filtro"
-                      onClick={handleAbrirFiltro}
-                      className="view-button w-10 h-10 "
-                      sx={{
-                        color: "black",
-                        border: "1px solid black",
-                        "&:hover": {
-                          color: "#fff",
-                          backgroundColor: "#9D4B5B",
-                          border: "1px solid black",
-                        },
-                      }}
-                    >
-                      <FilterAlt fontSize={"small"} />
-                    </IconButton>
-                  </div>
-                  <div className="w-full flex justify-center mb-4">
-                    {loading ? (
-                      <div className="w-full flex items-center h-[300px] flex-col gap-3 justify-center">
-                        <TableLoading />
-                        <label className="text-xs text-primary">
-                          Carregando Informações !
-                        </label>
-                      </div>
-                    ) : contasPagar.length > 0 ? (
-                      <>
-                        <TableComponent
-                          headers={headerContasPagar}
-                          rows={contasPagarem(contasPagar)}
-                          actionsLabel={"Ações"}
-                          actionCalls={{
-                            view: (row) => handleVisualizarParcelas(row),
-                            delete: (row) =>
-                              handleDeleteConta(row.id || row._id),
-                          }}
-                          pagination={true}
-                          forceShowDelete={true}
-                          totalRows={totalRegistros}
-                          page={paginaAtual}
-                          rowsPerPage={itensPorPagina}
-                          onPageChange={(newPage) => {
-                            fetchContasPagarComPaginacao(
-                              newPage,
-                              itensPorPagina,
-                            );
-                          }}
-                          onRowsPerPageChange={(newRowsPerPage) => {
-                            setItensPorPagina(newRowsPerPage);
-                            fetchContasPagarComPaginacao(1, newRowsPerPage);
-                          }}
-                        />
-                      </>
-                    ) : (
-                      <div className="text-center flex items-center mt-28 justify-center gap-5 flex-col text-primary">
-                        <TableLoading />
-                        <label className="text-sm">
-                          {termoBusca
-                            ? `Nenhum resultado encontrado para "${termoBusca}"`
-                            : "Nenhuma conta encontrada!"}
-                        </label>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
               <CentralModal
                 tamanhoTitulo={"81%"}
                 maxHeight={"90vh"}
@@ -1289,8 +1308,42 @@ const ContasPagar = () => {
 
                     <Autocomplete
                       fullWidth
+                      options={listaPrestadores}
+                      getOptionLabel={(option) => option.nome || ""}
+                      value={
+                        listaPrestadores.find(
+                          (p) => p.id === prestadorFiltro,
+                        ) || null
+                      }
+                      onChange={(event, newValue) => {
+                        setPrestadorFiltro(newValue ? newValue.id : "");
+                      }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          variant="outlined"
+                          size="small"
+                          label="Prestador"
+                          InputProps={{
+                            ...params.InputProps,
+                            startAdornment: (
+                              <>
+                                <InputAdornment position="start">
+                                  <Person />
+                                </InputAdornment>
+                                {params.InputProps.startAdornment}
+                              </>
+                            ),
+                          }}
+                        />
+                      )}
+                      sx={{ width: "95%" }}
+                    />
+
+                    <Autocomplete
+                      fullWidth
                       options={categoriasCadastradas}
-                      getOptionLabel={(option) => option.nome}
+                      getOptionLabel={(option) => option.nome || ""}
                       value={
                         categoriasCadastradas.find(
                           (cat) => cat.id === categoriaFiltro,
@@ -1365,9 +1418,20 @@ const ContasPagar = () => {
                           setDataInicioFiltro("");
                           setDataFimFiltro("");
                           setCategoriaFiltro("");
+                          setPrestadorFiltro("");
                           setStatusPagamentoFiltro("");
                         }}
                         variant="outlined"
+                      />
+
+                      <ButtonComponent
+                        startIcon={<Print fontSize="small" />}
+                        title={"Imprimir"}
+                        subtitle={"Relatório"}
+                        buttonSize="large"
+                        onClick={handleImprimir}
+                        variant="outlined"
+                        style={{ color: "#9D4B5B", borderColor: "#9D4B5B" }}
                       />
 
                       <ButtonComponent
@@ -1397,6 +1461,16 @@ const ContasPagar = () => {
                     className="flex flex-col gap-4 w-full"
                     style={{ maxHeight: "500px", overflow: "auto" }}
                   >
+                    {contaEditando?.cliente_nome && (
+                      <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mb-2">
+                        <div className="flex items-center">
+                          <Person className="text-blue-400 mr-2" fontSize="small" />
+                          <span className="text-sm font-semibold text-blue-700">
+                            Cliente: {contaEditando.cliente_nome}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                     {loadingParcelas ? (
                       <div className="flex justify-center items-center h-40">
                         <CircularProgress />

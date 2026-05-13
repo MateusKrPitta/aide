@@ -24,6 +24,7 @@ const Lines = ({
   color,
   border,
   flexWrap,
+  flex,
   zIndex,
   onClick
 }) => {
@@ -49,6 +50,7 @@ const Lines = ({
     border: border,
     marginLeft: marginLeft,
     flexWrap: flexWrap || 'wrap',
+    flex: flex,
     whiteSpace: whiteSpace,
     zIndex: zIndex
   };

@@ -1,7 +1,7 @@
 import CustomToast from "../../components/toast";
 import httpsInstance from "../url";
 
-export const buscarTotalContasPagar = async () => {
+export const buscarTotalContasPagar = async (params = {}) => {
   const https = httpsInstance();
   const token = sessionStorage.getItem("token");
 
@@ -10,6 +10,7 @@ export const buscarTotalContasPagar = async () => {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      params: params
     });
     return response.data;
   } catch (error) {

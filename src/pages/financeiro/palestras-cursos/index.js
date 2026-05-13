@@ -24,6 +24,8 @@ import { headerPalestras } from "../../../entities/header/financeiro/palestras";
 import { atualizarStatusPagParcela } from "../../../service/put/relatorio-palestra-cursos";
 import { exportRelatorioPalestrasToPDF } from "./imprimir";
 import { buscarRelatorioTotalPalestras } from "../../../service/get/total-palestras-valor";
+import { buscarClientes } from "../../../service/get/clientes";
+import { listarTiposPalestra } from "../../../service/get/tipo-palestra";
 
 const RelatorioPalestrasCursos = () => {
   const [loading, setLoading] = useState(false);
@@ -62,36 +64,20 @@ const RelatorioPalestrasCursos = () => {
 
   const extrairOpcoesFiltro = async () => {
     try {
-      const response = await buscarRelatorioTotalPalestras({
-        page: 1,
-        perPage: 1000,
-      });
+      const [resClientes, resTipos] = await Promise.all([
+        buscarClientes(),
+        listarTiposPalestra()
+      ]);
 
-      if (response && response.data && response.data.dados) {
-        const clientesUnicos = [];
-        const tiposPalestraUnicos = [];
+      if (resClientes && resClientes.data) {
+        setClientesOptions(resClientes.data.filter(c => c.ativo));
+      }
 
-        response.data.dados.forEach((item) => {
-          if (
-            item.cliente &&
-            !clientesUnicos.some((c) => c.id === item.cliente.id)
-          ) {
-            clientesUnicos.push(item.cliente);
-          }
-
-          if (
-            item.tipoPalestra &&
-            !tiposPalestraUnicos.some((t) => t.id === item.tipoPalestra.id)
-          ) {
-            tiposPalestraUnicos.push(item.tipoPalestra);
-          }
-        });
-
-        setClientesOptions(clientesUnicos);
-        setTiposPalestraOptions(tiposPalestraUnicos);
+      if (resTipos && resTipos.data) {
+        setTiposPalestraOptions(resTipos.data);
       }
     } catch (error) {
-      console.error("Erro ao extrair opções de filtro:", error);
+      console.error("Erro ao carregar opções de filtro:", error);
     }
   };
 
@@ -225,8 +211,10 @@ const RelatorioPalestrasCursos = () => {
   };
 
   useEffect(() => {
-    extrairOpcoesFiltro();
-  }, []);
+    if (filtro) {
+      extrairOpcoesFiltro();
+    }
+  }, [filtro]);
 
   useEffect(() => {
     carregarRelatorioPalestras();
@@ -539,8 +527,8 @@ const RelatorioPalestrasCursos = () => {
                       sx={{ width: "100%" }}
                     >
                       <MenuItem value="">Todos</MenuItem>
-                      <MenuItem value="Pago">Pago</MenuItem>
-                      <MenuItem value="Pendente">Pendente</MenuItem>
+                      <MenuItem value="2">Pago</MenuItem>
+                      <MenuItem value="1">Pendente</MenuItem>
                     </TextField>
 
                     {/* Botões de ação */}
@@ -688,10 +676,8 @@ const RelatorioPalestrasCursos = () => {
                                     }
                                     variant="outlined"
                                   >
-                                    <MenuItem value="2">Pendente</MenuItem>{" "}
-                                    {/* ← CORRIGIDO: 2 = Pendente */}
-                                    <MenuItem value="1">Pago</MenuItem>{" "}
-                                    {/* ← CORRIGIDO: 1 = Pago */}
+                                    <MenuItem value={1}>Pendente</MenuItem>
+                                    <MenuItem value={2}>Pago</MenuItem>
                                   </TextField>
                                 </p>
                               </div>

@@ -24,7 +24,7 @@ import {
   Edit,
   Person,
 } from "@mui/icons-material";
-import { IconButton, InputAdornment, MenuItem, TextField } from "@mui/material";
+import { Autocomplete, IconButton, InputAdornment, MenuItem, TextField } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { motion } from "framer-motion";
 import TableLoading from "../../../components/loading/loading-table/loading";
@@ -38,6 +38,7 @@ import { buscarFluxoCaixa } from "../../../service/get/fluxo-caixa";
 import { deletarFluxoCaixa } from "../../../service/delete/fluxo-caixa";
 import { atualizarFluxoCaixa } from "../../../service/put/fluxo-caixa";
 import { buscarTotalFluxoCaixa } from "../../../service/get/total-fluxo-caixa";
+import { buscarFluxoCaixaImprimir } from "../../../service/get/fluxo-caixa";
 import { cadastrosFluxoCaixa } from "../../../entities/class/fluxo-caixa";
 
 const FluxoCaixa = () => {
@@ -75,13 +76,11 @@ const FluxoCaixa = () => {
 
   const [filtrosAtivos, setFiltrosAtivos] = useState(false);
   const [pesquisa, setPesquisa] = useState("");
-
   const [filtros, setFiltros] = useState({
     dataInicio: "",
     dataFim: "",
     tipoFiltro: "",
     categoriaFiltro: "",
-    statusFiltro: "",
     origemFiltro: "",
   });
   const [filtro, setFiltro] = useState(false);
@@ -180,13 +179,142 @@ const FluxoCaixa = () => {
       dataFim: "",
       tipoFiltro: "",
       categoriaFiltro: "",
-      statusFiltro: "",
       origemFiltro: "",
     });
     setPesquisa("");
     setFiltrosAtivos(false);
     buscarFluxo(1, fluxoData.perPage);
     buscarTotais();
+  };
+
+  const handleImprimir = async () => {
+    try {
+      setLoading(true);
+
+      const response = await buscarFluxoCaixaImprimir(filtros);
+      const dadosBrutos = response.movimentacoes || [];
+
+      if (dadosBrutos.length === 0) {
+        CustomToast({
+          type: "warning",
+          message: "Nenhum dado encontrado para imprimir.",
+        });
+        return;
+      }
+
+      const printWindow = window.open("", "_blank");
+
+      const formatarMoeda = (valor) => {
+        return valor.toLocaleString("pt-BR", {
+          style: "currency",
+          currency: "BRL",
+        });
+      };
+
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Relatório de Fluxo de Caixa</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #9D4B5B; color: white; text-transform: uppercase; }
+              tr:nth-child(even) { background-color: #f9f9f9; }
+              h2 { color: #9D4B5B; margin-bottom: 5px; }
+              .header { text-align: center; border-bottom: 2px solid #9D4B5B; padding-bottom: 10px; margin-bottom: 20px; }
+              .summary { display: flex; justify-content: space-around; margin-top: 20px; padding: 15px; background: #f8f8f8; border: 1px solid #eee; border-radius: 8px; }
+              .summary-item { text-align: center; }
+              .summary-item span { display: block; font-size: 10px; color: #666; text-transform: uppercase; margin-bottom: 5px; }
+              .summary-item strong { display: block; color: #9D4B5B; font-size: 16px; }
+              .item-entrada { color: #2e7d32; font-weight: bold; }
+              .item-saida { color: #d32f2f; font-weight: bold; }
+              .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #777; }
+              @media print {
+                .no-print { display: none; }
+                th { background-color: #9D4B5B !important; color: white !important; -webkit-print-color-adjust: exact; }
+                .summary { background-color: #f8f8f8 !important; -webkit-print-color-adjust: exact; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h2>Relatório de Fluxo de Caixa</h2>
+              <p>Gerado em: ${response.data_geracao}</p>
+              <p style="font-size: 12px; color: #666;">Período: ${response.filtros_aplicados.periodo} | Origem: ${response.filtros_aplicados.origem}</p>
+            </div>
+            
+            <div class="summary">
+              <div class="summary-item">
+                <span>Total Entradas</span>
+                <strong style="color: #2e7d32;">${formatarMoeda(response.totais.total_entradas)}</strong>
+              </div>
+              <div class="summary-item">
+                <span>Total Saídas</span>
+                <strong style="color: #d32f2f;">${formatarMoeda(response.totais.total_saidas)}</strong>
+              </div>
+              <div class="summary-item">
+                <span>Saldo Período</span>
+                <strong>${formatarMoeda(response.totais.saldo)}</strong>
+              </div>
+              <div class="summary-item">
+                <span>Qtd. Movimentações</span>
+                <strong>${response.totais.quantidade_movimentacoes}</strong>
+              </div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Tipo</th>
+                  <th>Descrição</th>
+                  <th>Categoria</th>
+                  <th>Origem</th>
+                  <th>Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${dadosBrutos
+                  .map(
+                    (row) => `
+                  <tr>
+                    <td>${new Date(row.data).toLocaleDateString("pt-BR")}</td>
+                    <td class="${row.tipo === "Entrada" ? "item-entrada" : "item-saida"}">${row.tipo}</td>
+                    <td>${row.descricao || "-"}</td>
+                    <td>${row.categoria || "-"}</td>
+                    <td>${row.origem || "-"}</td>
+                    <td>${formatarMoeda(row.valor)}</td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+            <div class="footer">
+              <p>Sistema Aidê - Gestão Financeira</p>
+            </div>
+            <script>
+              window.onload = function() { 
+                setTimeout(() => {
+                  window.print(); 
+                  window.close();
+                }, 500);
+              }
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } catch (error) {
+      console.error("Erro ao imprimir:", error);
+      CustomToast({
+        type: "error",
+        message: "Erro ao gerar relatório para impressão.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const FecharFiltro = () => setFiltro(false);
@@ -579,122 +707,9 @@ const FluxoCaixa = () => {
     buscarFluxo(newPage, fluxoData.perPage);
   };
 
-  const buscarTodosParaImpressao = async () => {
-    try {
-      setLoading(true);
 
-      const params = new URLSearchParams();
-      params.append("page", 1);
-      params.append("perPage", 1000000);
 
-      const response = await buscarFluxoCaixa(params);
-      return response.data;
-    } catch (error) {
-      console.error("Erro ao buscar dados para impressão:", error);
-      CustomToast({
-        type: "error",
-        message: "Erro ao gerar relatório",
-      });
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const gerarPDF = async () => {
-    setLoading(true);
-
-    try {
-      const todosDados = await buscarTodosParaImpressao();
-
-      if (!todosDados || todosDados.length === 0) {
-        CustomToast({
-          type: "warning",
-          message: "Nenhum dado encontrado para gerar o relatório",
-        });
-        setLoading(false);
-        return;
-      }
-
-      const [jsPDFModule, autoTableModule] = await Promise.all([
-        import("jspdf"),
-        import("jspdf-autotable"),
-      ]);
-
-      const { jsPDF } = jsPDFModule;
-      const doc = new jsPDF();
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(16);
-      doc.text("Relatório de Fluxo de Caixa", 14, 15);
-
-      doc.setFontSize(10);
-      doc.text(
-        `Data de emissão: ${new Date().toLocaleDateString("pt-BR")}`,
-        14,
-        22,
-      );
-
-      doc.text(`Total de registros: ${todosDados.length}`, 14, 29);
-
-      const dadosTabela = todosDados.map((item) => [
-        item.status === "pago"
-          ? "Pago"
-          : item.status === "vencido"
-            ? "Vencido"
-            : "Pendente",
-        item.tipo,
-        new Date(item.data).toLocaleDateString("pt-BR"),
-        item.descricao,
-        item.categoria_nome || "Sem categoria",
-        `R$ ${item.valor.toFixed(2).replace(".", ",")}`,
-      ]);
-
-      autoTableModule.default(doc, {
-        head: [["Status", "Tipo", "Data", "Descrição", "Categoria", "Valor"]],
-        body: dadosTabela,
-        startY: 35,
-        styles: {
-          fontSize: 8,
-          cellPadding: 2,
-          overflow: "linebreak",
-        },
-        columnStyles: {
-          0: { cellWidth: 25 },
-          1: { cellWidth: 20 },
-          2: { cellWidth: 25 },
-          3: { cellWidth: 60 },
-          4: { cellWidth: 30 },
-          5: { cellWidth: 25, halign: "right" },
-        },
-        headStyles: {
-          fontStyle: "bold",
-          textColor: 0,
-          fillColor: [240, 240, 240],
-        },
-        didDrawPage: (data) => {
-          doc.setFontSize(8);
-          doc.text(
-            `Página ${data.pageNumber}`,
-            doc.internal.pageSize.width - 14,
-            doc.internal.pageSize.height - 5,
-          );
-        },
-      });
-
-      const nomeArquivo = `fluxo-caixa-completo-${new Date().toISOString().slice(0, 10)}.pdf`;
-      doc.save(nomeArquivo);
-
-      CustomToast({
-        type: "success",
-        message: "Relatório gerado com sucesso!",
-      });
-    } catch (error) {
-      console.error("Erro ao gerar PDF:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handlePerPageChange = (newPerPage) => {
     buscarFluxo(1, newPerPage);
@@ -736,7 +751,6 @@ const FluxoCaixa = () => {
       filtros.dataFim ||
       filtros.tipoFiltro ||
       filtros.categoriaFiltro ||
-      filtros.statusFiltro ||
       filtros.origemFiltro ||
       pesquisa;
     setFiltrosAtivos(temFiltros);
@@ -907,7 +921,7 @@ const FluxoCaixa = () => {
                       border: "1px solid black",
                     },
                   }}
-                  onClick={gerarPDF}
+                  onClick={handleImprimir}
                   disabled={loading}
                 >
                   <Print fontSize={"small"} />
@@ -1061,31 +1075,36 @@ const FluxoCaixa = () => {
                       }}
                     />
 
-                    <TextField
-                      select
+                    <Autocomplete
                       fullWidth
-                      variant="outlined"
                       size="small"
-                      label="Categoria"
-                      value={categoriaId}
-                      onChange={(e) => setCategoriaId(e.target.value)}
+                      options={categoriasCadastradas}
+                      getOptionLabel={(option) => option.nome || ""}
+                      value={categoriasCadastradas.find(cat => cat.id === parseInt(categoriaId)) || null}
+                      onChange={(event, newValue) => setCategoriaId(newValue ? newValue.id.toString() : "")}
                       sx={{
                         width: { xs: "100%", sm: "50%", md: "40%", lg: "47%" },
                       }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Category />
-                          </InputAdornment>
-                        ),
-                      }}
-                    >
-                      {categoriasCadastradas.map((categoria) => (
-                        <MenuItem key={categoria.id} value={categoria.id}>
-                          {categoria.nome}
-                        </MenuItem>
-                      ))}
-                    </TextField>
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Categoria"
+                          variant="outlined"
+                          InputProps={{
+                            ...params.InputProps,
+                            startAdornment: (
+                              <>
+                                <InputAdornment position="start">
+                                  <Category />
+                                </InputAdornment>
+                                {params.InputProps.startAdornment}
+                              </>
+                            ),
+                          }}
+                        />
+                      )}
+                      noOptionsText="Nenhuma categoria encontrada"
+                    />
 
                     {/* Campo Valor com máscara */}
                     <TextField
@@ -1192,37 +1211,7 @@ const FluxoCaixa = () => {
                       }}
                     />
 
-                    <TextField
-                      select
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      label="Status"
-                      value={filtros.statusFiltro}
-                      onChange={(e) =>
-                        setFiltros({ ...filtros, statusFiltro: e.target.value })
-                      }
-                      sx={{
-                        width: { xs: "100%", sm: "50%", md: "40%", lg: "47%" },
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            {filtros.statusFiltro === "pago" ? (
-                              <CheckCircle />
-                            ) : filtros.statusFiltro === "pendente" ? (
-                              <Pending />
-                            ) : (
-                              <FilterAlt />
-                            )}
-                          </InputAdornment>
-                        ),
-                      }}
-                    >
-                      <MenuItem value="">Todos</MenuItem>
-                      <MenuItem value="pendente">Pendente</MenuItem>
-                      <MenuItem value="pago">Pago</MenuItem>
-                    </TextField>
+
 
                     <TextField
                       select
@@ -1250,40 +1239,41 @@ const FluxoCaixa = () => {
                       <MenuItem value="saida">Saída</MenuItem>
                     </TextField>
 
-                    <TextField
-                      select
+                    <Autocomplete
                       fullWidth
-                      variant="outlined"
                       size="small"
-                      label="Categoria"
-                      value={filtros.categoriaFiltro}
-                      onChange={(e) =>
+                      options={categoriasCadastradas}
+                      getOptionLabel={(option) => option.nome || ""}
+                      value={categoriasCadastradas.find(cat => cat.id.toString() === filtros.categoriaFiltro) || null}
+                      onChange={(event, newValue) =>
                         setFiltros({
                           ...filtros,
-                          categoriaFiltro: e.target.value,
+                          categoriaFiltro: newValue ? newValue.id.toString() : "",
                         })
                       }
                       sx={{
                         width: { xs: "100%", sm: "50%", md: "40%", lg: "47%" },
                       }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Category />
-                          </InputAdornment>
-                        ),
-                      }}
-                    >
-                      <MenuItem value="">Todas</MenuItem>
-                      {categoriasCadastradas.map((categoria) => (
-                        <MenuItem
-                          key={categoria.id}
-                          value={categoria.id.toString()}
-                        >
-                          {categoria.nome}
-                        </MenuItem>
-                      ))}
-                    </TextField>
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Categoria"
+                          variant="outlined"
+                          InputProps={{
+                            ...params.InputProps,
+                            startAdornment: (
+                              <>
+                                <InputAdornment position="start">
+                                  <Category />
+                                </InputAdornment>
+                                {params.InputProps.startAdornment}
+                              </>
+                            ),
+                          }}
+                        />
+                      )}
+                      noOptionsText="Nenhuma categoria encontrada"
+                    />
                     <TextField
                       select
                       fullWidth
@@ -1355,6 +1345,13 @@ const FluxoCaixa = () => {
                         buttonSize="large"
                         onClick={limparFiltros}
                         disabled={!filtrosAtivos}
+                      />
+                      <ButtonComponent
+                        startIcon={<Print fontSize="small" />}
+                        title={"Imprimir"}
+                        subtitle={"Imprimir"}
+                        buttonSize="large"
+                        onClick={handleImprimir}
                       />
                     </div>
                   </div>
@@ -1452,31 +1449,36 @@ const FluxoCaixa = () => {
                     />
 
                     {/* Categoria - editável */}
-                    <TextField
-                      select
+                    <Autocomplete
                       fullWidth
-                      variant="outlined"
                       size="small"
-                      label="Categoria"
-                      value={categoriaId}
-                      onChange={(e) => setCategoriaId(e.target.value)}
+                      options={categoriasCadastradas}
+                      getOptionLabel={(option) => option.nome || ""}
+                      value={categoriasCadastradas.find(cat => cat.id === parseInt(categoriaId)) || null}
+                      onChange={(event, newValue) => setCategoriaId(newValue ? newValue.id.toString() : "")}
                       sx={{
                         width: { xs: "100%", sm: "50%", md: "48%", lg: "48%" },
                       }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Category />
-                          </InputAdornment>
-                        ),
-                      }}
-                    >
-                      {categoriasCadastradas.map((categoria) => (
-                        <MenuItem key={categoria.id} value={categoria.id}>
-                          {categoria.nome}
-                        </MenuItem>
-                      ))}
-                    </TextField>
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Categoria"
+                          variant="outlined"
+                          InputProps={{
+                            ...params.InputProps,
+                            startAdornment: (
+                              <>
+                                <InputAdornment position="start">
+                                  <Category />
+                                </InputAdornment>
+                                {params.InputProps.startAdornment}
+                              </>
+                            ),
+                          }}
+                        />
+                      )}
+                      noOptionsText="Nenhuma categoria encontrada"
+                    />
 
                     {prestador && (
                       <TextField
@@ -1550,6 +1552,8 @@ const FluxoCaixa = () => {
                   </div>
                 }
               />
+              {/* Modal de Impressão */}
+
             </div>
           </div>
         </motion.div>
