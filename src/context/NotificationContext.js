@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { buscarContasPagarPendente } from "../service/get/contas-pagar-pendente";
 import { buscarServicoPendente } from "../service/get/servico-pendente";
 import { buscarContasReceberPendente } from "../service/get/contas-receber-pendente";
@@ -145,6 +146,14 @@ export const NotificationProvider = ({ children }) => {
   }, []);
 
   const fetchAllNotifications = useCallback(async (force = false) => {
+    // Só busca se houver token e não estiver na tela de login
+    const token = sessionStorage.getItem("token");
+    const isLoginPage = window.location.pathname === "/";
+    
+    if (!token || isLoginPage) {
+        return;
+    }
+
     // Evita chamadas repetidas se já buscou nos últimos 5 minutos (a menos que seja forçado)
     const now = new Date();
     if (!force && lastFetch && (now - lastFetch < 5 * 60 * 1000)) {
@@ -191,11 +200,16 @@ export const NotificationProvider = ({ children }) => {
     setNotifications({ contas: [], servicos: [], contasReceber: [], comissoes: [] });
   };
 
+  const location = useLocation();
+
   useEffect(() => {
     fetchAllNotifications();
+  }, [location.pathname, fetchAllNotifications]);
+
+  useEffect(() => {
     const interval = setInterval(() => fetchAllNotifications(), 30 * 60 * 1000); // 30 min
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchAllNotifications]);
 
   const unreadCount = 
     notifications.contas.filter(n => !n.read).length +
