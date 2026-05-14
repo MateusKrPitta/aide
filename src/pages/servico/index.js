@@ -487,7 +487,7 @@ const Servico = () => {
               valorPrestador: 0,
               is_servico_aide: false,
               dataInicio: new Date().toISOString().split("T")[0],
-              dataEntrega: new Date().toISOString().split("T")[0],
+              dataEntrega: "",
               dataPagamento: new Date().toISOString().split("T")[0],
             },
           },
@@ -569,7 +569,7 @@ const Servico = () => {
               : parseFloat(servico.pagamento.valorPrestador),
             is_servico_aide: servico.pagamento.is_servico_aide,
             data_inicio: servico.pagamento.dataInicio,
-            data_entrega: servico.pagamento.dataEntrega,
+            data_entrega: servico.pagamento.dataEntrega || null,
             data_pagamento: servico.pagamento.dataPagamento,
           })),
         };
@@ -618,8 +618,7 @@ const Servico = () => {
               servico.data_inicio?.split("T")[0] ||
               new Date().toLocaleDateString("en-CA"),
             dataEntrega:
-              servico.data_entrega?.split("T")[0] ||
-              new Date().toLocaleDateString("en-CA"),
+              servico.data_entrega?.split("T")[0] || "",
             dataPagamento:
               servico.data_pagamento?.split("T")[0] ||
               new Date().toLocaleDateString("en-CA"),

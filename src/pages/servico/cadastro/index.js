@@ -224,7 +224,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
               valorPrestador: 0,
               is_servico_aide: false,
               dataInicio: new Date().toLocaleDateString("en-CA"),
-              dataEntrega: new Date().toLocaleDateString("en-CA"),
+              dataEntrega: "",
               dataPagamento: new Date().toLocaleDateString("en-CA"),
             },
           },
@@ -303,9 +303,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
           data_inicio:
             servico.pagamento.dataInicio ||
             new Date().toISOString().split("T")[0],
-          data_entrega:
-            servico.pagamento.dataEntrega ||
-            new Date().toISOString().split("T")[0],
+          data_entrega: servico.pagamento.dataEntrega || null,
           data_pagamento:
             servico.pagamento.dataPagamento ||
             new Date().toISOString().split("T")[0],
