@@ -382,12 +382,15 @@ const Servico = () => {
       );
 
       if (servicoIndex !== -1) {
-        const numericValue =
-          field === "tipo" || field === "metodo"
+        const valueToSet =
+          field === "tipo" ||
+          field === "metodo" ||
+          field.includes("data") ||
+          field === "is_servico_aide"
             ? value
             : parseFloat(value) || 0;
 
-        updated[prestadorId][servicoIndex].pagamento[field] = numericValue;
+        updated[prestadorId][servicoIndex].pagamento[field] = valueToSet;
 
         if (field === "tipo") {
           if (value === "1") {
@@ -400,13 +403,13 @@ const Servico = () => {
         if (field === "valorTotal") {
           updated[prestadorId][servicoIndex].pagamento.valorParcela =
             updated[prestadorId][servicoIndex].pagamento.tipo === "1"
-              ? numericValue
-              : numericValue /
+              ? valueToSet
+              : valueToSet /
                 updated[prestadorId][servicoIndex].pagamento.parcelas;
 
           // Recalcula comissão
           updated[prestadorId][servicoIndex].pagamento.comissao =
-            numericValue -
+            valueToSet -
             (updated[prestadorId][servicoIndex].pagamento.valorPrestador || 0);
         }
 
@@ -414,7 +417,7 @@ const Servico = () => {
           // Recalcula comissão
           updated[prestadorId][servicoIndex].pagamento.comissao =
             (updated[prestadorId][servicoIndex].pagamento.valorTotal || 0) -
-            numericValue;
+            valueToSet;
         }
 
         if (field === "is_servico_aide") {
@@ -1376,14 +1379,10 @@ const Servico = () => {
                                                       e.target.value,
                                                     )
                                                   }
-                                                  InputProps={{
-                                                    startAdornment: (
-                                                      <InputAdornment position="start">
-                                                        <Money />
-                                                      </InputAdornment>
-                                                    ),
+                                                  InputLabelProps={{
+                                                    shrink: true,
                                                   }}
-                                                ></TextField>
+                                                />
                                                 <TextField
                                                   fullWidth
                                                   variant="outlined"
@@ -1402,15 +1401,11 @@ const Servico = () => {
                                                       e.target.value,
                                                     )
                                                   }
-                                                  style={{ width: "27%" }}
-                                                  InputProps={{
-                                                    startAdornment: (
-                                                      <InputAdornment position="start">
-                                                        <Money />
-                                                      </InputAdornment>
-                                                    ),
+                                                  style={{ width: "25%" }}
+                                                  InputLabelProps={{
+                                                    shrink: true,
                                                   }}
-                                                ></TextField>
+                                                />
                                               </div>
                                             </div>
                                           ))}

@@ -76,7 +76,9 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
           {
             method: formaPagamento,
             value: valorNumerico,
-            date: palestra.data ? formatDateForInput(palestra.data) : "",
+            date: palestra.primeira_data_parcela 
+              ? formatDateForInput(palestra.primeira_data_parcela) 
+              : (palestra.data ? formatDateForInput(palestra.data) : ""),
           },
         ]);
         setTotalPaid(valorNumerico);
@@ -97,8 +99,16 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
 
   const formatDateForInput = (dateString) => {
     if (!dateString) return "";
-    const parts = dateString.split("/");
-    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    if (dateString.includes("-")) {
+      return dateString.split("T")[0];
+    }
+    if (dateString.includes("/")) {
+      const parts = dateString.split("/");
+      if (parts.length === 3) {
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+    }
+    return dateString;
   };
 
   const formatTimeForInput = (timeString) => {

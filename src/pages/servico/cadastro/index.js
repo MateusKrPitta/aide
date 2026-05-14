@@ -900,14 +900,10 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                               e.target.value,
                                             )
                                           }
-                                          InputProps={{
-                                            startAdornment: (
-                                              <InputAdornment position="start">
-                                                <Money />
-                                              </InputAdornment>
-                                            ),
+                                          InputLabelProps={{
+                                            shrink: true,
                                           }}
-                                        ></TextField>
+                                        />
                                         <TextField
                                           fullWidth
                                           variant="outlined"
@@ -926,14 +922,10 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                             )
                                           }
                                           style={{ width: "25%" }}
-                                          InputProps={{
-                                            startAdornment: (
-                                              <InputAdornment position="start">
-                                                <Money />
-                                              </InputAdornment>
-                                            ),
+                                          InputLabelProps={{
+                                            shrink: true,
                                           }}
-                                        ></TextField>
+                                        />
                                       </div>
                                     </div>
                                   ),

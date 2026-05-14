@@ -439,7 +439,7 @@ const CadastrarPalestra = ({ onSuccess }) => {
         qtd_parcelas:
           paymentType === "Parcelado" ? parseInt(installments, 10) : null,
         primeira_data_parcela:
-          paymentType === "Parcelado" ? currentPaymentDate : null,
+          paymentMethods[0]?.date || primeiraSessao.data,
       };
       if (!dadosEnvio.data) {
         throw new Error("Data é obrigatória");
