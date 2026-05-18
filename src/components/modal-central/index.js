@@ -33,7 +33,7 @@ const CentralModal = ({
         <Box
           sx={{
             position: "absolute",
-            top: { xs: "10%", sm: "20%", md: "15%", lg: top || "15%" },
+            top: { xs: "10%", sm: "15%", md: "15%", lg: top || "15%" },
             left: { xs: "5%", sm: "15%", md: "15%", lg: left || "20%" },
             bottom: { bottom },
             maxHeight: maxHeight || "90vh",
@@ -115,7 +115,7 @@ const CentralModal = ({
           </Box>
 
           {/* Conteúdo do modal */}
-          <Box id="central-modal-description" sx={{ mb: 2 }}>
+          <Box id="central-modal-description" >
             {children}
           </Box>
         </Box>

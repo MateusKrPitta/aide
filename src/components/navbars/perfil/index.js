@@ -97,7 +97,7 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
     setNotifAnchorEl(event.currentTarget);
     
     // Marcar aba atual como lida
-    const tipos = ["contas", "servicos", "contasReceber", "comissoes"];
+    const tipos = ["contas", "servicos", "contasReceber"];
     markAsRead(tipos[notificationTab]);
   };
 
@@ -125,7 +125,6 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
       contas: "contas a pagar",
       servicos: "serviços",
       contasReceber: "contas a receber",
-      comissoes: "comissões",
     }[type];
 
     CustomToast({
@@ -152,8 +151,6 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
         return notifications.servicos;
       case 2:
         return notifications.contasReceber;
-      case 3:
-        return notifications.comissoes;
       default:
         return [];
     }
@@ -167,8 +164,6 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
         return notifications.servicos.length;
       case 2:
         return notifications.contasReceber.length;
-      case 3:
-        return notifications.comissoes.length;
       default:
         return 0;
     }
@@ -178,104 +173,7 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
     return contextLoading;
   };
 
-  const renderComissaoNotification = (notification) => (
-    <ListItem
-      button
-      key={notification.id}
-      sx={{
-        backgroundColor: notification.read
-          ? "transparent"
-          : notification.urgencia === "critico"
-            ? "#ffebee"
-            : notification.urgencia === "alto"
-              ? "#fff3e0"
-              : notification.urgencia === "medio"
-                ? "#fff8e1"
-                : "transparent",
-        "&:hover": {
-          backgroundColor:
-            notification.urgencia === "critico"
-              ? "#ffcdd2"
-              : notification.urgencia === "alto"
-                ? "#ffe0b2"
-                : notification.urgencia === "medio"
-                  ? "#ffecb3"
-                  : "#f5f5f5",
-        },
-      }}
-    >
-      <ListItemText
-        primary={
-          <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-            <Typography
-              style={{
-                fontWeight: notification.read ? "normal" : "bold",
-                fontSize: "0.95rem",
-              }}
-            >
-              {notification.text}
-            </Typography>
-            {notification.urgencia === "critico" && (
-              <Chip
-                label="Crítico"
-                size="small"
-                color="error"
-                sx={{ height: 20, fontSize: "0.7rem" }}
-              />
-            )}
-            {notification.urgencia === "alto" && (
-              <Chip
-                label="Alto"
-                size="small"
-                color="error"
-                variant="outlined"
-                sx={{ height: 20, fontSize: "0.7rem" }}
-              />
-            )}
-            {notification.urgencia === "medio" && (
-              <Chip
-                label="Médio"
-                size="small"
-                color="warning"
-                sx={{ height: 20, fontSize: "0.7rem" }}
-              />
-            )}
-          </Box>
-        }
-        secondary={
-          <Box sx={{ mt: 0.5 }}>
-            <Typography component="div" variant="body2" color="textSecondary">
-              <strong>Prestador:</strong> {notification.details.prestador}
-              <br />
-              <strong>Cliente:</strong> {notification.details.cliente}
-              <br />
-              <strong>Vencimento:</strong> {notification.details.vencimento}
-              <br />
-              <strong>Valor:</strong> {notification.details.valor}
-            </Typography>
-            <Typography
-              component="div"
-              variant="caption"
-              sx={{
-                color:
-                  notification.urgencia === "critico"
-                    ? "error.main"
-                    : notification.urgencia === "alto"
-                      ? "error.light"
-                      : notification.urgencia === "medio"
-                        ? "warning.main"
-                        : "warning.light",
-                fontWeight: "bold",
-                marginTop: 1,
-              }}
-            >
-              {notification.time}
-            </Typography>
-          </Box>
-        }
-      />
-    </ListItem>
-  );
+
 
   const renderContaNotification = (notification) => (
     <ListItem button key={notification.id}>
@@ -524,12 +422,6 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
             label={`Contas a Receber (${notifications.contasReceber.length})`}
             id="notification-tab-2"
           />
-          <Tab
-            label={`Comissões (${notifications.comissoes.length})`}
-            id="notification-tab-3"
-            icon={<PaymentsIcon fontSize="small" />}
-            iconPosition="start"
-          />
         </Tabs>
 
         <Divider />
@@ -543,7 +435,6 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
                   0: "contas",
                   1: "servicos",
                   2: "contasReceber",
-                  3: "comissoes",
                 };
                 clearNotificationsByType(tipoMap[notificationTab]);
               }}
@@ -556,9 +447,7 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
                 ? "Contas a Pagar"
                 : notificationTab === 1
                   ? "Serviços"
-                  : notificationTab === 2
-                    ? "Contas a Receber"
-                    : "Comissões"}
+                  : "Contas a Receber"}
             </Button>
           </div>
         )}
@@ -570,9 +459,7 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
         ) : getCurrentNotificationCount() > 0 ? (
           <List style={{ padding: 0 }}>
             {getCurrentNotifications().map((notification) => {
-              if (notification.type === "comissao") {
-                return renderComissaoNotification(notification);
-              } else if (notification.type === "conta") {
+              if (notification.type === "conta") {
                 return renderContaNotification(notification);
               } else if (notification.type === "servico") {
                 return renderServicoNotification(notification);
@@ -592,9 +479,7 @@ const HeaderPerfil = ({ pageTitle = "Dashboard" }) => {
               ? "conta a pagar"
               : notificationTab === 1
                 ? "serviço"
-                : notificationTab === 2
-                  ? "conta a receber"
-                  : "comissão"}{" "}
+                : "conta a receber"}{" "}
             vencida
           </Typography>
         )}

@@ -3,7 +3,6 @@ import { useLocation } from "react-router-dom";
 import { buscarContasPagarPendente } from "../service/get/contas-pagar-pendente";
 import { buscarServicoPendente } from "../service/get/servico-pendente";
 import { buscarContasReceberPendente } from "../service/get/contas-receber-pendente";
-import { buscarContasReceberComissaoPendente } from "../service/get/contas-receber-comissao-pendente";
 import CustomToast from "../components/toast";
 
 const NotificationContext = createContext();
@@ -21,7 +20,6 @@ export const NotificationProvider = ({ children }) => {
     contas: [],
     servicos: [],
     contasReceber: [],
-    comissoes: [],
   });
   const [loading, setLoading] = useState(false);
   const [lastFetch, setLastFetch] = useState(null);
@@ -41,41 +39,7 @@ export const NotificationProvider = ({ children }) => {
     now.setHours(0, 0, 0, 0);
     const novasNotificacoes = [];
 
-    if (tipo === "comissoes") {
-        const itens = Array.isArray(dados) ? dados : (dados?.comissoes || dados?.data?.comissoes || []);
-        itens.forEach(item => {
-            const dataVencimento = item.data_vencimento || item.data_pagamento;
-            if (!dataVencimento) return;
-            const vencimentoDate = new Date(dataVencimento);
-            vencimentoDate.setHours(0, 0, 0, 0);
-            const diffDays = Math.ceil((vencimentoDate - now) / (1000 * 60 * 60 * 24));
-
-            if (diffDays < 0) {
-                const diasAtraso = Math.abs(diffDays);
-                let urgencia = "normal";
-                let corUrgencia = "warning";
-                if (diasAtraso >= 30) { urgencia = "critico"; corUrgencia = "error"; }
-                else if (diasAtraso >= 15) { urgencia = "alto"; corUrgencia = "error"; }
-                else if (diasAtraso >= 7) { urgencia = "medio"; corUrgencia = "warning"; }
-
-                novasNotificacoes.push({
-                    id: `comissao-${item.id}-${Math.random()}`,
-                    text: `💰 Comissão vencida: ${item.servico?.nome || item.servico_nome || "Serviço"}`,
-                    details: {
-                        prestador: item.prestador?.nome || item.prestador_nome || "Não informado",
-                        cliente: item.cliente?.nome || item.cliente_nome || "Não informado",
-                        vencimento: formatarData(dataVencimento),
-                        valor: `R$ ${parseFloat(item.valor_comissao || item.valor || 0).toFixed(2)}`,
-                        diasAtraso, urgencia
-                    },
-                    read: false,
-                    time: `Vencida há ${diasAtraso} dias`,
-                    type: "comissao",
-                    urgencia, corUrgencia
-                });
-            }
-        });
-    } else if (tipo === "contas") {
+    if (tipo === "contas") {
         (dados || []).forEach(parcela => {
             const vencimentoDate = new Date(parcela.data_vencimento);
             vencimentoDate.setHours(0, 0, 0, 0);
@@ -162,18 +126,16 @@ export const NotificationProvider = ({ children }) => {
 
     setLoading(true);
     try {
-      const [contasRes, servicosRes, receberRes, comissoesRes] = await Promise.all([
+      const [contasRes, servicosRes, receberRes] = await Promise.all([
         buscarContasPagarPendente().catch(() => ({ parcelas: [] })),
         buscarServicoPendente().catch(() => []),
-        buscarContasReceberPendente().catch(() => ({ data: [] })),
-        buscarContasReceberComissaoPendente().catch(() => ({ comissoes: [] }))
+        buscarContasReceberPendente().catch(() => ({ data: [] }))
       ]);
 
       const novasNotifs = {
         contas: processarDados("contas", contasRes?.parcelas || []),
         servicos: processarDados("servicos", Array.isArray(servicosRes) ? servicosRes : (servicosRes?.data?.pendencias || [])),
-        contasReceber: processarDados("contasReceber", receberRes?.data || []),
-        comissoes: processarDados("comissoes", comissoesRes)
+        contasReceber: processarDados("contasReceber", receberRes?.data || [])
       };
 
       setNotifications(novasNotifs);
@@ -197,7 +159,7 @@ export const NotificationProvider = ({ children }) => {
   };
 
   const clearAll = () => {
-    setNotifications({ contas: [], servicos: [], contasReceber: [], comissoes: [] });
+    setNotifications({ contas: [], servicos: [], contasReceber: [] });
   };
 
   const location = useLocation();
@@ -214,8 +176,7 @@ export const NotificationProvider = ({ children }) => {
   const unreadCount = 
     notifications.contas.filter(n => !n.read).length +
     notifications.servicos.filter(n => !n.read).length +
-    notifications.contasReceber.filter(n => !n.read).length +
-    notifications.comissoes.filter(n => !n.read).length;
+    notifications.contasReceber.filter(n => !n.read).length;
 
   return (
     <NotificationContext.Provider value={{ 

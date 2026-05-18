@@ -60,6 +60,26 @@ const CadastroServicosCliente = ({ onSuccess }) => {
     setValorPrestador(0);
   };
 
+  const calcularTotais = () => {
+    let total = 0;
+    let pagar = 0;
+    let receber = 0;
+
+    Object.values(servicosPorPrestador).forEach((servicos) => {
+      servicos.forEach((servico) => {
+        const valor = parseFloat(servico.pagamento.valorTotal) || 0;
+        total += valor;
+        if (servico.pagamento.destino === "pagar") {
+          pagar += valor;
+        } else if (servico.pagamento.destino === "receber") {
+          receber += valor;
+        }
+      });
+    });
+
+    return { total, pagar, receber };
+  };
+
   const FecharCadastro = () => {
     setCadastro(false);
     limparEstados();
@@ -143,28 +163,10 @@ const CadastroServicosCliente = ({ onSuccess }) => {
             updated[prestadorId][servicoIndex].pagamento.tipo === "1"
               ? valor
               : valor / updated[prestadorId][servicoIndex].pagamento.parcelas;
-          
-          // Recalcula comissão
-          updated[prestadorId][servicoIndex].pagamento.comissao = 
-            valor - (updated[prestadorId][servicoIndex].pagamento.valorPrestador || 0);
         }
 
-        if (field === "valorPrestador") {
-          const valor = parseFloat(value) || 0;
-          updated[prestadorId][servicoIndex].pagamento.valorPrestador = valor;
-          
-          // Recalcula comissão
-          updated[prestadorId][servicoIndex].pagamento.comissao = 
-            (updated[prestadorId][servicoIndex].pagamento.valorTotal || 0) - valor;
-        }
-
-        if (field === "is_servico_aide") {
-          updated[prestadorId][servicoIndex].pagamento.is_servico_aide = value;
-          if (value) {
-            updated[prestadorId][servicoIndex].pagamento.valorPrestador = 0;
-            updated[prestadorId][servicoIndex].pagamento.comissao = 
-              updated[prestadorId][servicoIndex].pagamento.valorTotal || 0;
-          }
+        if (field === "destino") {
+          updated[prestadorId][servicoIndex].pagamento.destino = value;
         }
         if (field === "parcelas") {
           const num = Math.max(1, parseInt(value) || 1);
@@ -220,12 +222,9 @@ const CadastroServicosCliente = ({ onSuccess }) => {
               parcelas: 1,
               valorTotal: 0,
               valorParcela: 0,
-              comissao: 0,
-              valorPrestador: 0,
-              is_servico_aide: false,
-              dataInicio: new Date().toLocaleDateString("en-CA"),
-              dataEntrega: "",
-              dataPagamento: new Date().toLocaleDateString("en-CA"),
+              destino: "receber",
+              dataInicio: new Date().toISOString().split("T")[0],
+              dataPagamento: new Date().toISOString().split("T")[0],
             },
           },
         ],
@@ -252,15 +251,14 @@ const CadastroServicosCliente = ({ onSuccess }) => {
       return null;
     }
 
-    // Validação de Serviço Aidê vs Valor Prestador
+    // Validação de Destino (não é mais necessário validar is_servico_aide)
     for (const prestador of prestadoresAdicionados) {
       const servicosDoPrestador = servicosPorPrestador[prestador.id] || [];
       for (const servico of servicosDoPrestador) {
-        const valorPrestador = parseFloat(servico.pagamento.valorPrestador || 0);
-        if (valorPrestador === 0 && !servico.pagamento.is_servico_aide) {
+        if (!servico.pagamento.destino) {
           CustomToast({
             type: "error",
-            message: `Para o serviço "${servico.nome}", se não houver valor para o prestador, você deve marcar "Serviço Aidê".`,
+            message: `Para o serviço "${servico.nome}", você deve informar o destino (Conta a Pagar ou Conta a Receber).`,
           });
           return null;
         }
@@ -293,20 +291,9 @@ const CadastroServicosCliente = ({ onSuccess }) => {
           numero_parcelas: servico.pagamento.parcelas,
           valor_total: parseFloat(servico.pagamento.valorTotal),
           valor_parcela: parseFloat(servico.pagamento.valorParcela),
-          comissao: servico.pagamento.is_servico_aide
-            ? 0
-            : parseFloat(servico.pagamento.comissao),
-          valor_prestador: servico.pagamento.is_servico_aide
-            ? 0
-            : parseFloat(servico.pagamento.valorPrestador),
-          is_servico_aide: servico.pagamento.is_servico_aide,
-          data_inicio:
-            servico.pagamento.dataInicio ||
-            new Date().toISOString().split("T")[0],
-          data_entrega: servico.pagamento.dataEntrega || null,
-          data_pagamento:
-            servico.pagamento.dataPagamento ||
-            new Date().toISOString().split("T")[0],
+          destino: servico.pagamento.destino,
+          data_inicio: servico.pagamento.dataInicio,
+          data_pagamento: servico.pagamento.dataPagamento,
         })),
       };
 
@@ -351,7 +338,6 @@ const CadastroServicosCliente = ({ onSuccess }) => {
       <CentralModal
         tamanhoTitulo={"81%"}
         maxHeight={"90vh"}
-        top={"20%"}
         left={"28%"}
         width={"750px"}
         icon={<AddCircleOutline fontSize="small" />}
@@ -359,7 +345,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
         onClose={FecharCadastro}
         title="Cadastrar Serviço"
       >
-        <div className="overflow-y-auto overflow-x-hidden max-h-[300px]">
+        <div className="overflow-y-auto overflow-x-hidden max-h-[55vh] px-2">
           <div className="mt-4 flex gap-3 flex-wrap">
             <Box className="flex w-full items-center justify-center">
               <BottomNavigation
@@ -491,6 +477,28 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                   variants={fadeIn}
                   transition={{ duration: 0.9 }}
                 >
+                  {/* Cards de Resumo Financeiro */}
+                  <div className="w-full flex gap-3 mb-4 justify-between px-2">
+                    <div className="flex-1 p-3 rounded-lg border border-gray-200 bg-white shadow-sm flex flex-col">
+                      <span className="text-xs text-gray-500 font-normal">Valor Total</span>
+                      <span className="text-lg font-bold text-gray-800">
+                        R$ {calcularTotais().total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="flex-1 p-3 rounded-lg border border-[#e57373] bg-[#ffebee] shadow-sm flex flex-col">
+                      <span className="text-xs text-red-600 font-normal">Contas a Pagar</span>
+                      <span className="text-lg font-bold text-red-700">
+                        R$ {calcularTotais().pagar.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="flex-1 p-3 rounded-lg border border-[#81c784] bg-[#e8f5e9] shadow-sm flex flex-col">
+                      <span className="text-xs text-green-600 font-normal">Contas a Receber</span>
+                      <span className="text-lg font-bold text-green-700">
+                        R$ {calcularTotais().receber.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </div>
+
                   <div className="w-[95%] flex itens-start gap-3">
                     <div className="w-[100%]">
                       <div className="flex w-[100%] items-center gap-3 flex-wrap">
@@ -777,91 +785,37 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                             }}
                                           />
                                         )}
-                                        <FormControlLabel
-                                          control={
-                                            <Checkbox
-                                              size="small"
-                                              checked={
-                                                servico.pagamento
-                                                  .is_servico_aide
-                                              }
-                                              onChange={(e) =>
-                                                handlePagamentoChange(
-                                                  prestador.id,
-                                                  servico.id,
-                                                  "is_servico_aide",
-                                                  e.target.checked,
-                                                )
-                                              }
-                                              sx={{
-                                                color: "#9D4B5B",
-                                                "&.Mui-checked": {
-                                                  color: "#9D4B5B",
-                                                },
-                                              }}
-                                            />
+                                        <TextField
+                                          fullWidth
+                                          variant="outlined"
+                                          size="small"
+                                          select
+                                          label="Destino"
+                                          value={servico.pagamento.destino}
+                                          onChange={(e) =>
+                                            handlePagamentoChange(
+                                              prestador.id,
+                                              servico.id,
+                                              "destino",
+                                              e.target.value,
+                                            )
                                           }
-                                          label={
-                                            <span className="text-xs font-semibold text-[#9D4B5B]">
-                                              Serviço Aidê
-                                            </span>
-                                          }
-                                        />
-                                        {!servico.pagamento.is_servico_aide && (
-                                          <>
-                                            <TextField
-                                              fullWidth
-                                              variant="outlined"
-                                              size="small"
-                                              label="Comissão"
-                                              type="number"
-                                              value={servico.pagamento.comissao}
-                                              onChange={(e) =>
-                                                handlePagamentoChange(
-                                                  prestador.id,
-                                                  servico.id,
-                                                  "comissao",
-                                                  e.target.value,
-                                                )
-                                              }
-                                              style={{ width: "16%" }}
-                                              InputProps={{
-                                                startAdornment: (
-                                                  <InputAdornment position="start">
-                                                    <Money />
-                                                  </InputAdornment>
-                                                ),
-                                              }}
-                                            />
-                                            {/* Valor Prestador */}
-                                            <TextField
-                                              fullWidth
-                                              variant="outlined"
-                                              size="small"
-                                              label="Valor Prestador"
-                                              type="number"
-                                              value={
-                                                servico.pagamento.valorPrestador
-                                              }
-                                              onChange={(e) =>
-                                                handlePagamentoChange(
-                                                  prestador.id,
-                                                  servico.id,
-                                                  "valorPrestador",
-                                                  e.target.value,
-                                                )
-                                              }
-                                              style={{ width: "20%" }}
-                                              InputProps={{
-                                                startAdornment: (
-                                                  <InputAdornment position="start">
-                                                    <Money />
-                                                  </InputAdornment>
-                                                ),
-                                              }}
-                                            />
-                                          </>
-                                        )}
+                                          style={{ width: "25%" }}
+                                          InputProps={{
+                                            startAdornment: (
+                                              <InputAdornment position="start">
+                                                <Money />
+                                              </InputAdornment>
+                                            ),
+                                          }}
+                                        >
+                                          <MenuItem value="receber">
+                                            Conta a Receber
+                                          </MenuItem>
+                                          <MenuItem value="pagar">
+                                            Conta a Pagar
+                                          </MenuItem>
+                                        </TextField>
                                         <TextField
                                           fullWidth
                                           variant="outlined"
@@ -882,26 +836,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                             shrink: true,
                                           }}
                                         />
-                                        <TextField
-                                          fullWidth
-                                          variant="outlined"
-                                          size="small"
-                                          type="date"
-                                          label="Data de Entrega"
-                                          style={{ width: "25%" }}
-                                          value={servico.pagamento.dataEntrega}
-                                          onChange={(e) =>
-                                            handlePagamentoChange(
-                                              prestador.id,
-                                              servico.id,
-                                              "dataEntrega",
-                                              e.target.value,
-                                            )
-                                          }
-                                          InputLabelProps={{
-                                            shrink: true,
-                                          }}
-                                        />
+
                                         <TextField
                                           fullWidth
                                           variant="outlined"

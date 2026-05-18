@@ -40,9 +40,8 @@ export const transformarOrcamentosParaTabela = (orcamentos) => {
         .map((p) => p.prestador.nome)
         .join(", "),
       data_inicio: formatarData(orcamento.prestadores[0]?.servicos[0]?.data_inicio),
-      data_entrega: formatarData(orcamento.prestadores[0]?.servicos[0]?.data_entrega),
+      data_pagamento: formatarData(orcamento.prestadores[0]?.servicos[0]?.data_pagamento),
       valor_total: formatarValor(valorTotal),
-      comissao: formatarValor(comissaoTotal),
     };
   });
 };
