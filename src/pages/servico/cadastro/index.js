@@ -339,7 +339,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
         tamanhoTitulo={"81%"}
         maxHeight={"90vh"}
         left={"28%"}
-        width={"750px"}
+        width={"850px"}
         icon={<AddCircleOutline fontSize="small" />}
         open={cadastro}
         onClose={FecharCadastro}
