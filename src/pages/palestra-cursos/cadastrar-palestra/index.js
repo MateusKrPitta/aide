@@ -110,7 +110,7 @@ const CadastrarPalestra = ({ onSuccess }) => {
   const validarCamposCadastro = () => {
     return (
       nomePalestra.trim() !== "" &&
-      selectedCliente.length > 0 !== "" &&
+      Boolean(selectedCliente) &&
       endereco.trim() !== ""
     );
   };

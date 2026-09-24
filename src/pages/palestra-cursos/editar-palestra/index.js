@@ -118,7 +118,7 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
       setHorario(palestra.horário ? formatTimeForInput(palestra.horário) : "");
       setValor("");
       setPaymentStatus(
-        palestra.status_pagamento == 2 || palestra.status_pagamento == "2" || palestra.statusPagamento === "Pago"
+        String(palestra.status_pagamento) === "2" || palestra.statusPagamento === "Pago"
           ? "Pago"
           : "Pendente"
       );
