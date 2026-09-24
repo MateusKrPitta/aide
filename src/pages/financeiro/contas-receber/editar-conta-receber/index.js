@@ -39,6 +39,10 @@ import CustomToast from "../../../../components/toast";
 import { atualizarContasReceber } from "../../../../service/put/contas-receber";
 import { buscarContasReceberId } from "../../../../service/get/contas-receber-id";
 import { atualizarParcelaContasReceber } from "../../../../service/put/contas-receber-parcela";
+import {
+  formatarMoedaOnBlur,
+  desformatarValor,
+} from "../../../../utils/mascaras/formatValor";
 
 const EditarContaREceber = ({
   informacoes,
@@ -133,17 +137,11 @@ const EditarContaREceber = ({
     if (conta.custo_fixo === true) {
       setTipoCusto("fixo");
       setQuantidadeParcelas(conta.quantidade_parcelas?.toString() || "0");
-      const valorMensalNum = conta.valor_mensal
-        ? parseFloat(conta.valor_mensal.replace(",", "."))
-        : 0;
-      setValorMensal(valorMensalNum.toString());
+      setValorMensal(formatarMoedaOnBlur(conta.valor_mensal || 0));
       setValorTotal("");
     } else if (conta.custo_variavel === true || conta.valor_total) {
       setTipoCusto("variavel");
-      const valorTotalNum = conta.valor_total
-        ? parseFloat(conta.valor_total.replace(",", "."))
-        : 0;
-      setValorTotal(valorTotalNum.toString());
+      setValorTotal(formatarMoedaOnBlur(conta.valor_total || 0));
       setQuantidadeParcelas("");
       setValorMensal("");
     }
@@ -198,7 +196,7 @@ const EditarContaREceber = ({
 
     setParcelaDataVencimento(dataVencimentoFormatada);
     setParcelaStatusPagamento(parcela.status_pagamento?.toString() || "1");
-    setParcelaValor(parcela.valor?.toString() || "");
+    setParcelaValor(formatarMoedaOnBlur(parcela.valor || ""));
     setParcelaFormaPagamento(parcela.forma_pagamento?.toString() || "2");
     setEditandoParcela(true);
   };
@@ -210,7 +208,7 @@ const EditarContaREceber = ({
       const dadosAtualizacao = {
         data_vencimento: parcelaDataVencimento,
         status_pagamento: parseInt(parcelaStatusPagamento),
-        valor: parseFloat(parcelaValor),
+        valor: desformatarValor(parcelaValor),
         forma_pagamento: parcelaFormaPagamento,
       };
 
@@ -285,15 +283,15 @@ const EditarContaREceber = ({
         dadosParaEnvio.custo_fixo = true;
         dadosParaEnvio.custo_variavel = false;
         dadosParaEnvio.quantidade_parcelas = parseInt(quantidadeParcelas);
-        dadosParaEnvio.valor_mensal = parseFloat(valorMensal);
+        dadosParaEnvio.valor_mensal = desformatarValor(valorMensal);
         dadosParaEnvio.valor_total =
-          parseFloat(valorMensal) * parseInt(quantidadeParcelas);
+          desformatarValor(valorMensal) * parseInt(quantidadeParcelas);
       } else {
         dadosParaEnvio.custo_fixo = false;
         dadosParaEnvio.custo_variavel = true;
-        dadosParaEnvio.valor_total = parseFloat(valorTotal);
+        dadosParaEnvio.valor_total = desformatarValor(valorTotal);
         dadosParaEnvio.quantidade_parcelas = 1;
-        dadosParaEnvio.valor_mensal = parseFloat(valorTotal);
+        dadosParaEnvio.valor_mensal = desformatarValor(valorTotal);
       }
 
       await atualizarContasReceber(dadosParaEnvio, contaSelecionada.id);
@@ -523,9 +521,17 @@ const EditarContaREceber = ({
                         variant="outlined"
                         size="small"
                         label="Valor Mensal"
+                        placeholder="0,00"
                         value={valorMensal}
-                        onChange={(e) => setValorMensal(e.target.value)}
-                        type="number"
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/[^0-9,.]/g, "");
+                          setValorMensal(raw);
+                        }}
+                        onBlur={() => {
+                          if (valorMensal) {
+                            setValorMensal(formatarMoedaOnBlur(valorMensal));
+                          }
+                        }}
                         sx={{
                           width: {
                             xs: "100%",
@@ -577,9 +583,17 @@ const EditarContaREceber = ({
                         size="small"
                         disabled
                         label="Valor Total"
+                        placeholder="0,00"
                         value={valorTotal}
-                        onChange={(e) => setValorTotal(e.target.value)}
-                        type="number"
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/[^0-9,.]/g, "");
+                          setValorTotal(raw);
+                        }}
+                        onBlur={() => {
+                          if (valorTotal) {
+                            setValorTotal(formatarMoedaOnBlur(valorTotal));
+                          }
+                        }}
                         sx={{
                           width: {
                             xs: "100%",
@@ -753,9 +767,17 @@ const EditarContaREceber = ({
               variant="outlined"
               size="small"
               label="Valor"
+              placeholder="0,00"
               value={parcelaValor}
-              onChange={(e) => setParcelaValor(e.target.value)}
-              type="number"
+              onChange={(e) => {
+                const raw = e.target.value.replace(/[^0-9,.]/g, "");
+                setParcelaValor(raw);
+              }}
+              onBlur={() => {
+                if (parcelaValor) {
+                  setParcelaValor(formatarMoedaOnBlur(parcelaValor));
+                }
+              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">

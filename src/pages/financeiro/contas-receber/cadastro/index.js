@@ -20,6 +20,10 @@ import TransformIcon from "@mui/icons-material/Transform";
 import ButtonComponent from "../../../../components/button";
 import CustomToast from "../../../../components/toast";
 import { criarContasReceber } from "../../../../service/post/contas-receber";
+import {
+  formatarMoedaOnBlur,
+  desformatarValor,
+} from "../../../../utils/mascaras/formatValor";
 
 const CadastrarContaReceber = ({
   cadastroUsuario,
@@ -106,7 +110,7 @@ const CadastrarContaReceber = ({
         dadosParaEnvio.custo_fixo = true;
         dadosParaEnvio.custo_variavel = false;
         dadosParaEnvio.quantidade_parcelas = meses;
-        dadosParaEnvio.valor_mensal = parseFloat(valorMensal);
+        dadosParaEnvio.valor_mensal = desformatarValor(valorMensal);
         dadosParaEnvio.prestador_id = prestadorId
           ? parseInt(prestadorId)
           : null;
@@ -114,7 +118,7 @@ const CadastrarContaReceber = ({
       } else {
         dadosParaEnvio.custo_fixo = false;
         dadosParaEnvio.custo_variavel = true;
-        dadosParaEnvio.valor_total = parseFloat(valorTotal);
+        dadosParaEnvio.valor_total = desformatarValor(valorTotal);
       }
 
       await criarContasReceber(dadosParaEnvio);
@@ -321,9 +325,17 @@ const CadastrarContaReceber = ({
                   variant="outlined"
                   size="small"
                   label="Valor Mensal"
+                  placeholder="0,00"
                   value={valorMensal}
-                  onChange={(e) => setValorMensal(e.target.value)}
-                  type="number"
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[^0-9,.]/g, "");
+                    setValorMensal(raw);
+                  }}
+                  onBlur={() => {
+                    if (valorMensal) {
+                      setValorMensal(formatarMoedaOnBlur(valorMensal));
+                    }
+                  }}
                   sx={{
                     width: {
                       xs: "100%",
@@ -375,9 +387,17 @@ const CadastrarContaReceber = ({
                   variant="outlined"
                   size="small"
                   label="Valor Total"
+                  placeholder="0,00"
                   value={valorTotal}
-                  onChange={(e) => setValorTotal(e.target.value)}
-                  type="number"
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[^0-9,.]/g, "");
+                    setValorTotal(raw);
+                  }}
+                  onBlur={() => {
+                    if (valorTotal) {
+                      setValorTotal(formatarMoedaOnBlur(valorTotal));
+                    }
+                  }}
                   sx={{
                     width: {
                       xs: "100%",

@@ -35,87 +35,6 @@ import { buscarPalestraCurso } from "../../../service/get/palestra-curso";
 import { cadastrosPalestraCurso } from "../../../entities/class/palestra-cursos";
 
 const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
-  useEffect(() => {
-    if (palestra) {
-      setSelectedCliente(palestra.cliente ? { nome: palestra.cliente } : null);
-      setData("");
-      setHorario(palestra.horário ? formatTimeForInput(palestra.horário) : "");
-      setValor(palestra.valor ? palestra.valor.replace("R$ ", "") : "");
-      setPaymentStatus(
-        palestra.status_pagamento == 2 || palestra.status_pagamento == "2" || palestra.statusPagamento === "Pago"
-          ? "Pago"
-          : "Pendente"
-      );
-      setHorario("");
-      setValor("");
-      setSecoes("");
-      setSelectedLecture("");
-      setPaymentType("À vista");
-      setCurrentPaymentMethod("Dinheiro");
-      setCurrentPaymentDate("");
-      setPaymentMethods([]);
-      setSessoesAdicionadas([]);
-      setTotalPaid(0);
-      setPaymentType(palestra.tipo_pagamento === "1" ? "À vista" : "Parcelado");
-      setInstallments(palestra.qtd_parcelas || 1);
-
-      const formaPagamento =
-        palestra.forma_pagamento === "1"
-          ? "Dinheiro"
-          : palestra.forma_pagamento === "2"
-          ? "PIX"
-          : palestra.forma_pagamento === "3"
-          ? "Débito"
-          : palestra.forma_pagamento === "4"
-          ? "Crédito"
-          : "Cheque";
-      setCurrentPaymentMethod(formaPagamento);
-      if (palestra.valor) {
-        const valorNumerico = parseFloat(palestra.valor.replace("R$ ", ""));
-        setPaymentMethods([
-          {
-            method: formaPagamento,
-            value: valorNumerico,
-            date: palestra.primeira_data_parcela 
-              ? formatDateForInput(palestra.primeira_data_parcela) 
-              : (palestra.data ? formatDateForInput(palestra.data) : ""),
-          },
-        ]);
-        setTotalPaid(valorNumerico);
-      }
-
-      setSessoesAdicionadas([
-        {
-          id: Date.now(),
-          horario: palestra.horário ? formatTimeForInput(palestra.horário) : "",
-          data: palestra.data ? formatDateForInput(palestra.data) : "",
-          secoes: palestra.secoes || "",
-          palestra: palestra.nome || "",
-          valor: palestra.valor ? palestra.valor.replace("R$ ", "") : "",
-        },
-      ]);
-    }
-  }, [palestra]);
-
-  const formatDateForInput = (dateString) => {
-    if (!dateString) return "";
-    if (dateString.includes("-")) {
-      return dateString.split("T")[0];
-    }
-    if (dateString.includes("/")) {
-      const parts = dateString.split("/");
-      if (parts.length === 3) {
-        return `${parts[2]}-${parts[1]}-${parts[0]}`;
-      }
-    }
-    return dateString;
-  };
-
-  const formatTimeForInput = (timeString) => {
-    if (!timeString) return "";
-    return timeString.substring(0, 5);
-  };
-
   const [nomePalestra, setNomePalestra] = useState(palestra?.nome || "");
   const [endereco, setEndereco] = useState(palestra?.endereco || "");
   const [loading, setLoading] = useState(false);
@@ -144,6 +63,120 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
   const [totalPaid, setTotalPaid] = useState(0);
   const [lista, setLista] = useState([]);
 
+  const formatarMoedaOnBlur = (val) => {
+    if (!val && val !== 0) return "";
+    const clean = val
+      .toString()
+      .replace(/[^\d,.-]/g, "")
+      .replace(/\./g, "")
+      .replace(",", ".");
+    const num = parseFloat(clean);
+    if (isNaN(num)) return "";
+    return num.toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
+  const desformatarValor = (valorFormatado) => {
+    if (!valorFormatado && valorFormatado !== 0) return 0;
+    if (typeof valorFormatado === "number") return valorFormatado;
+    const clean = valorFormatado
+      .toString()
+      .replace(/[^\d,.-]/g, "")
+      .replace(/\./g, "")
+      .replace(",", ".");
+    const num = parseFloat(clean);
+    return isNaN(num) ? 0 : num;
+  };
+
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return "";
+    if (dateString.includes("-")) {
+      return dateString.split("T")[0];
+    }
+    if (dateString.includes("/")) {
+      const parts = dateString.split("/");
+      if (parts.length === 3) {
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+    }
+    return dateString;
+  };
+
+  const formatTimeForInput = (timeString) => {
+    if (!timeString) return "";
+    return timeString.substring(0, 5);
+  };
+
+  useEffect(() => {
+    if (palestra) {
+      setNomePalestra(palestra.nome || "");
+      setEndereco(palestra.endereco || "");
+      setSelectedCliente(palestra.cliente ? { nome: palestra.cliente } : null);
+      setData("");
+      setHorario(palestra.horário ? formatTimeForInput(palestra.horário) : "");
+      setValor("");
+      setPaymentStatus(
+        palestra.status_pagamento == 2 || palestra.status_pagamento == "2" || palestra.statusPagamento === "Pago"
+          ? "Pago"
+          : "Pendente"
+      );
+      setSecoes("");
+      setSelectedLecture("");
+      setPaymentType("À vista");
+      setCurrentPaymentMethod("Dinheiro");
+      setCurrentPaymentDate("");
+      setPaymentMethods([]);
+      setSessoesAdicionadas([]);
+      setTotalPaid(0);
+      setPaymentType(palestra.tipo_pagamento === "1" ? "À vista" : "Parcelado");
+      setInstallments(palestra.qtd_parcelas || 1);
+
+      const formaPagamento =
+        palestra.forma_pagamento === "1"
+          ? "Dinheiro"
+          : palestra.forma_pagamento === "2"
+          ? "PIX"
+          : palestra.forma_pagamento === "3"
+          ? "Débito"
+          : palestra.forma_pagamento === "4"
+          ? "Crédito"
+          : "Cheque";
+      setCurrentPaymentMethod(formaPagamento);
+      if (palestra.valor) {
+        const valorNumerico = typeof palestra.valor === "number"
+          ? palestra.valor
+          : desformatarValor(palestra.valor);
+        setPaymentMethods([
+          {
+            method: formaPagamento,
+            value: valorNumerico,
+            date: palestra.primeira_data_parcela 
+              ? formatDateForInput(palestra.primeira_data_parcela) 
+              : (palestra.data ? formatDateForInput(palestra.data) : ""),
+          },
+        ]);
+        setTotalPaid(valorNumerico);
+      }
+
+      const valorSessaoInicial = palestra.valor
+        ? (typeof palestra.valor === "number" ? palestra.valor : desformatarValor(palestra.valor))
+        : 0;
+
+      setSessoesAdicionadas([
+        {
+          id: Date.now(),
+          horario: palestra.horário ? formatTimeForInput(palestra.horário) : "",
+          data: palestra.data ? formatDateForInput(palestra.data) : "",
+          secoes: palestra.secoes || "",
+          palestra: palestra.nome || "",
+          valor: valorSessaoInicial,
+        },
+      ]);
+    }
+  }, [palestra]);
+
   const fadeIn = {
     hidden: { opacity: 0 },
     visible: { opacity: 1 },
@@ -162,13 +195,15 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
       return;
     }
 
+    const valorNumerico = desformatarValor(valor);
+
     const novaSessao = {
       id: Date.now(),
       horario: horario,
       data: data,
       secoes: secoes,
       palestra: selectedLecture,
-      valor: valor,
+      valor: valorNumerico,
     };
 
     setSessoesAdicionadas([...sessoesAdicionadas, novaSessao]);
@@ -263,37 +298,47 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
     setHorario(value.substring(0, 5));
   };
 
-  const valorMascara = (e) => {
-    const value = e.target.value.replace(/[^0-9.]/g, "");
-    setValor(value);
-  };
-
   const adicionarPagamento = () => {
-    if (currentPaymentValue && parseFloat(currentPaymentValue) > 0) {
-      const valorPagamento = parseFloat(currentPaymentValue);
-      const valorRestante = parseFloat(valor) - totalPaid;
+    const valorPagamento = desformatarValor(currentPaymentValue);
+    if (!valorPagamento || valorPagamento <= 0) {
+      CustomToast({
+        type: "warning",
+        message: "Informe um valor para o pagamento",
+      });
+      return;
+    }
 
-      if (valorPagamento > valorRestante) {
+    const valorBaseTotal =
+      valorTotal > 0 ? valorTotal : valor ? desformatarValor(valor) : 0;
+
+    if (valorBaseTotal > 0) {
+      const valorRestante = valorBaseTotal - totalPaid;
+
+      if (valorPagamento > valorRestante + 0.01) {
         CustomToast({
           type: "warning",
-          message: `O valor excede o restante a pagar (R$ ${valorRestante.toFixed(
-            2
-          )})`,
+          message: `O valor excede o restante a pagar (R$ ${Math.max(
+            0,
+            valorRestante
+          ).toLocaleString("pt-BR", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })})`,
         });
         return;
       }
-
-      const newPayment = {
-        method: currentPaymentMethod,
-        value: valorPagamento,
-        date: currentPaymentDate,
-      };
-
-      setPaymentMethods([...paymentMethods, newPayment]);
-      setTotalPaid(totalPaid + valorPagamento);
-      setCurrentPaymentValue("");
-      setCurrentPaymentDate("");
     }
+
+    const newPayment = {
+      method: currentPaymentMethod,
+      value: valorPagamento,
+      date: currentPaymentDate,
+    };
+
+    setPaymentMethods([...paymentMethods, newPayment]);
+    setTotalPaid(totalPaid + valorPagamento);
+    setCurrentPaymentValue("");
+    setCurrentPaymentDate("");
   };
 
   const removerPagamento = (index) => {
@@ -315,7 +360,11 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
   };
 
   const valorTotal = sessoesAdicionadas.reduce(
-    (total, sessao) => total + parseFloat(sessao.valor || 0),
+    (total, sessao) =>
+      total +
+      (typeof sessao.valor === "number"
+        ? sessao.valor
+        : desformatarValor(sessao.valor) || 0),
     0
   );
 
@@ -695,8 +744,17 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
                             variant="outlined"
                             size="small"
                             label="Valor"
+                            placeholder="0,00"
                             value={valor}
-                            onChange={valorMascara}
+                            onChange={(e) => {
+                              const raw = e.target.value.replace(/[^0-9,.]/g, "");
+                              setValor(raw);
+                            }}
+                            onBlur={() => {
+                              if (valor) {
+                                setValor(formatarMoedaOnBlur(valor));
+                              }
+                            }}
                             sx={{
                               width: {
                                 xs: "50%",
@@ -781,7 +839,14 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
                                     <div className="w-[48%] flex items-center gap-1">
                                       <AttachMoney fontSize="small" />
                                       <label className="text-xs w-full font-semibold">
-                                        R$ {parseFloat(sessao.valor).toFixed(2)}
+                                        R${" "}
+                                        {(typeof sessao.valor === "number"
+                                          ? sessao.valor
+                                          : desformatarValor(sessao.valor)
+                                        ).toLocaleString("pt-BR", {
+                                          minimumFractionDigits: 2,
+                                          maximumFractionDigits: 2,
+                                        })}
                                       </label>
                                     </div>
                                   </div>
@@ -795,7 +860,11 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
                             Valor Total:
                           </label>
                           <label className="text-xs font-semibold">
-                            R$ {valorTotal.toFixed(2)}
+                            R${" "}
+                            {valorTotal.toLocaleString("pt-BR", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
                           </label>
                         </div>
                       </div>
@@ -889,12 +958,19 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
                             <TextField
                               fullWidth
                               label="Valor"
+                              placeholder="0,00"
                               value={currentPaymentValue}
-                              onChange={(e) =>
-                                setCurrentPaymentValue(
-                                  e.target.value.replace(/[^0-9.]/g, "")
-                                )
-                              }
+                              onChange={(e) => {
+                                const raw = e.target.value.replace(/[^0-9,.]/g, "");
+                                setCurrentPaymentValue(raw);
+                              }}
+                              onBlur={() => {
+                                if (currentPaymentValue) {
+                                  setCurrentPaymentValue(
+                                    formatarMoedaOnBlur(currentPaymentValue)
+                                  );
+                                }
+                              }}
                               sx={{ width: { xs: "40%", lg: "47%" } }}
                               variant="outlined"
                               size="small"
@@ -958,7 +1034,13 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
                                         </label>
                                         <label className="text-xs">
                                           R${" "}
-                                          {parseFloat(payment.value).toFixed(2)}
+                                          {(typeof payment.value === "number"
+                                            ? payment.value
+                                            : desformatarValor(payment.value)
+                                          ).toLocaleString("pt-BR", {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2,
+                                          })}
                                         </label>
                                       </div>
                                       <div className="flex items-center gap-2 mt-1">
@@ -989,7 +1071,11 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
                                   Valor Total
                                 </span>
                                 <span className="text-xs font-bold">
-                                  R$ {totalPaid.toFixed(2)}
+                                  R${" "}
+                                  {totalPaid.toLocaleString("pt-BR", {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  })}
                                 </span>
                               </div>
 
@@ -1000,7 +1086,13 @@ const EditarPalestra = ({ open, onClose, onSave, palestra }) => {
                                   </span>
                                   <span className="text-xs">
                                     {installments}x de R${" "}
-                                    {(totalPaid / installments).toFixed(2)}
+                                    {(totalPaid / installments).toLocaleString(
+                                      "pt-BR",
+                                      {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                      }
+                                    )}
                                   </span>
                                 </div>
                               )}

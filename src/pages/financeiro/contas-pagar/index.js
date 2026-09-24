@@ -43,6 +43,10 @@ import { buscarCategoria } from "../../../service/get/categoria";
 import { contasPagarem } from "../../../entities/class/contas";
 import { deletarContas } from "../../../service/delete/contas";
 import { atualizarParcelaContasPagar } from "../../../service/put/atualiza-parcela-contas-pagar";
+import {
+  formatarMoedaOnBlur,
+  desformatarValor,
+} from "../../../utils/mascaras/formatValor";
 
 import { buscarTotalContasPagar } from "../../../service/get/total-contas-pagar";
 import { atualizarContasPagar } from "../../../service/put/contas-pagar";
@@ -560,9 +564,7 @@ const ContasPagar = () => {
     try {
       setLoading(true);
 
-      const valorNumerico = parseFloat(
-        valor.replace("R$", "").replace(",", ".").trim(),
-      );
+      const valorNumerico = desformatarValor(valor);
 
       const dataInicioFormatada =
         tipoCusto === "fixo" ? dataInicio : dataVariavel;
@@ -1146,11 +1148,19 @@ const ContasPagar = () => {
                         <TextField
                           fullWidth
                           variant="outlined"
-                          type="number"
                           size="small"
                           label="Valor Mensal"
+                          placeholder="0,00"
                           value={valor}
-                          onChange={(e) => setValor(e.target.value)}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(/[^0-9,.]/g, "");
+                            setValor(raw);
+                          }}
+                          onBlur={() => {
+                            if (valor) {
+                              setValor(formatarMoedaOnBlur(valor));
+                            }
+                          }}
                           sx={{
                             width: {
                               xs: "100%",

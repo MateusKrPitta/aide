@@ -54,6 +54,11 @@ import ModalLateral from "../../components/modal-lateral";
 import ButtonComponent from "../../components/button";
 import { atualizaOrcamento } from "../../service/put/orcamento";
 import { buscarServico } from "../../service/get/servicos";
+import {
+  formatarMoedaOnBlur,
+  formatarMoedaExibicao,
+  desformatarValor,
+} from "../../utils/mascaras/formatValor";
 
 const Servico = () => {
   const [orcamentoParaEditar, setOrcamentoParaEditar] = useState(null);
@@ -401,11 +406,13 @@ const Servico = () => {
         }
 
         if (field === "valorTotal") {
+          const valorNum = desformatarValor(value);
+          const parcelas = updated[prestadorId][servicoIndex].pagamento.parcelas || 1;
+          updated[prestadorId][servicoIndex].pagamento.valorTotal = value;
           updated[prestadorId][servicoIndex].pagamento.valorParcela =
             updated[prestadorId][servicoIndex].pagamento.tipo === "1"
-              ? valueToSet
-              : valueToSet /
-                updated[prestadorId][servicoIndex].pagamento.parcelas;
+              ? valorNum
+              : valorNum / parcelas;
         }
 
         if (field === "destino") {
@@ -414,9 +421,10 @@ const Servico = () => {
 
         if (field === "parcelas") {
           const num = Math.max(1, parseInt(value) || 1);
+          const valorNum = desformatarValor(updated[prestadorId][servicoIndex].pagamento.valorTotal);
           updated[prestadorId][servicoIndex].pagamento.parcelas = num;
           updated[prestadorId][servicoIndex].pagamento.valorParcela =
-            updated[prestadorId][servicoIndex].pagamento.valorTotal / num;
+            valorNum / num;
         }
       }
 
@@ -538,8 +546,8 @@ const Servico = () => {
             tipo_pagamento: parseInt(servico.pagamento.tipo),
             metodo_pagamento: parseInt(servico.pagamento.metodo),
             numero_parcelas: servico.pagamento.parcelas,
-            valor_total: parseFloat(servico.pagamento.valorTotal),
-            valor_parcela: parseFloat(servico.pagamento.valorParcela),
+            valor_total: desformatarValor(servico.pagamento.valorTotal),
+            valor_parcela: desformatarValor(servico.pagamento.valorParcela),
             destino: servico.pagamento.destino,
             data_inicio: servico.pagamento.dataInicio,
             data_pagamento: servico.pagamento.dataPagamento,
@@ -566,7 +574,7 @@ const Servico = () => {
 
     Object.values(servicosPorPrestador).forEach((servicos) => {
       servicos.forEach((servico) => {
-        const valor = parseFloat(servico.pagamento.valorTotal) || 0;
+        const valor = desformatarValor(servico.pagamento.valorTotal) || 0;
         total += valor;
         if (servico.pagamento.destino === "pagar") {
           pagar += valor;
@@ -601,8 +609,14 @@ const Servico = () => {
             tipo: servico.tipo_pagamento.toString(),
             metodo: servico.metodo_pagamento.toString(),
             parcelas: parseInt(servico.numero_parcelas) || 1,
-            valorTotal: parseFloat(servico.valor_total) || 0,
-            valorParcela: parseFloat(servico.valor_parcela) || 0,
+            valorTotal:
+              servico.valor_total !== undefined && servico.valor_total !== null
+                ? formatarMoedaExibicao(servico.valor_total)
+                : "",
+            valorParcela:
+              servico.valor_parcela !== undefined && servico.valor_parcela !== null
+                ? formatarMoedaExibicao(servico.valor_parcela)
+                : "",
             destino: servico.destino || "receber",
             dataInicio:
               servico.data_inicio?.split("T")[0] ||
@@ -1247,18 +1261,30 @@ const Servico = () => {
                                                   variant="outlined"
                                                   size="small"
                                                   label="Valor Total"
-                                                  type="number"
                                                   value={
                                                     servico.pagamento.valorTotal
                                                   }
-                                                  onChange={(e) =>
+                                                  onChange={(e) => {
+                                                    const val = e.target.value.replace(/[^0-9,.]/g, "");
                                                     handlePagamentoChange(
                                                       prestador.id,
                                                       servico.id,
                                                       "valorTotal",
-                                                      e.target.value,
-                                                    )
-                                                  }
+                                                      val,
+                                                    );
+                                                  }}
+                                                  onBlur={() => {
+                                                    if (servico.pagamento.valorTotal) {
+                                                      handlePagamentoChange(
+                                                        prestador.id,
+                                                        servico.id,
+                                                        "valorTotal",
+                                                        formatarMoedaOnBlur(
+                                                          servico.pagamento.valorTotal
+                                                        ),
+                                                      );
+                                                    }
+                                                  }}
                                                   style={{ width: "20%" }}
                                                   InputProps={{
                                                     startAdornment: (
@@ -1275,10 +1301,10 @@ const Servico = () => {
                                                     variant="outlined"
                                                     size="small"
                                                     label="Valor Parcela"
-                                                    value={Number(
+                                                    value={formatarMoedaExibicao(
                                                       servico.pagamento
                                                         .valorParcela || 0,
-                                                    ).toFixed(2)}
+                                                    )}
                                                     disabled
                                                     style={{ width: "20%" }}
                                                     InputProps={{

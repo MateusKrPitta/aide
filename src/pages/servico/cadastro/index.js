@@ -27,6 +27,11 @@ import { buscarClientes } from "../../../service/get/clientes";
 import { buscarPretadores } from "../../../service/get/prestadores";
 import CustomToast from "../../../components/toast";
 import { criarOrcamento } from "../../../service/post/orcamento";
+import {
+  formatarMoedaOnBlur,
+  formatarMoedaExibicao,
+  desformatarValor,
+} from "../../../utils/mascaras/formatValor";
 
 const CadastroServicosCliente = ({ onSuccess }) => {
   const [nomeServico, setNomeServico] = useState("");
@@ -67,7 +72,7 @@ const CadastroServicosCliente = ({ onSuccess }) => {
 
     Object.values(servicosPorPrestador).forEach((servicos) => {
       servicos.forEach((servico) => {
-        const valor = parseFloat(servico.pagamento.valorTotal) || 0;
+        const valor = desformatarValor(servico.pagamento.valorTotal) || 0;
         total += valor;
         if (servico.pagamento.destino === "pagar") {
           pagar += valor;
@@ -157,12 +162,13 @@ const CadastroServicosCliente = ({ onSuccess }) => {
         }
 
         if (field === "valorTotal") {
-          const valor = parseFloat(value) || 0;
-          updated[prestadorId][servicoIndex].pagamento.valorTotal = valor;
+          const valorNum = desformatarValor(value);
+          const parcelas = updated[prestadorId][servicoIndex].pagamento.parcelas || 1;
+          updated[prestadorId][servicoIndex].pagamento.valorTotal = value;
           updated[prestadorId][servicoIndex].pagamento.valorParcela =
             updated[prestadorId][servicoIndex].pagamento.tipo === "1"
-              ? valor
-              : valor / updated[prestadorId][servicoIndex].pagamento.parcelas;
+              ? valorNum
+              : valorNum / parcelas;
         }
 
         if (field === "destino") {
@@ -170,9 +176,10 @@ const CadastroServicosCliente = ({ onSuccess }) => {
         }
         if (field === "parcelas") {
           const num = Math.max(1, parseInt(value) || 1);
+          const valorNum = desformatarValor(updated[prestadorId][servicoIndex].pagamento.valorTotal);
           updated[prestadorId][servicoIndex].pagamento.parcelas = num;
           updated[prestadorId][servicoIndex].pagamento.valorParcela =
-            updated[prestadorId][servicoIndex].pagamento.valorTotal / num;
+            valorNum / num;
         }
       }
 
@@ -289,8 +296,8 @@ const CadastroServicosCliente = ({ onSuccess }) => {
           tipo_pagamento: parseInt(servico.pagamento.tipo),
           metodo_pagamento: parseInt(servico.pagamento.metodo),
           numero_parcelas: servico.pagamento.parcelas,
-          valor_total: parseFloat(servico.pagamento.valorTotal),
-          valor_parcela: parseFloat(servico.pagamento.valorParcela),
+          valor_total: desformatarValor(servico.pagamento.valorTotal),
+          valor_parcela: desformatarValor(servico.pagamento.valorParcela),
           destino: servico.pagamento.destino,
           data_inicio: servico.pagamento.dataInicio,
           data_pagamento: servico.pagamento.dataPagamento,
@@ -745,16 +752,26 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                           variant="outlined"
                                           size="small"
                                           label="Valor Total"
-                                          type="number"
                                           value={servico.pagamento.valorTotal}
-                                          onChange={(e) =>
+                                          onChange={(e) => {
+                                            const val = e.target.value.replace(/[^0-9,.]/g, "");
                                             handlePagamentoChange(
                                               prestador.id,
                                               servico.id,
                                               "valorTotal",
-                                              e.target.value,
-                                            )
-                                          }
+                                              val,
+                                            );
+                                          }}
+                                          onBlur={() => {
+                                            if (servico.pagamento.valorTotal) {
+                                              handlePagamentoChange(
+                                                prestador.id,
+                                                servico.id,
+                                                "valorTotal",
+                                                formatarMoedaOnBlur(servico.pagamento.valorTotal),
+                                              );
+                                            }
+                                          }}
                                           style={{ width: "20%" }}
                                           InputProps={{
                                             startAdornment: (
@@ -771,8 +788,8 @@ const CadastroServicosCliente = ({ onSuccess }) => {
                                             variant="outlined"
                                             size="small"
                                             label="Valor Parcela"
-                                            value={servico.pagamento.valorParcela.toFixed(
-                                              2,
+                                            value={formatarMoedaExibicao(
+                                              servico.pagamento.valorParcela,
                                             )}
                                             disabled
                                             style={{ width: "20%" }}

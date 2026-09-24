@@ -40,6 +40,11 @@ import { atualizarFluxoCaixa } from "../../../service/put/fluxo-caixa";
 import { buscarTotalFluxoCaixa } from "../../../service/get/total-fluxo-caixa";
 import { buscarFluxoCaixaImprimir } from "../../../service/get/fluxo-caixa";
 import { cadastrosFluxoCaixa } from "../../../entities/class/fluxo-caixa";
+import {
+  formatarMoedaOnBlur,
+  formatarMoedaExibicao,
+  desformatarValor,
+} from "../../../utils/mascaras/formatValor";
 
 const FluxoCaixa = () => {
   const [cadastroUsuario, setCadastroUsuario] = useState(false);
@@ -87,37 +92,11 @@ const FluxoCaixa = () => {
   const [itemEditando, setItemEditando] = useState(null);
 
   const formatarValorParaExibicao = (valor) => {
-    if (!valor) return "";
-
-    if (typeof valor === "number") {
-      return valor.toFixed(2).replace(".", ",");
-    }
-
-    const valorStr = valor.toString();
-    const apenasNumeros = valorStr.replace(/\D/g, "");
-    if (!apenasNumeros) return "";
-
-    const numero = parseFloat(apenasNumeros) / 100;
-    return numero.toFixed(2).replace(".", ",");
+    return formatarMoedaExibicao(valor);
   };
 
   const converterValorParaNumero = (valor) => {
-    if (!valor) return 0;
-    if (typeof valor === "number") return valor;
-
-    let valorStr = valor.toString();
-
-    valorStr = valorStr.replace(/R\$\s*/g, "");
-
-    valorStr = valorStr.replace(/\./g, "");
-
-    valorStr = valorStr.replace(",", ".");
-
-    valorStr = valorStr.replace(/[^\d.-]/g, "");
-
-    const numero = parseFloat(valorStr);
-
-    return isNaN(numero) ? 0 : numero;
+    return desformatarValor(valor);
   };
 
   const buscarTotais = async () => {
@@ -1116,13 +1095,12 @@ const FluxoCaixa = () => {
                       type="text"
                       value={valor}
                       onChange={(e) => {
-                        const valorDigitado = e.target.value;
-                        const apenasNumeros = valorDigitado.replace(/\D/g, "");
-                        if (apenasNumeros) {
-                          const numero = parseFloat(apenasNumeros) / 100;
-                          setValor(numero.toFixed(2).replace(".", ","));
-                        } else {
-                          setValor("");
+                        const val = e.target.value.replace(/[^0-9,.]/g, "");
+                        setValor(val);
+                      }}
+                      onBlur={() => {
+                        if (valor) {
+                          setValor(formatarMoedaOnBlur(valor));
                         }
                       }}
                       autoComplete="off"
@@ -1517,13 +1495,12 @@ const FluxoCaixa = () => {
                       type="text"
                       value={valor}
                       onChange={(e) => {
-                        const valorDigitado = e.target.value;
-                        const apenasNumeros = valorDigitado.replace(/\D/g, "");
-                        if (apenasNumeros) {
-                          const numero = parseFloat(apenasNumeros) / 100;
-                          setValor(numero.toFixed(2).replace(".", ","));
-                        } else {
-                          setValor("");
+                        const val = e.target.value.replace(/[^0-9,.]/g, "");
+                        setValor(val);
+                      }}
+                      onBlur={() => {
+                        if (valor) {
+                          setValor(formatarMoedaOnBlur(valor));
                         }
                       }}
                       autoComplete="off"

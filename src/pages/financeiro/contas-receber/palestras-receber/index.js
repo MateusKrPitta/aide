@@ -16,6 +16,11 @@ import ButtonComponent from "../../../../components/button";
 import ModalLateral from "../../../../components/modal-lateral";
 import { buscarContasReceberPalestraId } from "../../../../service/get/contas-receber-palestra-id";
 import { atualizarStatusParcela } from "../../../../service/put/atualiza-parcela-palestra-receber";
+import {
+  formatarMoedaOnBlur,
+  formatarMoedaExibicao,
+  desformatarValor,
+} from "../../../../utils/mascaras/formatValor";
 
 const PalestrasReceber = () => {
   const [editando, setEditando] = useState(false);
@@ -111,7 +116,7 @@ const PalestrasReceber = () => {
         setFormData({
           nome: dados.nome || "",
           data: dados.data ? dados.data.split("T")[0] : "",
-          valor: dados.valor || "",
+          valor: dados.valor !== undefined && dados.valor !== null ? formatarMoedaExibicao(dados.valor) : "",
           status_pagamento: dados.status_pagamento?.toString() || "",
           cliente_id: dados.cliente_id?.toString() || "",
           endereco: dados.endereco || "",
@@ -617,11 +622,19 @@ const PalestrasReceber = () => {
                       size="small"
                       label="Valor"
                       name="valor"
-                      type="number"
                       value={formData.valor}
-                      onChange={(e) =>
-                        handleInputChange("valor", e.target.value)
-                      }
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^0-9,.]/g, "");
+                        handleInputChange("valor", val);
+                      }}
+                      onBlur={() => {
+                        if (formData.valor) {
+                          handleInputChange(
+                            "valor",
+                            formatarMoedaOnBlur(formData.valor)
+                          );
+                        }
+                      }}
                       sx={{
                         width: {
                           xs: "100%",

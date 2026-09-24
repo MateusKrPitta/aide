@@ -66,91 +66,45 @@ const CadastrarPalestra = ({ onSuccess }) => {
   const [pagamentoError, setPagamentoError] = useState("");
   const [lista, setLista] = useState([]);
 
-  const mascaraValorMoeda = (e) => {
-    let value = e.target.value;
-
-    let numeros = value.replace(/\D/g, "");
-
-    if (numeros) {
-      let inteiro = numeros.slice(0, -2);
-      let centavos = numeros.slice(-2);
-
-      if (centavos.length === 0) {
-        centavos = "00";
-      } else if (centavos.length === 1) {
-        centavos = centavos + "0";
-      }
-
-      if (inteiro === "") inteiro = "0";
-      inteiro = parseInt(inteiro).toLocaleString("pt-BR");
-
-      value = inteiro + "," + centavos;
-    } else {
-      value = "";
-    }
-
-    return value;
-  };
-
-  const desformatarValorMoeda = (valorFormatado) => {
-    if (!valorFormatado) return 0;
-    const numeros = valorFormatado.replace(/\D/g, "");
-    const valorNumerico = parseFloat(numeros) / 100;
-    return isNaN(valorNumerico) ? 0 : valorNumerico;
-  };
-
-  const handlePaymentValueChange = (e) => {
-    const valorDigitado = e.target.value;
-    const valorMascarado = mascaraValorMoeda({
-      target: { value: valorDigitado },
+  const formatarMoedaOnBlur = (val) => {
+    if (!val && val !== 0) return "";
+    const clean = val
+      .toString()
+      .replace(/[^\d,.-]/g, "")
+      .replace(/\./g, "")
+      .replace(",", ".");
+    const num = parseFloat(clean);
+    if (isNaN(num)) return "";
+    return num.toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     });
-
-    setCurrentPaymentValue(valorMascarado);
-
-    const numero = desformatarValorMoeda(valorMascarado);
-    setCurrentPaymentValueNumeric(numero);
-  };
-
-  const mascaraValor = (e) => {
-    let value = e.target.value;
-
-    let numeros = value.replace(/\D/g, "");
-
-    if (numeros) {
-      let inteiro = numeros.slice(0, -2);
-      let centavos = numeros.slice(-2);
-
-      if (centavos.length === 0) {
-        centavos = "00";
-      } else if (centavos.length === 1) {
-        centavos = centavos + "0";
-      }
-
-      if (inteiro === "") inteiro = "0";
-      inteiro = parseInt(inteiro).toLocaleString("pt-BR");
-
-      value = inteiro + "," + centavos;
-    } else {
-      value = "";
-    }
-
-    return value;
   };
 
   const desformatarValor = (valorFormatado) => {
-    if (!valorFormatado) return 0;
-    const numeros = valorFormatado.replace(/\D/g, "");
-    const valorNumerico = parseFloat(numeros) / 100;
-    return isNaN(valorNumerico) ? 0 : valorNumerico;
+    if (!valorFormatado && valorFormatado !== 0) return 0;
+    if (typeof valorFormatado === "number") return valorFormatado;
+    const clean = valorFormatado
+      .toString()
+      .replace(/[^\d,.-]/g, "")
+      .replace(/\./g, "")
+      .replace(",", ".");
+    const num = parseFloat(clean);
+    return isNaN(num) ? 0 : num;
   };
 
   const handleValorChange = (e) => {
-    const valorDigitado = e.target.value;
-    const valorMascarado = mascaraValor({ target: { value: valorDigitado } });
-    setValor(valorMascarado);
-
-    const numero = desformatarValor(valorMascarado);
+    const raw = e.target.value.replace(/[^0-9,.]/g, "");
+    setValor(raw);
+    const numero = desformatarValor(raw);
     setValorNumerico(numero);
+  };
+
+  const handlePaymentValueChange = (e) => {
+    const raw = e.target.value.replace(/[^0-9,.]/g, "");
+    setCurrentPaymentValue(raw);
+    const numero = desformatarValor(raw);
+    setCurrentPaymentValueNumeric(numero);
   };
 
   const validarCamposCadastro = () => {
@@ -804,7 +758,12 @@ const CadastrarPalestra = ({ onSuccess }) => {
                             label="Valor"
                             value={valor}
                             onChange={handleValorChange}
-                            placeholder="R$ 0,00"
+                            onBlur={() => {
+                              if (valor) {
+                                setValor(formatarMoedaOnBlur(valor));
+                              }
+                            }}
+                            placeholder="0,00"
                             sx={{
                               width: {
                                 xs: "50%",
@@ -996,7 +955,14 @@ const CadastrarPalestra = ({ onSuccess }) => {
                               label="Valor"
                               value={currentPaymentValue}
                               onChange={handlePaymentValueChange}
-                              placeholder="R$ 0,00"
+                              onBlur={() => {
+                                if (currentPaymentValue) {
+                                  setCurrentPaymentValue(
+                                    formatarMoedaOnBlur(currentPaymentValue)
+                                  );
+                                }
+                              }}
+                              placeholder="0,00"
                               sx={{ width: { xs: "40%", lg: "47%" } }}
                               variant="outlined"
                               size="small"
